@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import { useReactFlow } from "@xyflow/react";
 import Image from "next/image";
-import { X } from "lucide-react";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useEditor } from "./EditorContext";
 import type { AgentNode } from "./editor.constants";
 
@@ -136,8 +135,10 @@ export function NodeConfigSheet() {
       <Sheet open={isConfigOpen} onOpenChange={(o) => { if (!o) closeConfig(); }}>
          <SheetContent
             side="right"
+            aria-describedby={undefined}
             className="w-[380px] bg-[#1c1c1c] border-l border-[#2a2a2a] p-0 flex flex-col"
          >
+            <SheetTitle className="sr-only">Node configuration</SheetTitle>
             {/* Header */}
             <div className="flex items-center gap-3 px-5 py-4 border-b border-[#2a2a2a]">
                <div className="w-9 h-9 rounded-lg bg-[#2d2d2d] flex items-center justify-center shrink-0">
@@ -149,12 +150,6 @@ export function NodeConfigSheet() {
                   onBlur={handleNameBlur}
                   className="flex-1 bg-transparent text-[15px] font-semibold text-sand outline-none border-b border-transparent focus:border-sand/20 transition-colors pb-0.5"
                />
-               <button
-                  onClick={closeConfig}
-                  className="text-sand/30 hover:text-sand transition-colors cursor-pointer"
-               >
-                  <X size={15} strokeWidth={1.5} />
-               </button>
             </div>
 
             {/* Tabs */}

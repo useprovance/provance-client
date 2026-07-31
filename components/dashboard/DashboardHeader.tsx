@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { LogOut, Bot, Store, Search } from "lucide-react";
+import { Search, User, Bot, Store, Settings2, LogOut, Wallet } from "lucide-react";
 import {
    DropdownMenu,
    DropdownMenuContent,
@@ -32,8 +32,6 @@ export default function DashboardHeader() {
       clearUser();
       router.push("/");
    };
-
-   const initial = user?.name?.charAt(0).toUpperCase() ?? "?";
 
    return (
       <header className="flex h-12 shrink-0 items-center border-b border-sand-faint bg-ink-dark w-full px-3 gap-1">
@@ -66,49 +64,58 @@ export default function DashboardHeader() {
          {/* User dropdown */}
          <DropdownMenu>
             <DropdownMenuTrigger asChild>
-               <button className="flex size-8 items-center justify-center rounded-full bg-orange/20 text-orange text-xs font-bold hover:bg-orange/30 transition-colors cursor-pointer border border-orange/20">
-                  {initial}
+               <button className="flex size-8 items-center justify-center rounded-full bg-sand shrink-0 overflow-hidden hover:bg-sand-light transition-colors cursor-pointer">
+                  <User size={18} strokeWidth={1.5} className="text-ink" />
                </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent side="bottom" align="end" className="w-52">
-               <div className="px-2 py-1.5 flex flex-col gap-0.5">
-                  <span className="text-sm text-foreground font-medium truncate">
-                     {user?.name ?? "—"}
-                  </span>
-                  {user?.email && (
-                     <span className="text-xs text-muted-foreground truncate">
-                        {user.email}
-                     </span>
+            <DropdownMenuContent
+               side="bottom"
+               align="end"
+               className="w-64 bg-[#1c1c1c] border border-[#2a2a2a] p-1 shadow-2xl"
+            >
+               {/* User info */}
+               <div className="px-3 py-2.5">
+                  <p className="text-[13px] font-semibold text-sand leading-tight truncate">{user?.name ?? "—"}</p>
+                  {user?.email && <p className="text-[11px] text-sand/40 truncate mt-0.5">{user.email}</p>}
+                  {user?.wallet_address && (
+                     <div className="flex items-center gap-1.5 mt-2 bg-[#252525] rounded-md px-2 py-1.5">
+                        <Wallet size={12} strokeWidth={1} className="text-sand/40 shrink-0" />
+                        <span className="text-[11px] text-sand/50 font-mono truncate">
+                           {user.wallet_address.slice(0, 6)}...{user.wallet_address.slice(-4)}
+                        </span>
+                     </div>
                   )}
                </div>
-               <DropdownMenuSeparator />
-               <DropdownMenuItem asChild className="cursor-pointer gap-2">
+
+               <DropdownMenuSeparator className="bg-[#2a2a2a]" />
+
+               <DropdownMenuItem asChild className="cursor-pointer px-3 py-2 text-[13px] text-sand/60 focus:text-sand focus:bg-[#252525] gap-3 [&_svg]:!size-[18px] [&_svg]:!text-current">
                   <Link href="/dashboard/agents">
-                     <Bot
-                        size={14}
-                        strokeWidth={1.5}
-                        className="text-muted-foreground"
-                     />
+                     <Bot strokeWidth={1} className="shrink-0" />
                      My Agents
                   </Link>
                </DropdownMenuItem>
-               <DropdownMenuItem asChild className="cursor-pointer gap-2">
+               <DropdownMenuItem asChild className="cursor-pointer px-3 py-2 text-[13px] text-sand/60 focus:text-sand focus:bg-[#252525] gap-3 [&_svg]:!size-[18px] [&_svg]:!text-current">
                   <Link href="/dashboard/marketplace">
-                     <Store
-                        size={14}
-                        strokeWidth={1.5}
-                        className="text-muted-foreground"
-                     />
+                     <Store strokeWidth={1} className="shrink-0" />
                      Marketplace
                   </Link>
                </DropdownMenuItem>
-               <DropdownMenuSeparator />
+               <DropdownMenuItem asChild className="cursor-pointer px-3 py-2 text-[13px] text-sand/60 focus:text-sand focus:bg-[#252525] gap-3 [&_svg]:!size-[18px] [&_svg]:!text-current">
+                  <Link href="/dashboard/settings">
+                     <Settings2 strokeWidth={1} className="shrink-0" />
+                     Settings
+                  </Link>
+               </DropdownMenuItem>
+
+               <DropdownMenuSeparator className="bg-[#2a2a2a]" />
+
                <DropdownMenuItem
-                  className="cursor-pointer gap-2 text-destructive focus:text-destructive"
                   onSelect={handleLogout}
+                  className="cursor-pointer px-3 py-2 text-[13px] text-sand/40 focus:text-red-400 focus:bg-red-400/8 gap-3 [&_svg]:!size-[18px] [&_svg]:!text-current"
                >
-                  <LogOut size={14} strokeWidth={1.5} />
-                  Log out
+                  <LogOut strokeWidth={1} className="shrink-0" />
+                  Sign out
                </DropdownMenuItem>
             </DropdownMenuContent>
          </DropdownMenu>

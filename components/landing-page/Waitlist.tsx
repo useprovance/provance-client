@@ -1,14 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/utils/supabase/client";
-
-const STRIPE = {
-   backgroundImage:
-      "repeating-linear-gradient(-45deg, var(--sand) 0, var(--sand) 1px, transparent 0, transparent 50%)",
-   backgroundSize: "6px 6px",
-   opacity: 0.07,
-};
+import AuthModal from "@/components/shared/AuthModal";
 
 function WaitlistGraphic() {
    return (
@@ -33,47 +26,20 @@ function WaitlistGraphic() {
 }
 
 export default function Waitlist() {
-   const [email, setEmail] = useState("");
-   const [submitted, setSubmitted] = useState(false);
-   const [error, setError] = useState<string | null>(null);
-   const [loading, setLoading] = useState(false);
-
-   async function handleSubmit(e: React.FormEvent) {
-      e.preventDefault();
-      if (!email) return;
-      setLoading(true);
-      setError(null);
-
-      const supabase = createClient();
-      const { error: dbError } = await supabase
-         .from("provance_waitlist")
-         .insert([{ email }]);
-
-      setLoading(false);
-      if (dbError) {
-         if (dbError.code === "23505") {
-            // duplicate email — still treat as success
-            setSubmitted(true);
-         } else {
-            setError("Something went wrong. Please try again.");
-         }
-      } else {
-         setSubmitted(true);
-      }
-   }
+   const [authOpen, setAuthOpen] = useState(false);
 
    return (
-      <section id="waitlist" className="w-full bg-ink max-w-7xl mx-auto">
+    <>
+      <section id="get-started" className="w-full bg-ink max-w-7xl mx-auto">
          <div className="w-full bg-ink-dark border border-sand-mid/10 overflow-hidden">
-            {/* Body */}
             <div className="grid grid-cols-1 lg:grid-cols-2">
-               {/* Left — content + form */}
-               <div className="order-2 .lg:order-1 flex flex-col justify-between px-8 sm:px-12 py-12 sm:py-20 border-t lg:border-t-0 lg:border-r border-sand-mid/10">
-                  <div className="flex items-center justify-between w-full max-w-lg  border-t border-b  py-3 border-sand/40 ">
-                     <div className="flex items-center gap-2  pr-6 flex-shrink-0">
+               {/* Left — content + CTA */}
+               <div className="order-2 lg:order-1 flex flex-col justify-between px-8 sm:px-12 py-12 sm:py-20 border-t lg:border-t-0 lg:border-r border-sand-mid/10">
+                  <div className="flex items-center justify-between w-full max-w-lg border-t border-b py-3 border-sand/40">
+                     <div className="flex items-center gap-2 pr-6 flex-shrink-0">
                         <div className="w-2.5 h-2.5 rounded-full bg-orange flex-shrink-0" />
                         <p className="text-sand text-xs font-mono uppercase">
-                           Early Access
+                           Start Now
                         </p>
                      </div>
                      <div
@@ -86,67 +52,34 @@ export default function Waitlist() {
                         }}
                      />
                   </div>
-                  <div className="flex flex-col gap-6  max-w-lg mt-10">
+                  <div className="flex flex-col gap-6 max-w-lg mt-10">
                      <h2 className="font-geist text-4xl sm:text-5xl font-normal text-sand leading-tight">
-                        Be first when the agents
-                        <span className="text-white"> go live!!</span>
+                        Your agent workforce
+                        <span className="text-white"> starts here.</span>
                      </h2>
                      <p className="text-sand/70 text-md leading-relaxed max-w-lg">
-                        Join the waitlist and get early access to Provance. The
-                        autonomous AI agent network that puts the right work in
-                        the right hands, automatically.
+                        Build and deploy autonomous AI agent workflows today. The right work always gets to the right agent, automatically.
                      </p>
                   </div>
 
-                  <div className="mt-8 flex flex-col gap-6">
-                     {submitted ? (
-                        <div className="flex items-center gap-3 border border-sand-mid/20 px-6 py-4">
-                           <div className="w-2 h-2 rounded-full bg-orange flex-shrink-0" />
-                           <p className="text-sand text-sm font-mono">
-                              You're on the list. We'll be in touch.
-                           </p>
-                        </div>
-                     ) : (
-                        <form
-                           onSubmit={handleSubmit}
-                           className="flex flex-col gap-6"
-                        >
-                           <div className="flex flex-col gap-2">
-                              <label className="text-sand/40 text-xs font-mono uppercase tracking-widest">
-                                 Your email
-                              </label>
-                              <input
-                                 type="email"
-                                 required
-                                 placeholder="your@email.com"
-                                 value={email}
-                                 onChange={(e) => setEmail(e.target.value)}
-                                 className="w-full h-[52px] bg-ink border border-sand-mid/20 px-5 text-sand text-sm placeholder-sand/30 outline-none focus:border-sand-mid/50 transition-colors"
-                              />
-                           </div>
-                           {error && (
-                              <p className="text-orange text-xs font-mono">{error}</p>
-                           )}
-                           <button
-                              type="submit"
-                              disabled={loading}
-                              className="w-full h-[52px] bg-sand text-ink-dark font-bold text-xs tracking-widest hover:bg-sand-light transition-colors disabled:opacity-50"
-                              style={{
-                                 clipPath:
-                                    "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
-                              }}
-                           >
-                              {loading ? "JOINING..." : "JOIN WAITLIST"}
-                           </button>
-                        </form>
-                     )}
+                  <div className="mt-8 flex flex-col gap-4">
+                     <button
+                        onClick={() => setAuthOpen(true)}
+                        className="flex items-center justify-center w-full max-w-lg h-[52px] bg-sand text-ink-dark font-bold text-xs tracking-widest hover:bg-sand-light transition-colors cursor-pointer"
+                        style={{
+                           clipPath:
+                              "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)",
+                        }}
+                     >
+                        GET STARTED
+                     </button>
                   </div>
                </div>
 
                {/* Right — graphic */}
-               <div className="order-1 .lg:order-2 relative min-h-[280px] sm:min-h-[360px] lg:min-h-0 overflow-hidden bg-orange">
+               <div className="order-1 lg:order-2 relative min-h-[280px] sm:min-h-[360px] lg:min-h-0 overflow-hidden bg-orange">
                   <div
-                     className=" absolute inset-0 pointer-events-none"
+                     className="absolute inset-0 pointer-events-none"
                      style={{
                         backgroundColor: "rgba(29,29,29,0.8)",
                         WebkitMaskImage: "url('/icons/dots.svg')",
@@ -169,5 +102,7 @@ export default function Waitlist() {
             </div>
          </div>
       </section>
+      <AuthModal open={authOpen} onOpenChange={setAuthOpen} />
+    </>
    );
 }
