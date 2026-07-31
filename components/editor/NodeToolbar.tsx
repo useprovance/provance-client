@@ -12,11 +12,12 @@ import {
 interface NodeToolbarProps {
    visible: boolean;
    onDelete: () => void;
+   onOpen: () => void;
    onMouseEnter?: () => void;
    onMouseLeave?: () => void;
 }
 
-export function NodeToolbar({ visible, onDelete, onMouseEnter, onMouseLeave }: NodeToolbarProps) {
+export function NodeToolbar({ visible, onDelete, onOpen, onMouseEnter, onMouseLeave }: NodeToolbarProps) {
    return (
       <div
          onMouseEnter={onMouseEnter}
@@ -59,7 +60,7 @@ export function NodeToolbar({ visible, onDelete, onMouseEnter, onMouseLeave }: N
                align="start"
                className="w-44 bg-ink-dark border-sand/15 text-sand shadow-xl"
             >
-               <DropdownMenuItem className="text-sm text-sand/80 focus:bg-sand/8 focus:text-sand cursor-pointer py-2">Open</DropdownMenuItem>
+               <DropdownMenuItem onClick={onOpen} className="text-sm text-sand/80 focus:bg-sand/8 focus:text-sand cursor-pointer py-2">Open</DropdownMenuItem>
                <DropdownMenuItem className="text-sm text-sand/80 focus:bg-sand/8 focus:text-sand cursor-pointer py-2">Execute step</DropdownMenuItem>
                <DropdownMenuItem className="text-sm text-sand/80 focus:bg-sand/8 focus:text-sand cursor-pointer py-2">Rename</DropdownMenuItem>
                <DropdownMenuSeparator className="bg-sand/10" />

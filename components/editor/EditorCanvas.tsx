@@ -15,6 +15,7 @@ import "@xyflow/react/dist/style.css";
 
 import { AgentNodeComponent } from "./AgentNode";
 import { AddAgentSheet } from "./AddAgentSheet";
+import { NodeConfigSheet } from "./NodeConfigSheet";
 import { EditorProvider } from "./EditorContext";
 import {
    INITIAL_NODES,
@@ -35,7 +36,7 @@ function Canvas() {
    );
 
    return (
-      <>
+      <div className="relative w-full h-full bg-[#0f0f0f]">
          <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -51,17 +52,18 @@ function Canvas() {
             snapGrid={[20, 20]}
             fitView
             proOptions={{ hideAttribution: true }}
-            className="bg-ink"
+            style={{ background: "transparent" }}
          >
             <Background
                variant={BackgroundVariant.Dots}
                gap={20}
                size={1}
-               color="#e3d8c520"
+               color="#e3d8c559"
             />
          </ReactFlow>
          <AddAgentSheet />
-      </>
+         <NodeConfigSheet />
+      </div>
    );
 }
 

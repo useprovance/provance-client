@@ -149,36 +149,54 @@ const AGENTS: AgentDef[] = [
 
 function StarRating({ rating }: { rating: number }) {
    return (
-      <span className="flex items-center gap-0.5 text-sm text-sand/40">
-         <Star size={13} className="fill-yellow-400 text-yellow-400" />
+      <span className="flex items-center gap-0.5 text-sm text-sand/70">
+         <Star size={13} className="fill-yellow-500 text-yellow-500" />
          {rating}
       </span>
    );
 }
 
-function AgentRow({ agent, onAdd }: { agent: AgentDef; onAdd: (agent: AgentDef) => void }) {
+function AgentRow({
+   agent,
+   onAdd,
+}: {
+   agent: AgentDef;
+   onAdd: (agent: AgentDef) => void;
+}) {
    return (
-      <div className="flex items-start gap-3 px-4 py-3.5 hover:bg-sand/5 transition-colors cursor-default border-b border-sand/5 last:border-0">
+      <div className="flex items-start gap-3 px-4 py-3.5 hover:bg-sand/5 transition-colors cursor-pointer border-b border-sand/5 last:border-0">
          <div className="w-11 h-11 rounded-lg shrink-0 bg-ink flex items-center justify-center">
-            <Image src={agent.icon} alt={agent.label} width={28} height={28} className="object-contain" />
+            <Image
+               src={agent.icon}
+               alt={agent.label}
+               width={36}
+               height={36}
+               className="object-contain"
+            />
          </div>
          <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2 mb-1">
-               <span className="text-[15px] font-semibold text-sand leading-none truncate">{agent.label}</span>
-               <div className="flex items-center gap-2 shrink-0">
-                  <span className="flex items-center gap-1 text-sm text-sand/35">
-                     <CloudDownload size={13} />
+               <span className="text-[15px] font-semibold text-sand leading-none truncate">
+                  {agent.label}
+               </span>
+               <div className="flex items-center gap-3 shrink-0">
+                  <span className="flex items-center gap-1 text-xs text-sand/70">
+                     <CloudDownload size={15} />
                      {agent.downloads}
                   </span>
                   <StarRating rating={agent.rating} />
                </div>
             </div>
-            <p className="text-[13px] text-sand/45 leading-snug mb-2 line-clamp-1">{agent.description}</p>
+            <p className="text-[13px] text-sand/45 leading-snug mb-2 line-clamp-1">
+               {agent.description}
+            </p>
             <div className="flex items-center justify-between">
-               <span className="text-[13px] font-semibold text-orange/70">{agent.author}</span>
+               <span className="text-xs font-semibold text-sand/70">
+                  {agent.author}
+               </span>
                {agent.installed ? (
-                  <button className="text-sand/30 hover:text-sand/60 transition-colors cursor-pointer">
-                     <Settings size={14} strokeWidth={1.5} />
+                  <button className="text-sand/60 hover:text-sand/60 transition-colors cursor-pointer">
+                     <Settings size={17} strokeWidth={1.5} />
                   </button>
                ) : (
                   <button
@@ -199,12 +217,15 @@ export function AddAgentSheet() {
    const { addNodes, addEdges, getNode } = useReactFlow();
    const [search, setSearch] = useState("");
 
-   const filtered = useMemo(() =>
-      AGENTS.filter((a) =>
-         a.label.toLowerCase().includes(search.toLowerCase()) ||
-         a.description.toLowerCase().includes(search.toLowerCase()) ||
-         a.author.toLowerCase().includes(search.toLowerCase())
-      ), [search]
+   const filtered = useMemo(
+      () =>
+         AGENTS.filter(
+            (a) =>
+               a.label.toLowerCase().includes(search.toLowerCase()) ||
+               a.description.toLowerCase().includes(search.toLowerCase()) ||
+               a.author.toLowerCase().includes(search.toLowerCase()),
+         ),
+      [search],
    );
 
    const installed = filtered.filter((a) => a.installed);
@@ -214,36 +235,54 @@ export function AddAgentSheet() {
       if (!sourceNodeId) return;
       const source = getNode(sourceNodeId);
       const newId = `${Date.now()}`;
-      addNodes([{
-         id: newId,
-         type: "agent" as const,
-         position: {
-            x: (source?.position.x ?? 0) + 110,
-            y: source?.position.y ?? 0,
+      addNodes([
+         {
+            id: newId,
+            type: "agent" as const,
+            position: {
+               x: (source?.position.x ?? 0) + 110,
+               y: source?.position.y ?? 0,
+            },
+            data: { label: agent.label, icon: agent.icon },
          },
-         data: { label: agent.label, icon: agent.icon },
-      }]);
-      addEdges([{
-         id: `e${sourceNodeId}-${newId}`,
-         source: sourceNodeId,
-         target: newId,
-         type: "smoothstep",
-         style: EDGE_STYLE,
-      }]);
+      ]);
+      addEdges([
+         {
+            id: `e${sourceNodeId}-${newId}`,
+            source: sourceNodeId,
+            target: newId,
+            type: "smoothstep",
+            style: EDGE_STYLE,
+         },
+      ]);
       closeSheet();
       setSearch("");
    };
 
    return (
-      <Sheet open={isSheetOpen} onOpenChange={(o) => { if (!o) closeSheet(); }}>
-         <SheetContent side="right" className="w-80 bg-ink-dark border-sand/15 p-0 flex flex-col">
+      <Sheet
+         open={isSheetOpen}
+         onOpenChange={(o) => {
+            if (!o) closeSheet();
+         }}
+      >
+         <SheetContent
+            side="right"
+            className="w-80 bg-ink-dark border-sand/15 p-0 flex flex-col"
+         >
             <SheetHeader className="px-4 pt-5 pb-3 border-b border-sand/10">
-               <SheetTitle className="text-sm text-sand font-semibold">Agents</SheetTitle>
+               <SheetTitle className="text-sm text-sand font-semibold">
+                  Agents
+               </SheetTitle>
             </SheetHeader>
 
             <div className="px-3 py-3 border-b border-sand/10">
                <div className="flex items-center gap-2 bg-ink border border-sand/15 rounded px-3 py-2">
-                  <Search size={12} strokeWidth={1.5} className="text-sand/40 shrink-0" />
+                  <Search
+                     size={12}
+                     strokeWidth={1.5}
+                     className="text-sand/40 shrink-0"
+                  />
                   <input
                      autoFocus
                      value={search}
@@ -257,18 +296,28 @@ export function AddAgentSheet() {
             <div className="flex-1 overflow-y-auto">
                {installed.length > 0 && (
                   <>
-                     <p className="px-4 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-sand/30">Installed</p>
-                     {installed.map((a) => <AgentRow key={a.id} agent={a} onAdd={handleAdd} />)}
+                     <p className="px-4 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-sand/30">
+                        Installed
+                     </p>
+                     {installed.map((a) => (
+                        <AgentRow key={a.id} agent={a} onAdd={handleAdd} />
+                     ))}
                   </>
                )}
                {available.length > 0 && (
                   <>
-                     <p className="px-4 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-sand/30">Available</p>
-                     {available.map((a) => <AgentRow key={a.id} agent={a} onAdd={handleAdd} />)}
+                     <p className="px-4 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-sand/30">
+                        Available
+                     </p>
+                     {available.map((a) => (
+                        <AgentRow key={a.id} agent={a} onAdd={handleAdd} />
+                     ))}
                   </>
                )}
                {filtered.length === 0 && (
-                  <p className="text-xs text-sand/30 text-center py-10">No agents found</p>
+                  <p className="text-xs text-sand/30 text-center py-10">
+                     No agents found
+                  </p>
                )}
             </div>
          </SheetContent>

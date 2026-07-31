@@ -7,6 +7,10 @@ interface EditorContextValue {
    isSheetOpen: boolean;
    openSheet: (sourceNodeId: string) => void;
    closeSheet: () => void;
+   configNodeId: string | null;
+   isConfigOpen: boolean;
+   openConfig: (nodeId: string) => void;
+   closeConfig: () => void;
 }
 
 const EditorContext = createContext<EditorContextValue | null>(null);
@@ -14,6 +18,8 @@ const EditorContext = createContext<EditorContextValue | null>(null);
 export function EditorProvider({ children }: { children: ReactNode }) {
    const [sourceNodeId, setSourceNodeId] = useState<string | null>(null);
    const [isSheetOpen, setIsSheetOpen] = useState(false);
+   const [configNodeId, setConfigNodeId] = useState<string | null>(null);
+   const [isConfigOpen, setIsConfigOpen] = useState(false);
 
    const openSheet = useCallback((id: string) => {
       setSourceNodeId(id);
@@ -25,8 +31,18 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       setSourceNodeId(null);
    }, []);
 
+   const openConfig = useCallback((id: string) => {
+      setConfigNodeId(id);
+      setIsConfigOpen(true);
+   }, []);
+
+   const closeConfig = useCallback(() => {
+      setIsConfigOpen(false);
+      setConfigNodeId(null);
+   }, []);
+
    return (
-      <EditorContext.Provider value={{ sourceNodeId, isSheetOpen, openSheet, closeSheet }}>
+      <EditorContext.Provider value={{ sourceNodeId, isSheetOpen, openSheet, closeSheet, configNodeId, isConfigOpen, openConfig, closeConfig }}>
          {children}
       </EditorContext.Provider>
    );
