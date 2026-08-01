@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X, Wallet, ChevronRight } from "lucide-react";
 import {
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAuthStore } from "@/stores/useAuthStore";
 import ProvanceLogo from "@/components/shared/ProvanceLogo";
+import { FormInput } from "@/components/ui/form-input";
 
 type AuthMode = "default" | "wallet-select" | "onboarding";
 
@@ -79,8 +80,6 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
       signature: string;
       message: string;
    } | null>(null);
-   const nameInputRef = useRef<HTMLInputElement>(null);
-
    useEffect(() => {
       if (!open) {
          setMode("default");
@@ -91,12 +90,6 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
          setPendingWallet(null);
       }
    }, [open]);
-
-   useEffect(() => {
-      if (mode === "onboarding") {
-         setTimeout(() => nameInputRef.current?.focus(), 50);
-      }
-   }, [mode]);
 
    const handleGoogleSignIn = () => {
       window.location.href = "/api/auth/google";
@@ -278,21 +271,13 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
                         ))}
                      </div>
                   ) : mode === "onboarding" ? (
-                     <div>
-                        <label className="mb-1.5 block text-xs font-medium text-sand/60">
-                           Display name
-                        </label>
-                        <input
-                           ref={nameInputRef}
-                           type="text"
+                     <div onKeyDown={(e) => { if (e.key === "Enter" && !loading) void handleOnboardingContinue(); }}>
+                        <FormInput
+                           label="Display name"
                            value={name}
-                           onChange={(e) => setName(e.target.value)}
-                           onKeyDown={(e) => {
-                              if (e.key === "Enter" && !loading)
-                                 void handleOnboardingContinue();
-                           }}
+                           onChange={setName}
                            placeholder="Your name"
-                           className="h-10 w-full rounded-md border border-sand-faint bg-charcoal px-3 text-sm text-sand placeholder:text-sand/30 outline-none focus:border-sand/40 transition-colors"
+                           required
                         />
                      </div>
                   ) : (

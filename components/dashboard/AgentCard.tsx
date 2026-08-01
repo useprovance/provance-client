@@ -50,7 +50,7 @@ export function AgentCard({ agent }: { agent: Agent }) {
    const s = STATUS[status];
 
    return (
-      <div className="flex flex-col bg-[#1c1c1c] border border-[#2a2a2a] rounded-lg p-5 gap-4 hover:border-[#383838] transition-colors">
+      <div className="flex flex-col bg-[#141414] border border-[#222] rounded-lg p-5 gap-4 hover:border-[#2e2e2e] transition-colors">
          {/* Top row — icon + menu */}
          <div className="flex items-center justify-between">
             <div className="w-11 h-11 rounded-md bg-[#242424] border border-[#333] flex items-center justify-center shrink-0">
@@ -129,7 +129,7 @@ export function AgentCard({ agent }: { agent: Agent }) {
          </div>
 
          {/* Footer — earned + open button */}
-         <div className="flex items-center justify-between mt-17 pt-5 border-t border-white/5">
+         <div className="flex items-center justify-between mt-12 pt-5 border-t border-white/5">
             <div>
                <p className="text-md font-bold font-mono text-sand leading-none">
                   {agent.earned}
@@ -141,7 +141,10 @@ export function AgentCard({ agent }: { agent: Agent }) {
             <Link
                href={`/dashboard/editor?agent=${agent.id}`}
                className="flex items-center gap-1.5 bg-sand hover:bg-sand-light text-ink-dark text-[13px] font-semibold px-6 py-2 transition-colors"
-               style={{ clipPath: "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)" }}
+               style={{
+                  clipPath:
+                     "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)",
+               }}
             >
                Open
                <ArrowUpRight size={14} strokeWidth={2} />
