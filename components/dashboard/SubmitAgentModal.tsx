@@ -1,16 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Check, ChevronRight, X } from "lucide-react";
+import { ArrowLeft, Check, ChevronRight, ImageIcon, Link2, Plus, Trash2, X } from "lucide-react";
 import { FormInput } from "@/components/ui/form-input";
 import { FormSelector } from "@/components/ui/form-selector";
 
 type PricingModel = "free" | "per_request" | "per_token" | "fixed" | "subscription";
+type FieldType = "text" | "number" | "textarea" | "select";
+
+interface ConfigField {
+  id: string;
+  label: string;
+  type: FieldType;
+  placeholder: string;
+  required: boolean;
+}
 
 interface FormData {
   name: string;
   description: string;
+  icon: string;
+  repository: string;
   url: string;
   protocol: string;
   authentication: string;
@@ -25,10 +37,11 @@ const STEPS = [
   { label: "Identity", desc: "Name and description" },
   { label: "Endpoint", desc: "URL, protocol, auth" },
   { label: "Pricing & Payment", desc: "Rates and wallet" },
+  { label: "Configuration", desc: "Fields users will configure" },
 ];
 
 const EMPTY: FormData = {
-  name: "", description: "", url: "", protocol: "https",
+  name: "", description: "", icon: "", repository: "", url: "", protocol: "https",
   authentication: "api_key", pricingModel: "per_request",
   amount: "", currency: "USDC", network: "base", recipient: "",
 };
@@ -42,6 +55,7 @@ export function SubmitAgentModal({
 }) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormData>(EMPTY);
+  const [configFields, setConfigFields] = useState<ConfigField[]>([]);
 
   const set = (k: keyof FormData, v: string) =>
     setForm((prev) => ({ ...prev, [k]: v }));
@@ -49,11 +63,28 @@ export function SubmitAgentModal({
   const canNext =
     step === 0 ? form.name.trim() !== "" && form.description.trim() !== ""
     : step === 1 ? form.url.trim() !== ""
-    : form.recipient.trim() !== "";
+    : step === 2 ? form.recipient.trim() !== ""
+    : true;
+
+  const addConfigField = () => {
+    setConfigFields((prev) => [...prev, {
+      id: `${Date.now()}`,
+      label: "",
+      type: "text",
+      placeholder: "",
+      required: false,
+    }]);
+  };
+
+  const updateConfigField = (id: string, patch: Partial<ConfigField>) =>
+    setConfigFields((prev) => prev.map((f) => f.id === id ? { ...f, ...patch } : f));
+
+  const removeConfigField = (id: string) =>
+    setConfigFields((prev) => prev.filter((f) => f.id !== id));
 
   function handleClose() {
     onOpenChange(false);
-    setTimeout(() => { setStep(0); setForm(EMPTY); }, 300);
+    setTimeout(() => { setStep(0); setForm(EMPTY); setConfigFields([]); }, 300);
   }
 
   function handleSubmit() {
@@ -153,6 +184,31 @@ export function SubmitAgentModal({
 
                 {step === 0 && (
                   <>
+                    {/* Icon upload */}
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-[11px] font-mono uppercase tracking-widest text-sand/40">Agent Icon</span>
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 rounded-md bg-[#0c0c0c] border border-[#2a2a2a] flex items-center justify-center shrink-0 overflow-hidden">
+                          {form.icon ? (
+                            <Image src={form.icon} alt="icon preview" width={40} height={40} className="object-contain" />
+                          ) : (
+                            <ImageIcon size={20} strokeWidth={1.5} className="text-sand/20" />
+                          )}
+                        </div>
+                        <label className="flex-1 flex items-center gap-2 h-[42px] bg-[#0c0c0c] border border-[#2a2a2a] rounded-sm px-3 cursor-pointer hover:border-sand/20 transition-colors">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) set("icon", URL.createObjectURL(file));
+                            }}
+                          />
+                          <span className="text-[13px] text-sand/30">{form.icon ? "Change icon" : "Upload icon (PNG, SVG)"}</span>
+                        </label>
+                      </div>
+                    </div>
                     <FormInput
                       label="Agent Name"
                       value={form.name}
@@ -168,6 +224,13 @@ export function SubmitAgentModal({
                       type="textarea"
                       rows={5}
                       required
+                    />
+                    <FormInput
+                      label="GitHub Repository"
+                      value={form.repository}
+                      onChange={(v) => set("repository", v)}
+                      placeholder="https://github.com/you/your-agent"
+                      prefix={<Link2 size={14} strokeWidth={1.5} className="text-sand/30 ml-3 shrink-0" />}
                     />
                   </>
                 )}
@@ -266,6 +329,72 @@ export function SubmitAgentModal({
                       required
                     />
                   </>
+                )}
+
+                {step === 3 && (
+                  <div className="flex flex-col gap-4">
+                    <p className="text-[13px] text-sand/40 leading-relaxed">
+                      Define the fields users will fill in when they configure this agent in their workflow. These appear in the agent config panel.
+                    </p>
+
+                    {configFields.map((field, i) => (
+                      <div key={field.id} className="flex flex-col gap-3 p-4 border border-[#2a2a2a] rounded-sm bg-[#0c0c0c]">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[11px] font-mono uppercase tracking-widest text-sand/30">Field {i + 1}</span>
+                          <button
+                            onClick={() => removeConfigField(field.id)}
+                            className="w-6 h-6 rounded-full bg-white/5 hover:bg-red-500/15 flex items-center justify-center transition-colors cursor-pointer"
+                          >
+                            <Trash2 size={11} strokeWidth={2} className="text-sand/40 hover:text-red-400" />
+                          </button>
+                        </div>
+                        <div className="flex gap-3">
+                          <FormInput
+                            label="Label"
+                            value={field.label}
+                            onChange={(v) => updateConfigField(field.id, { label: v })}
+                            placeholder="e.g. API Key"
+                            className="flex-1"
+                          />
+                          <FormSelector
+                            label="Type"
+                            value={field.type}
+                            onChange={(v) => updateConfigField(field.id, { type: v as FieldType })}
+                            options={[
+                              { value: "text", label: "Text" },
+                              { value: "number", label: "Number" },
+                              { value: "textarea", label: "Textarea" },
+                              { value: "select", label: "Select" },
+                            ]}
+                            className="w-36"
+                          />
+                        </div>
+                        <FormInput
+                          label="Placeholder"
+                          value={field.placeholder}
+                          onChange={(v) => updateConfigField(field.id, { placeholder: v })}
+                          placeholder="e.g. Enter your API key"
+                        />
+                        <label className="flex items-center gap-2 cursor-pointer w-fit">
+                          <input
+                            type="checkbox"
+                            checked={field.required}
+                            onChange={(e) => updateConfigField(field.id, { required: e.target.checked })}
+                            className="w-3.5 h-3.5 accent-orange cursor-pointer"
+                          />
+                          <span className="text-[12px] text-sand/50">Required</span>
+                        </label>
+                      </div>
+                    ))}
+
+                    <button
+                      onClick={addConfigField}
+                      className="flex items-center gap-2 text-[13px] text-sand/40 hover:text-sand border border-dashed border-[#2a2a2a] hover:border-sand/20 px-4 py-3 transition-colors cursor-pointer rounded-sm"
+                    >
+                      <Plus size={14} strokeWidth={2} />
+                      Add config field
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

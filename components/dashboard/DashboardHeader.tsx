@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Search, User, Bot, Store, Settings2, LogOut, Wallet } from "lucide-react";
+import { Search, User, Settings2, LogOut, Wallet } from "lucide-react";
 import {
    DropdownMenu,
    DropdownMenuContent,
@@ -13,19 +13,25 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { HeaderDivider } from "@/components/common/dashboard/HeaderDivider";
 import {
-   ProjectSelector,
-   type Project,
-} from "@/components/common/dashboard/ProjectSelector";
+   OrgSelector,
+   type Org,
+} from "@/components/common/dashboard/OrgSelector";
 import ProvanceLogo from "@/components/shared/ProvanceLogo";
 import { useAuthStore } from "@/stores/useAuthStore";
 
-const PROJECTS: Project[] = [{ id: "1", name: "Provance" }];
+const ORGS: Org[] = [
+   { id: "personal", name: "Personal", type: "personal" },
+];
 
 export default function DashboardHeader() {
    const router = useRouter();
    const user = useAuthStore((s) => s.user);
    const clearUser = useAuthStore((s) => s.clearUser);
-   const [selectedProjectId, setSelectedProjectId] = useState(PROJECTS[0].id);
+   const [selectedOrgId, setSelectedOrgId] = useState(ORGS[0].id);
+
+   const orgs = user?.name
+      ? [{ id: "personal", name: user.name, type: "personal" as const }, ...ORGS.slice(1)]
+      : ORGS;
 
    const handleLogout = async () => {
       await fetch("/api/auth/logout", { method: "POST" });
@@ -42,11 +48,11 @@ export default function DashboardHeader() {
 
          <HeaderDivider />
 
-         {/* Project selector */}
-         <ProjectSelector
-            projects={PROJECTS}
-            selectedId={selectedProjectId}
-            onSelect={(p) => setSelectedProjectId(p.id)}
+         {/* Org selector */}
+         <OrgSelector
+            orgs={orgs}
+            selectedId={selectedOrgId}
+            onSelect={(o) => setSelectedOrgId(o.id)}
          />
 
          {/* Spacer */}
@@ -89,19 +95,7 @@ export default function DashboardHeader() {
 
                <DropdownMenuSeparator className="bg-[#2a2a2a]" />
 
-               <DropdownMenuItem asChild className="cursor-pointer px-3 py-2 text-[13px] text-sand/60 focus:text-sand focus:bg-[#252525] gap-3 [&_svg]:!size-[18px] [&_svg]:!text-current">
-                  <Link href="/dashboard/agents">
-                     <Bot strokeWidth={1} className="shrink-0" />
-                     My Agents
-                  </Link>
-               </DropdownMenuItem>
-               <DropdownMenuItem asChild className="cursor-pointer px-3 py-2 text-[13px] text-sand/60 focus:text-sand focus:bg-[#252525] gap-3 [&_svg]:!size-[18px] [&_svg]:!text-current">
-                  <Link href="/dashboard/marketplace">
-                     <Store strokeWidth={1} className="shrink-0" />
-                     Marketplace
-                  </Link>
-               </DropdownMenuItem>
-               <DropdownMenuItem asChild className="cursor-pointer px-3 py-2 text-[13px] text-sand/60 focus:text-sand focus:bg-[#252525] gap-3 [&_svg]:!size-[18px] [&_svg]:!text-current">
+<DropdownMenuItem asChild className="cursor-pointer px-3 py-2 text-[13px] text-sand/60 focus:text-sand focus:bg-[#252525] gap-3 [&_svg]:!size-[18px] [&_svg]:!text-current">
                   <Link href="/dashboard/settings">
                      <Settings2 strokeWidth={1} className="shrink-0" />
                      Settings

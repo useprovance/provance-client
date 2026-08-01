@@ -50,10 +50,10 @@ export function AgentCard({ agent }: { agent: Agent }) {
    const s = STATUS[status];
 
    return (
-      <div className="flex flex-col bg-[#141414] border border-[#222] rounded-lg p-5 gap-4 hover:border-[#2e2e2e] transition-colors">
+      <div className="flex flex-col bg-[#141414] border border-[#222] p-5 gap-4 hover:border-[#2e2e2e] transition-colors">
          {/* Top row — icon + menu */}
          <div className="flex items-center justify-between">
-            <div className="w-11 h-11 rounded-md bg-[#242424] border border-[#333] flex items-center justify-center shrink-0">
+            <div className="w-11 h-11 bg-[#242424] border border-[#333] flex items-center justify-center shrink-0">
                <Image
                   src={agent.icon}
                   alt={agent.name}
@@ -77,7 +77,7 @@ export function AgentCard({ agent }: { agent: Agent }) {
                         asChild
                         className="cursor-pointer px-3 py-2 text-[13px] text-sand/70 focus:text-sand focus:bg-white/5 gap-2.5 [&_svg]:!size-[14px] [&_svg]:!text-current"
                      >
-                        <Link href={`/dashboard/editor?agent=${agent.id}`}>
+                        <Link href={`/dashboard/agents/${agent.id}`}>
                            <ArrowUpRight strokeWidth={1.5} />
                            Open in editor
                         </Link>
@@ -119,11 +119,11 @@ export function AgentCard({ agent }: { agent: Agent }) {
 
          {/* Tags */}
          <div className="flex items-center gap-2 flex-wrap">
-            <span className="flex items-center gap-1.5 text-[12px] font-medium text-sand/60 px-2.5 py-1 rounded-md bg-white/5">
+            <span className="flex items-center gap-1.5 text-[12px] font-medium text-sand/60 px-2.5 py-1 bg-white/5">
                <span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} />
                {s.label}
             </span>
-            <span className="text-[12px] font-medium text-sand/50 px-2.5 py-1 rounded-md bg-white/5">
+            <span className="text-[12px] font-medium text-sand/50 px-2.5 py-1 bg-white/5">
                {agent.workflow}
             </span>
          </div>
@@ -139,7 +139,7 @@ export function AgentCard({ agent }: { agent: Agent }) {
                </p>
             </div>
             <Link
-               href={`/dashboard/editor?agent=${agent.id}`}
+               href={`/dashboard/agents/${agent.id}`}
                className="flex items-center gap-1.5 bg-sand hover:bg-sand-light text-ink-dark text-[13px] font-semibold px-6 py-2 transition-colors"
                style={{
                   clipPath:

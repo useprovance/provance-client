@@ -3,13 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-   Home,
-   Workflow,
-   Store,
+   LayoutDashboard,
+   GitBranch,
    Bot,
    Settings,
    PanelLeftDashed,
-   LayoutPanelTop,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -35,30 +33,12 @@ const BEHAVIOR_KEY = "provance_sidebar_behaviour";
 type Behaviour = "expandable" | "open" | "closed";
 
 const topRoutes = [
-   { key: "home", label: "Home", icon: Home, href: "/dashboard" },
-];
-const mainRoutes = [
-   {
-      key: "editor",
-      label: "Editor",
-      icon: LayoutPanelTop,
-      href: "/dashboard/editor",
-   },
-   {
-      key: "marketplace",
-      label: "Marketplace",
-      icon: Store,
-      href: "/dashboard/marketplace",
-   },
+   { key: "overview", label: "Overview", icon: LayoutDashboard, href: "/dashboard" },
+   { key: "workflows", label: "Workflows", icon: GitBranch, href: "/dashboard/workflows" },
    { key: "agents", label: "My Agents", icon: Bot, href: "/dashboard/agents" },
 ];
 const bottomRoutes = [
-   {
-      key: "settings",
-      label: "Settings",
-      icon: Settings,
-      href: "/dashboard/settings",
-   },
+   { key: "settings", label: "Settings", icon: Settings, href: "/dashboard/settings" },
 ];
 
 function NavItem({
@@ -69,7 +49,7 @@ function NavItem({
    isExpanded: boolean;
 }) {
    const pathname = usePathname();
-   const isActive = pathname === route.href;
+   const isActive = pathname === route.href || (route.href !== "/dashboard" && pathname.startsWith(route.href));
    const Icon = route.icon;
 
    const inner = (
@@ -83,11 +63,7 @@ function NavItem({
                : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
          )}
       >
-         <Icon
-            size={ICON_SIZE}
-            strokeWidth={ICON_STROKE}
-            className="shrink-0"
-         />
+         <Icon size={ICON_SIZE} strokeWidth={ICON_STROKE} className="shrink-0" />
          {isExpanded && <span className="truncate">{route.label}</span>}
       </Link>
    );
@@ -98,10 +74,7 @@ function NavItem({
       <li>
          <Tooltip>
             <TooltipTrigger asChild>{inner}</TooltipTrigger>
-            <TooltipContent
-               side="right"
-               className="text-xs bg-charcoal text-sand border-sidebar-border"
-            >
+            <TooltipContent side="right" className="text-xs bg-charcoal text-sand border-sidebar-border">
                {route.label}
             </TooltipContent>
          </Tooltip>
@@ -124,17 +97,11 @@ export default function DashboardSidebar() {
       localStorage.setItem(BEHAVIOR_KEY, b);
    };
 
-   const isExpanded =
-      behaviour === "open" || (behaviour === "expandable" && hovered);
+   const isExpanded = behaviour === "open" || (behaviour === "expandable" && hovered);
    const isOverlay = behaviour === "expandable";
 
    return (
-      <div
-         className={cn(
-            "relative shrink-0 h-full",
-            behaviour === "open" ? "w-56" : "w-12",
-         )}
-      >
+      <div className={cn("relative shrink-0 h-full", behaviour === "open" ? "w-56" : "w-12")}>
          <aside
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
@@ -144,8 +111,7 @@ export default function DashboardSidebar() {
                isExpanded ? "w-56" : "w-12",
             )}
          >
-            {/* Nav */}
-            <div className="flex-1 overflow-y-auto py-2 px-1.5 flex flex-col gap-4">
+            <div className="flex-1 overflow-y-auto py-2 px-1.5 flex flex-col gap-3">
                <ul className="flex flex-col gap-0.5 list-none">
                   {topRoutes.map((r) => (
                      <NavItem key={r.key} route={r} isExpanded={isExpanded} />
@@ -154,22 +120,14 @@ export default function DashboardSidebar() {
 
                <Separator />
 
-               <ul className="flex flex-col gap-0.5 list-none">
-                  {mainRoutes.map((r) => (
-                     <NavItem key={r.key} route={r} isExpanded={isExpanded} />
-                  ))}
-               </ul>
-
-               <Separator />
-
-               <ul className="flex flex-col gap-0.5 list-none">
+               <ul className="flex flex-col gap-0.5 list-none mt-auto">
                   {bottomRoutes.map((r) => (
                      <NavItem key={r.key} route={r} isExpanded={isExpanded} />
                   ))}
                </ul>
             </div>
 
-            {/* Footer — panel control */}
+            {/* Footer */}
             <div className="px-1.5 py-2 border-t border-sidebar-border">
                <DropdownMenu>
                   <Tooltip>
@@ -179,49 +137,21 @@ export default function DashboardSidebar() {
                               className="flex items-center justify-center w-9 h-9 rounded-md text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors cursor-pointer"
                               aria-label="Sidebar control"
                            >
-                              <PanelLeftDashed
-                                 size={ICON_SIZE}
-                                 strokeWidth={ICON_STROKE}
-                              />
+                              <PanelLeftDashed size={ICON_SIZE} strokeWidth={ICON_STROKE} />
                            </button>
                         </DropdownMenuTrigger>
                      </TooltipTrigger>
-                     <TooltipContent
-                        side="right"
-                        className="text-xs bg-charcoal text-sand border-sidebar-border"
-                     >
+                     <TooltipContent side="right" className="text-xs bg-charcoal text-sand border-sidebar-border">
                         Sidebar control
                      </TooltipContent>
                   </Tooltip>
-                  <DropdownMenuContent
-                     side="top"
-                     align="start"
-                     className="w-44"
-                  >
+                  <DropdownMenuContent side="top" align="start" className="w-44">
                      <DropdownMenuLabel>Sidebar control</DropdownMenuLabel>
                      <DropdownMenuSeparator />
-                     <DropdownMenuRadioGroup
-                        value={behaviour}
-                        onValueChange={handleBehaviourChange}
-                     >
-                        <DropdownMenuRadioItem
-                           value="open"
-                           className="cursor-pointer"
-                        >
-                           Expanded
-                        </DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem
-                           value="closed"
-                           className="cursor-pointer"
-                        >
-                           Collapsed
-                        </DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem
-                           value="expandable"
-                           className="cursor-pointer"
-                        >
-                           Expand on hover
-                        </DropdownMenuRadioItem>
+                     <DropdownMenuRadioGroup value={behaviour} onValueChange={handleBehaviourChange}>
+                        <DropdownMenuRadioItem value="open" className="cursor-pointer">Expanded</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="closed" className="cursor-pointer">Collapsed</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="expandable" className="cursor-pointer">Expand on hover</DropdownMenuRadioItem>
                      </DropdownMenuRadioGroup>
                   </DropdownMenuContent>
                </DropdownMenu>

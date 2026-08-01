@@ -3,9 +3,12 @@
 import { useState, useEffect } from "react";
 import { useReactFlow } from "@xyflow/react";
 import Image from "next/image";
+import { X } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useEditor } from "./EditorContext";
 import type { AgentNode } from "./editor.constants";
+import { FormInput } from "@/components/ui/form-input";
+import { FormSelector } from "@/components/ui/form-selector";
 
 type Tab = "parameters" | "settings";
 
@@ -71,61 +74,41 @@ function getFields(label: string): Field[] {
 
 function FormField({ field }: { field: Field }) {
    const [value, setValue] = useState("");
-   const base = "w-full bg-[#1a1a1a] border border-[#333] rounded-md text-[13px] text-sand placeholder:text-sand/25 outline-none focus:border-orange/60 transition-colors";
+
+   if (field.type === "select") {
+      return (
+         <FormSelector
+            label={field.label}
+            value={value}
+            onChange={setValue}
+            options={(field.options ?? []).map((o) => ({ value: o, label: o }))}
+            placeholder="Select..."
+         />
+      );
+   }
 
    return (
-      <div className="flex flex-col gap-1.5">
-         <label className="text-[11px] font-medium text-sand/50 uppercase tracking-wider">{field.label}</label>
-         {field.type === "textarea" ? (
-            <textarea
-               value={value}
-               onChange={(e) => setValue(e.target.value)}
-               placeholder={field.placeholder}
-               rows={4}
-               className={`${base} px-3 py-2 resize-none`}
-            />
-         ) : field.type === "select" ? (
-            <select
-               value={value}
-               onChange={(e) => setValue(e.target.value)}
-               className={`${base} px-3 py-2`}
-            >
-               <option value="" disabled>Select...</option>
-               {field.options?.map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
-         ) : (
-            <input
-               type={field.type === "number" ? "number" : "text"}
-               value={value}
-               onChange={(e) => setValue(e.target.value)}
-               placeholder={field.placeholder}
-               className={`${base} px-3 py-2`}
-            />
-         )}
-      </div>
+      <FormInput
+         label={field.label}
+         value={value}
+         onChange={setValue}
+         placeholder={field.placeholder}
+         type={field.type === "number" ? "number" : field.type === "textarea" ? "textarea" : "text"}
+         rows={4}
+      />
    );
 }
 
 export function NodeConfigSheet() {
    const { isConfigOpen, closeConfig, configNodeId } = useEditor();
-   const { getNode, setNodes } = useReactFlow();
+   const { getNode } = useReactFlow();
    const [tab, setTab] = useState<Tab>("parameters");
-   const [name, setName] = useState("");
 
    const node = configNodeId ? (getNode(configNodeId) as AgentNode | undefined) : undefined;
 
    useEffect(() => {
-      if (node) setName(node.data.label);
+      setTab("parameters");
    }, [node?.id]);
-
-   const handleNameBlur = () => {
-      if (!configNodeId || !name.trim()) return;
-      setNodes((nds) =>
-         nds.map((n) =>
-            n.id === configNodeId ? { ...n, data: { ...n.data, label: name } } : n
-         )
-      );
-   };
 
    if (!node) return null;
 
@@ -136,20 +119,22 @@ export function NodeConfigSheet() {
          <SheetContent
             side="right"
             aria-describedby={undefined}
-            className="w-[380px] bg-[#1c1c1c] border-l border-[#2a2a2a] p-0 flex flex-col"
+            className="w-[380px] bg-[#141414] border-l border-[#2a2a2a] p-0 flex flex-col [&>button]:hidden"
          >
             <SheetTitle className="sr-only">Node configuration</SheetTitle>
+
             {/* Header */}
             <div className="flex items-center gap-3 px-5 py-4 border-b border-[#2a2a2a]">
                <div className="w-9 h-9 rounded-lg bg-[#2d2d2d] flex items-center justify-center shrink-0">
                   <Image src={node.data.icon} alt={node.data.label} width={22} height={22} className="object-contain" />
                </div>
-               <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  onBlur={handleNameBlur}
-                  className="flex-1 bg-transparent text-[15px] font-semibold text-sand outline-none border-b border-transparent focus:border-sand/20 transition-colors pb-0.5"
-               />
+               <p className="flex-1 text-[15px] font-semibold text-sand">{node.data.label}</p>
+               <button
+                  onClick={closeConfig}
+                  className="w-7 h-7 rounded-full bg-white/8 hover:bg-white/15 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+               >
+                  <X size={13} strokeWidth={2} className="text-sand/60" />
+               </button>
             </div>
 
             {/* Tabs */}
@@ -190,7 +175,10 @@ export function NodeConfigSheet() {
                >
                   Cancel
                </button>
-               <button className="px-4 py-1.5 text-[13px] font-medium bg-orange text-white rounded-md hover:bg-orange/90 transition-colors cursor-pointer">
+               <button
+                  className="px-4 py-1.5 text-[13px] font-medium bg-orange text-white hover:bg-orange/90 transition-colors cursor-pointer"
+                  style={{ clipPath: "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)" }}
+               >
                   Save
                </button>
             </div>
