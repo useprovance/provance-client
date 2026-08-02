@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Globe, MoreHorizontal, Play, Save, Share2 } from "lucide-react";
+import { Bot, EyeOff, Globe, MoreHorizontal, Play, Save, Share2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PublishModal } from "./PublishModal";
+import { AiChatSheet } from "./AiChatSheet";
 
 type PanelTab = "logs" | "runs" | "executions";
 
@@ -38,6 +39,8 @@ export function EditorBottomPanel() {
   const [tab, setTab] = useState<PanelTab>("logs");
   const [collapsed, setCollapsed] = useState(true);
   const [publishOpen, setPublishOpen] = useState(false);
+  const [published, setPublished] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
 
   return (
     <>
@@ -50,7 +53,10 @@ export function EditorBottomPanel() {
           {TABS.map((t) => (
             <button
               key={t.key}
-              onClick={() => { setTab(t.key); if (collapsed) setCollapsed(false); }}
+              onClick={() => {
+                if (tab === t.key && !collapsed) { setCollapsed(true); }
+                else { setTab(t.key); setCollapsed(false); }
+              }}
               className={`px-3 h-full text-[12px] font-medium transition-colors cursor-pointer border-b-2 -mb-px ${
                 tab === t.key && !collapsed
                   ? "text-sand border-orange"
@@ -62,9 +68,24 @@ export function EditorBottomPanel() {
           ))}
 
           <div className="flex items-center gap-1 ml-auto">
+            {/* Publish status */}
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium ${published ? "text-orange" : "text-sand/40"}`}>
+              {published
+                ? <Globe size={12} strokeWidth={1.5} />
+                : <EyeOff size={12} strokeWidth={1.5} />}
+              {published ? "Published" : "Unpublished"}
+            </div>
+
+            <button
+              onClick={() => setAiOpen(true)}
+              className="p-1.5 text-sand/70 hover:text-sand transition-colors cursor-pointer hover:bg-white/5"
+            >
+              <Bot size={14} strokeWidth={1.5} />
+            </button>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="p-1.5 text-sand/60 hover:text-sand transition-colors cursor-pointer hover:bg-white/5">
+                <button className="p-1.5 text-sand/70 hover:text-sand transition-colors cursor-pointer hover:bg-white/5">
                   <MoreHorizontal size={14} strokeWidth={1.5} />
                 </button>
               </DropdownMenuTrigger>
@@ -96,12 +117,6 @@ export function EditorBottomPanel() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <button
-              onClick={() => setCollapsed((c) => !c)}
-              className="p-1 text-sand/30 hover:text-sand/60 transition-colors cursor-pointer"
-            >
-              {collapsed ? <ChevronUp size={14} strokeWidth={1.5} /> : <ChevronDown size={14} strokeWidth={1.5} />}
-            </button>
           </div>
         </div>
 
@@ -113,9 +128,11 @@ export function EditorBottomPanel() {
         )}
       </div>
 
+      <AiChatSheet open={aiOpen} onOpenChange={setAiOpen} />
+
       <PublishModal
         open={publishOpen}
-        onOpenChange={setPublishOpen}
+        onOpenChange={(open) => { setPublishOpen(open); if (!open) setPublished(true); }}
         workflowName="Untitled Workflow"
         nodeCount={0}
       />

@@ -7,6 +7,7 @@ interface FormInputProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
   placeholder?: string;
   type?: "text" | "email" | "number" | "password" | "textarea";
   required?: boolean;
@@ -23,6 +24,7 @@ export function FormInput({
   label,
   value,
   onChange,
+  onBlur,
   placeholder = "",
   type = "text",
   required = false,
@@ -62,6 +64,7 @@ export function FormInput({
             id={id}
             value={value}
             onChange={(e) => onChange(e.target.value)}
+            onBlur={onBlur}
             placeholder={placeholder}
             disabled={disabled}
             rows={rows}
@@ -73,6 +76,7 @@ export function FormInput({
             type={type}
             value={value}
             onChange={(e) => onChange(e.target.value)}
+            onBlur={onBlur}
             placeholder={placeholder}
             disabled={disabled}
             className={inputCls}

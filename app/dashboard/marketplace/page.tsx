@@ -167,81 +167,72 @@ export default function MarketplacePage() {
       <div className="flex flex-col h-full bg-[#181818] overflow-y-auto">
          <div className="max-w-7xl w-full mx-auto px-8 py-10 flex flex-col gap-8">
             {/* Badge strip */}
-            <div className="flex items-center justify-between w-full border-t border-b border-sand/25 py-3">
+            <div className="flex items-center justify-between w-full py-3">
                <div className="flex items-center gap-2 pr-6 shrink-0">
                   <div className="w-2.5 h-2.5 rounded-full bg-orange shrink-0" />
                   <p className="text-sand text-xs font-mono uppercase tracking-widest">
                      Marketplace
                   </p>
                </div>
-               <div
-                  className="flex-1 h-full min-h-[16px]"
-                  style={{
-                     backgroundImage:
-                        "repeating-linear-gradient(-45deg, var(--sand) 0, var(--sand) 1px, transparent 0, transparent 50%)",
-                     backgroundSize: "6px 6px",
-                     opacity: 0.15,
-                  }}
-               />
+               <div className="flex-1" />
             </div>
 
             {/* Stats */}
-            <div className="relative p-1.5 border border-sand/10">
-               <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                     backgroundImage:
-                        "repeating-linear-gradient(-45deg, var(--sand) 0, var(--sand) 1px, transparent 0, transparent 50%)",
-                     backgroundSize: "6px 6px",
-                     opacity: 0.25,
-                  }}
-               />
-               <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-1.5">
-                  {[
-                     {
-                        label: "Total Agents",
-                        display: String(MARKETPLACE_AGENTS.length).padStart(
-                           2,
-                           "0",
-                        ),
-                        icon: Store,
-                     },
-                     {
-                        label: "Categories",
-                        display: String(CATEGORIES.length - 1).padStart(2, "0"),
-                        icon: Layers,
-                     },
-                     {
-                        label: "All-time Runs",
-                        display: (totalRuns / 1000).toFixed(0) + "K",
-                        icon: TrendingUp,
-                     },
-                     {
-                        label: "Contributors",
-                        display: String(authors).padStart(2, "0"),
-                        icon: Users,
-                     },
-                  ].map(({ label, display, icon: Icon }) => (
-                     <div
-                        key={label}
-                        className="flex flex-col justify-between bg-[#0f0f0f] border border-sand/20 p-5"
-                     >
-                        <div className="flex items-center justify-between mb-3">
-                           <p className="text-[11px] font-mono uppercase tracking-widest text-sand/40">
-                              {label}
-                           </p>
-                           <Icon
-                              size={15}
-                              strokeWidth={1.5}
-                              className="text-sand/70 shrink-0"
-                           />
-                        </div>
-                        <p className="text-[28px] font-bold text-sand leading-none font-mono">
-                           {display}
+            <div className="hidden grid-cols-2 lg:grid-cols-4 gap-1.5">
+               {[
+                  {
+                     label: "Total Agents",
+                     display: String(MARKETPLACE_AGENTS.length).padStart(
+                        2,
+                        "0",
+                     ),
+                     icon: Store,
+                  },
+                  {
+                     label: "Categories",
+                     display: String(CATEGORIES.length - 1).padStart(2, "0"),
+                     icon: Layers,
+                  },
+                  {
+                     label: "All-time Runs",
+                     display: (totalRuns / 1000).toFixed(0) + "K",
+                     icon: TrendingUp,
+                  },
+                  {
+                     label: "Contributors",
+                     display: String(authors).padStart(2, "0"),
+                     icon: Users,
+                  },
+               ].map(({ label, display, icon: Icon }) => (
+                  <div
+                     key={label}
+                     className="relative flex flex-col justify-between bg-[#0f0f0f] border-t-3 border border-t-sand/30 p-5 pb-10 overflow-hidden"
+                  >
+                     <div className="flex items-center justify-between mb-3">
+                        <p className="text-[11px] font-mono uppercase tracking-widest text-sand/40">
+                           {label}
                         </p>
+                        <Icon
+                           size={15}
+                           strokeWidth={1.5}
+                           className="text-sand/70 shrink-0"
+                        />
                      </div>
-                  ))}
-               </div>
+                     <p className="text-[28px] font-bold text-sand leading-none font-mono">
+                        {display}
+                     </p>
+                     {/* Base stripe */}
+                     <div
+                        className="absolute bottom-0 left-0 right-0 h-4 pointer-events-none"
+                        style={{
+                           backgroundImage:
+                              "repeating-linear-gradient(-45deg, var(--sand) 0, var(--sand) 1px, transparent 0, transparent 50%)",
+                           backgroundSize: "6px 6px",
+                           opacity: 0.12,
+                        }}
+                     />
+                  </div>
+               ))}
             </div>
 
             {/* Search + filters */}
@@ -287,7 +278,11 @@ export default function MarketplacePage() {
             ) : (
                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {filtered.map((agent) => (
-                     <AgentCard key={agent.id} agent={agent} variant="marketplace" />
+                     <AgentCard
+                        key={agent.id}
+                        agent={agent}
+                        variant="marketplace"
+                     />
                   ))}
                </div>
             )}

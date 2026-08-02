@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Check, GitFork, Plus, Search, User, Settings2, LogOut, Wallet } from "lucide-react";
+import { useWorkflowStore } from "@/stores/useWorkflowStore";
 import {
    DropdownMenu,
    DropdownMenuContent,
@@ -34,11 +35,6 @@ const ORGS: Org[] = [
    { id: "personal", name: "Personal", type: "personal" },
 ];
 
-const MOCK_WORKFLOWS = [
-   { id: "1", name: "Untitled Workflow" },
-   { id: "2", name: "DeFi Risk Monitor" },
-   { id: "3", name: "NFT Price Tracker" },
-];
 
 export default function DashboardHeader() {
    const router = useRouter();
@@ -53,10 +49,10 @@ export default function DashboardHeader() {
       ? [{ id: "personal", name: user.name, type: "personal" as const }, ...ORGS.slice(1)]
       : ORGS;
 
+   const workflows = useWorkflowStore((s) => s.workflows);
    const isInEditor = /^\/dashboard\/workflows\/[^/]+$/.test(pathname ?? "");
    const currentWorkflowId = isInEditor ? (pathname ?? "").split("/").pop() : null;
-   const currentWorkflow =
-      MOCK_WORKFLOWS.find((w) => w.id === currentWorkflowId) ?? MOCK_WORKFLOWS[0];
+   const currentWorkflow = workflows.find((w) => w.id === currentWorkflowId);
 
    const handleLogout = async () => {
       await fetch("/api/auth/logout", { method: "POST" });
@@ -90,10 +86,10 @@ export default function DashboardHeader() {
                      <div className="flex items-center gap-2">
                         <GitFork size={15} strokeWidth={1.5} className="text-muted-foreground shrink-0" />
                         <span
-                           title={currentWorkflow.name}
+                           title={currentWorkflow?.name ?? "Untitled Workflow"}
                            className="text-sand font-medium max-w-32 lg:max-w-48 truncate text-sm"
                         >
-                           {currentWorkflow.name}
+                           {currentWorkflow?.name ?? "Untitled Workflow"}
                         </span>
                      </div>
                   }
@@ -118,7 +114,7 @@ export default function DashboardHeader() {
                         />
                         <CommandList className="max-h-none md:max-h-[300px] overflow-y-auto overflow-x-hidden">
                            <CommandGroup>
-                              {MOCK_WORKFLOWS.filter((w) =>
+                              {workflows.filter((w) =>
                                  w.name.toLowerCase().includes(workflowSearch.toLowerCase())
                               ).map((wf) => (
                                  <CommandItem

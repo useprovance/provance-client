@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { Plus } from "lucide-react";
-import { WorkflowCard, type Workflow } from "@/components/dashboard/WorkflowCard";
+import { WorkflowCard } from "@/components/dashboard/WorkflowCard";
+import { CreateWorkflowModal } from "@/components/dashboard/CreateWorkflowModal";
+import { useWorkflowStore } from "@/stores/useWorkflowStore";
 import Footer from "@/components/landing-page/Footer";
 
 const STRIPE = {
@@ -12,38 +13,9 @@ const STRIPE = {
   backgroundSize: "6px 6px",
 };
 
-const MOCK_WORKFLOWS: Workflow[] = [
-  {
-    id: "1",
-    name: "DeFi Risk Monitor",
-    description: "Monitors on-chain risk signals and triggers alerts via multiple agents.",
-    published: true,
-    nodeCount: 6,
-    lastRun: "2 mins ago",
-    runs: 1482,
-  },
-  {
-    id: "2",
-    name: "Token Launch Pipeline",
-    description: "Automates liquidity seeding, social posts, and analytics on launch.",
-    published: false,
-    nodeCount: 4,
-    lastRun: null,
-    runs: 0,
-  },
-  {
-    id: "3",
-    name: "Wallet Health Check",
-    description: "Runs daily checks across wallets and reports anomalies.",
-    published: false,
-    nodeCount: 3,
-    lastRun: "3 days ago",
-    runs: 214,
-  },
-];
-
 export default function WorkflowsPage() {
-  const [workflows] = useState<Workflow[]>(MOCK_WORKFLOWS);
+  const workflows = useWorkflowStore((s) => s.workflows);
+  const [createOpen, setCreateOpen] = useState(false);
 
   return (
     <div className="flex flex-col h-full bg-[#181818] overflow-y-auto">
@@ -56,25 +28,40 @@ export default function WorkflowsPage() {
             <p className="text-sand text-xs font-mono uppercase tracking-widest">Workflows</p>
           </div>
           <div className="flex-1 h-full min-h-[16px]" style={{ ...STRIPE, opacity: 0.15 }} />
-          <Link
-            href="/dashboard/workflows/new"
+          <button
+            onClick={() => setCreateOpen(true)}
             className="flex items-center gap-2 bg-sand hover:bg-sand-light text-ink-dark text-[12px] font-bold px-5 py-2 ml-6 shrink-0 transition-colors cursor-pointer"
             style={{ clipPath: "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)" }}
           >
             <Plus size={13} strokeWidth={2.5} />
             New Workflow
-          </Link>
+          </button>
         </div>
 
         {/* Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {workflows.map((w) => (
-            <WorkflowCard key={w.id} workflow={w} />
-          ))}
-        </div>
+        {workflows.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-4 py-24 border border-dashed border-sand/10">
+            <p className="text-[13px] text-sand/30">No workflows yet</p>
+            <button
+              onClick={() => setCreateOpen(true)}
+              className="flex items-center gap-2 bg-sand hover:bg-sand-light text-ink-dark text-[12px] font-bold px-5 py-2 transition-colors cursor-pointer"
+              style={{ clipPath: "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)" }}
+            >
+              <Plus size={13} strokeWidth={2.5} />
+              Create your first workflow
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {workflows.map((w) => (
+              <WorkflowCard key={w.id} workflow={w} />
+            ))}
+          </div>
+        )}
 
       </div>
 
+      <CreateWorkflowModal open={createOpen} onOpenChange={setCreateOpen} />
       <Footer />
     </div>
   );

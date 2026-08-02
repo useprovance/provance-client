@@ -8,6 +8,7 @@ import {
    Globe,
    EyeOff,
 } from "lucide-react";
+import type { Workflow } from "@/stores/useWorkflowStore";
 import {
    DropdownMenu,
    DropdownMenuContent,
@@ -16,15 +17,7 @@ import {
    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export interface Workflow {
-   id: string;
-   name: string;
-   description: string;
-   published: boolean;
-   nodeCount: number;
-   lastRun: string | null;
-   runs: number;
-}
+export type { Workflow };
 
 export function WorkflowCard({ workflow }: { workflow: Workflow }) {
    return (
