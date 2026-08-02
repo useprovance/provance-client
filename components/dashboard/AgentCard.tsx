@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
    ArrowUpRight,
+   CloudDownload,
    MoreHorizontal,
    Pause,
    Play,
@@ -32,23 +33,24 @@ export interface Agent {
    author: string;
 }
 
-
 const STATUS: Record<AgentStatus, { label: string; dot: string }> = {
    active: { label: "Active", dot: "bg-emerald-400" },
-   paused: { label: "Paused", dot: "bg-amber-400"   },
-   idle:   { label: "Idle",   dot: "bg-sand/30"     },
+   paused: { label: "Paused", dot: "bg-amber-400" },
+   idle: { label: "Idle", dot: "bg-sand/30" },
 };
 
-export function AgentCard({ agent }: { agent: Agent }) {
+export function AgentCard({ agent, variant = "owned" }: { agent: Agent; variant?: "owned" | "marketplace" }) {
    const [status, setStatus] = useState<AgentStatus>(agent.status);
    const s = STATUS[status];
 
    return (
       <div className="relative flex flex-col bg-[#141414] border border-[#222] hover:border-[#2e2e2e] transition-colors overflow-hidden">
-
          {/* Dot header */}
          <div className="relative h-16 shrink-0">
-            <div className="absolute inset-0" style={{ backgroundColor: "rgba(204,189,159,0.06)" }} />
+            <div
+               className="absolute inset-0"
+               style={{ backgroundColor: "rgba(204,189,159,0.06)" }}
+            />
             <div
                className="absolute inset-0"
                style={{
@@ -67,20 +69,32 @@ export function AgentCard({ agent }: { agent: Agent }) {
                         <MoreHorizontal size={15} strokeWidth={1.5} />
                      </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-44 bg-[#1c1c1c] border border-[#2a2a2a] p-1">
-                     <DropdownMenuItem asChild className="cursor-pointer px-3 py-2 text-[13px] text-sand/70 focus:text-sand focus:bg-white/5 gap-2.5 [&_svg]:!size-[14px] [&_svg]:!text-current">
+                  <DropdownMenuContent
+                     align="end"
+                     className="w-44 bg-[#1c1c1c] border border-[#2a2a2a] p-1"
+                  >
+                     <DropdownMenuItem
+                        asChild
+                        className="cursor-pointer px-3 py-2 text-[13px] text-sand/70 focus:text-sand focus:bg-white/5 gap-2.5 [&_svg]:!size-[14px] [&_svg]:!text-current"
+                     >
                         <Link href={`/dashboard/agents/${agent.id}`}>
                            <ArrowUpRight strokeWidth={1.5} />
                            Open in editor
                         </Link>
                      </DropdownMenuItem>
                      {status === "active" ? (
-                        <DropdownMenuItem onClick={() => setStatus("paused")} className="cursor-pointer px-3 py-2 text-[13px] text-sand/70 focus:text-sand focus:bg-white/5 gap-2.5 [&_svg]:!size-[14px] [&_svg]:!text-current">
+                        <DropdownMenuItem
+                           onClick={() => setStatus("paused")}
+                           className="cursor-pointer px-3 py-2 text-[13px] text-sand/70 focus:text-sand focus:bg-white/5 gap-2.5 [&_svg]:!size-[14px] [&_svg]:!text-current"
+                        >
                            <Pause strokeWidth={1.5} />
                            Pause
                         </DropdownMenuItem>
                      ) : (
-                        <DropdownMenuItem onClick={() => setStatus("active")} className="cursor-pointer px-3 py-2 text-[13px] text-sand/70 focus:text-sand focus:bg-white/5 gap-2.5 [&_svg]:!size-[14px] [&_svg]:!text-current">
+                        <DropdownMenuItem
+                           onClick={() => setStatus("active")}
+                           className="cursor-pointer px-3 py-2 text-[13px] text-sand/70 focus:text-sand focus:bg-white/5 gap-2.5 [&_svg]:!size-[14px] [&_svg]:!text-current"
+                        >
                            <Play strokeWidth={1.5} />
                            Resume
                         </DropdownMenuItem>
@@ -96,16 +110,23 @@ export function AgentCard({ agent }: { agent: Agent }) {
          </div>
 
          {/* Icon — overlaps dot header bottom edge */}
-         <div className="absolute top-[40px] left-5 w-12 h-12 bg-[#1a1a1a] border border-[#333] flex items-center justify-center z-10">
-            <Image src={agent.icon} alt={agent.name} width={24} height={24} className="object-contain" />
+         <div className="absolute top-[40px] left-5 w-12 h-12 bg-[#1a1a1a] border border-[#333] flex items-center justify-center z-10 rounded-full">
+            <Image
+               src={agent.icon}
+               alt={agent.name}
+               width={24}
+               height={24}
+               className="object-contain"
+            />
          </div>
 
          <div className="flex flex-col gap-4 p-5 pt-10 flex-1">
-
             {/* Author + name */}
             <div>
                <p className="text-[12px] text-sand/40 mb-0.5">{agent.author}</p>
-               <p className="text-[20px] font-semibold text-sand leading-tight font-geist">{agent.name}</p>
+               <p className="text-[20px] font-semibold text-sand leading-tight font-geist">
+                  {agent.name}
+               </p>
             </div>
 
             {/* Tags */}
@@ -125,20 +146,33 @@ export function AgentCard({ agent }: { agent: Agent }) {
             {/* Footer */}
             <div className="flex items-center justify-between pt-5 border-t border-white/5">
                <div>
-                  <p className="text-[15px] font-bold font-mono text-sand leading-none">{agent.earned}</p>
-                  <p className="text-[11px] text-sand/35 mt-1">{agent.runsToday} runs · {agent.lastRun}</p>
+                  <p className="text-[15px] font-bold font-mono text-sand leading-none">
+                     {agent.earned}
+                  </p>
+                  <p className="text-[11px] text-sand/35 mt-1">
+                     {agent.runsToday} runs · {agent.lastRun}
+                  </p>
                </div>
-               <Link
-                  href={`/dashboard/agents/${agent.id}`}
-                  className="flex items-center gap-1.5 bg-sand hover:bg-sand-light text-ink-dark text-[13px] font-semibold px-6 py-2 transition-colors"
-                  style={{ clipPath: "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)" }}
-               >
-                  Open
-                  <ArrowUpRight size={14} strokeWidth={2} />
-               </Link>
+               {variant === "marketplace" ? (
+                  <button
+                     className="flex items-center gap-1.5 bg-orange hover:bg-orange/90 text-white text-[13px] font-semibold px-6 py-2 transition-colors cursor-pointer"
+                     style={{ clipPath: "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)" }}
+                  >
+                     <CloudDownload size={13} strokeWidth={2} />
+                     Install
+                  </button>
+               ) : (
+                  <Link
+                     href={`/dashboard/agents/${agent.id}`}
+                     className="flex items-center gap-1.5 bg-sand hover:bg-sand-light text-ink-dark text-[13px] font-semibold px-6 py-2 transition-colors"
+                     style={{ clipPath: "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)" }}
+                  >
+                     Open
+                     <ArrowUpRight size={14} strokeWidth={2} />
+                  </Link>
+               )}
             </div>
          </div>
-
       </div>
    );
 }

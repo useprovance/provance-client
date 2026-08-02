@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus, Bot, Activity, Zap, TrendingUp } from "lucide-react";
 import { AgentCard, type Agent } from "@/components/dashboard/AgentCard";
 import { SubmitAgentModal } from "@/components/dashboard/SubmitAgentModal";
+import Footer from "@/components/landing-page/Footer";
 
 const MOCK_AGENTS: Agent[] = [
    {
@@ -81,8 +82,8 @@ export default function AgentsPage() {
 
    return (
       <>
-      <div className="flex flex-col h-full bg-[#111] overflow-y-auto">
-         <div className="max-w-5xl w-full mx-auto px-8 py-10 flex flex-col gap-8">
+      <div className="flex flex-col h-full bg-[#181818] overflow-y-auto">
+         <div className="max-w-7xl w-full mx-auto px-8 py-10 flex flex-col gap-8">
             <div className="flex flex-col gap-3">
                {/* Badge strip */}
                <div className="flex items-center justify-between w-full border-t border-b border-sand/25 py-3">
@@ -167,12 +168,14 @@ export default function AgentsPage() {
                </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                {MOCK_AGENTS.map((agent) => (
                   <AgentCard key={agent.id} agent={agent} />
                ))}
             </div>
          </div>
+
+         <Footer />
       </div>
 
       <SubmitAgentModal open={submitOpen} onOpenChange={setSubmitOpen} />

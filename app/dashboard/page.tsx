@@ -1,6 +1,7 @@
 "use client";
 
 import { GitBranch, Bot, Zap, TrendingUp } from "lucide-react";
+import Footer from "@/components/landing-page/Footer";
 import { Bar, BarChart, CartesianGrid, XAxis, LabelList } from "recharts";
 import {
   ChartContainer,
@@ -39,8 +40,8 @@ const STRIPE = {
 
 export default function DashboardPage() {
   return (
-    <div className="flex flex-col h-full bg-[#111] overflow-y-auto">
-      <div className="max-w-5xl w-full mx-auto px-8 py-10 flex flex-col gap-8">
+    <div className="flex flex-col h-full bg-[#181818] overflow-y-auto">
+      <div className="max-w-7xl w-full mx-auto px-8 py-10 flex flex-col gap-8">
 
         {/* Badge strip */}
         <div className="flex items-center justify-between w-full border-t border-b border-sand/25 py-3">
@@ -116,6 +117,8 @@ export default function DashboardPage() {
         </div>
 
       </div>
+
+      <Footer />
     </div>
   );
 }

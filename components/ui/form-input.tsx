@@ -38,7 +38,7 @@ export function FormInput({
   const hasError = error && touched;
 
   const containerCls = cn(
-    "relative flex items-center w-full rounded-sm border bg-[#0c0c0c] transition-colors",
+    "relative flex items-center w-full border bg-[#0c0c0c] transition-colors",
     hasError
       ? "border-red-500/60 focus-within:ring-2 focus-within:ring-red-500/20"
       : "border-[#2a2a2a] focus-within:border-sand/30 focus-within:ring-2 focus-within:ring-sand/10",

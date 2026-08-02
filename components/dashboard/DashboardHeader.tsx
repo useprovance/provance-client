@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Search, User, Settings2, LogOut, Wallet } from "lucide-react";
+import { Check, GitFork, Plus, Search, User, Settings2, LogOut, Wallet } from "lucide-react";
 import {
    DropdownMenu,
    DropdownMenuContent,
@@ -11,7 +11,18 @@ import {
    DropdownMenuSeparator,
    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+   Command,
+   CommandGroup,
+   CommandInput,
+   CommandItem,
+   CommandList,
+} from "@/components/ui/command";
 import { HeaderDivider } from "@/components/common/dashboard/HeaderDivider";
+import {
+   DashboardHeaderDropdownTriggerButton,
+   DashboardHeaderDropdownWithPopover,
+} from "@/components/common/dashboard/DashboardHeaderDropdown";
 import {
    OrgSelector,
    type Org,
@@ -23,15 +34,29 @@ const ORGS: Org[] = [
    { id: "personal", name: "Personal", type: "personal" },
 ];
 
+const MOCK_WORKFLOWS = [
+   { id: "1", name: "Untitled Workflow" },
+   { id: "2", name: "DeFi Risk Monitor" },
+   { id: "3", name: "NFT Price Tracker" },
+];
+
 export default function DashboardHeader() {
    const router = useRouter();
+   const pathname = usePathname();
    const user = useAuthStore((s) => s.user);
    const clearUser = useAuthStore((s) => s.clearUser);
    const [selectedOrgId, setSelectedOrgId] = useState(ORGS[0].id);
+   const [workflowOpen, setWorkflowOpen] = useState(false);
+   const [workflowSearch, setWorkflowSearch] = useState("");
 
    const orgs = user?.name
       ? [{ id: "personal", name: user.name, type: "personal" as const }, ...ORGS.slice(1)]
       : ORGS;
+
+   const isInEditor = /^\/dashboard\/workflows\/[^/]+$/.test(pathname ?? "");
+   const currentWorkflowId = isInEditor ? (pathname ?? "").split("/").pop() : null;
+   const currentWorkflow =
+      MOCK_WORKFLOWS.find((w) => w.id === currentWorkflowId) ?? MOCK_WORKFLOWS[0];
 
    const handleLogout = async () => {
       await fetch("/api/auth/logout", { method: "POST" });
@@ -54,6 +79,85 @@ export default function DashboardHeader() {
             selectedId={selectedOrgId}
             onSelect={(o) => setSelectedOrgId(o.id)}
          />
+
+         {/* Workflow selector — only visible in editor */}
+         {isInEditor && (
+            <>
+               <HeaderDivider />
+               <DashboardHeaderDropdownWithPopover
+                  linkHref={`/dashboard/workflows/${currentWorkflowId}`}
+                  linkContent={
+                     <div className="flex items-center gap-2">
+                        <GitFork size={15} strokeWidth={1.5} className="text-muted-foreground shrink-0" />
+                        <span
+                           title={currentWorkflow.name}
+                           className="text-sand font-medium max-w-32 lg:max-w-48 truncate text-sm"
+                        >
+                           {currentWorkflow.name}
+                        </span>
+                     </div>
+                  }
+                  linkClassName="flex items-center gap-2 shrink-0"
+                  open={workflowOpen}
+                  onOpenChange={setWorkflowOpen}
+                  triggerButton={
+                     <DashboardHeaderDropdownTriggerButton
+                        className="shrink-0"
+                        aria-label="Switch workflow"
+                     />
+                  }
+                  commandContent={
+                     <Command shouldFilter={false}>
+                        <CommandInput
+                           value={workflowSearch}
+                           onValueChange={setWorkflowSearch}
+                           showResetIcon
+                           handleReset={() => setWorkflowSearch("")}
+                           placeholder="Find workflow..."
+                           className="text-base sm:text-sm"
+                        />
+                        <CommandList className="max-h-none md:max-h-[300px] overflow-y-auto overflow-x-hidden">
+                           <CommandGroup>
+                              {MOCK_WORKFLOWS.filter((w) =>
+                                 w.name.toLowerCase().includes(workflowSearch.toLowerCase())
+                              ).map((wf) => (
+                                 <CommandItem
+                                    key={wf.id}
+                                    value={wf.id}
+                                    className="cursor-pointer w-full"
+                                    onSelect={() => {
+                                       router.push(`/dashboard/workflows/${wf.id}`);
+                                       setWorkflowOpen(false);
+                                       setWorkflowSearch("");
+                                    }}
+                                 >
+                                    <div className="w-full flex items-center justify-between gap-3">
+                                       <p className="text-[13px] truncate">{wf.name}</p>
+                                       {wf.id === currentWorkflowId && (
+                                          <Check size={14} strokeWidth={2} className="text-white shrink-0" />
+                                       )}
+                                    </div>
+                                 </CommandItem>
+                              ))}
+                           </CommandGroup>
+                           <div className="h-px bg-border -mx-1 shrink-0" />
+                           <CommandGroup>
+                              <CommandItem
+                                 className="cursor-pointer w-full"
+                                 onSelect={() => setWorkflowOpen(false)}
+                              >
+                                 <div className="flex items-center gap-2">
+                                    <Plus size={14} strokeWidth={1.5} />
+                                    <span>New workflow</span>
+                                 </div>
+                              </CommandItem>
+                           </CommandGroup>
+                        </CommandList>
+                     </Command>
+                  }
+               />
+            </>
+         )}
 
          {/* Spacer */}
          <div className="flex-1" />
