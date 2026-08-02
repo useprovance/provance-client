@@ -103,7 +103,7 @@ export default function DashboardPage() {
                     fontSize={10}
                     fill="rgba(227,216,197,0.3)"
                     fontFamily="monospace"
-                    formatter={(v: number) => (v === 0 ? "0" : v.toLocaleString())}
+                    formatter={(v: unknown) => (v === 0 ? "0" : Number(v).toLocaleString())}
                   />
                 </Bar>
               </BarChart>
