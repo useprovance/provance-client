@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, EyeOff, Globe, MoreHorizontal, Play, Save, Share2 } from "lucide-react";
+import Image from "next/image";
+import { EyeOff, Globe, MoreHorizontal, Play, Save, Share2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -80,7 +81,7 @@ export function EditorBottomPanel() {
               onClick={() => setAiOpen(true)}
               className="p-1.5 text-sand/70 hover:text-sand transition-colors cursor-pointer hover:bg-white/5"
             >
-              <Bot size={14} strokeWidth={1.5} />
+              <Image src="/icons/chat-sparkle.svg" alt="AI Chat" width={14} height={14} className="opacity-70 hover:opacity-100" />
             </button>
 
             <DropdownMenu>

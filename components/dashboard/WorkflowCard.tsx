@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
    ArrowUpRight,
    MoreHorizontal,
@@ -9,6 +10,7 @@ import {
    EyeOff,
 } from "lucide-react";
 import type { Workflow } from "@/stores/useWorkflowStore";
+import { useWorkflowStore } from "@/stores/useWorkflowStore";
 import {
    DropdownMenu,
    DropdownMenuContent,
@@ -20,6 +22,17 @@ import {
 export type { Workflow };
 
 export function WorkflowCard({ workflow }: { workflow: Workflow }) {
+   const router = useRouter();
+   const remove = useWorkflowStore((s) => s.remove);
+
+   const handleDelete = () => {
+      remove(workflow.id);
+      localStorage.removeItem(`provance_canvas_${workflow.id}`);
+      localStorage.removeItem(`provance_viewport_${workflow.id}`);
+      if (window.location.pathname.includes(workflow.id)) {
+         router.push("/dashboard/workflows");
+      }
+   };
    return (
       <div className="flex flex-col bg-[#0f0f0f] border border-sand/15 hover:border-sand/25 transition-colors overflow-hidden group">
          {/* Canvas preview */}
@@ -50,7 +63,10 @@ export function WorkflowCard({ workflow }: { workflow: Workflow }) {
                         </Link>
                      </DropdownMenuItem>
                      <DropdownMenuSeparator className="bg-white/6 my-1" />
-                     <DropdownMenuItem className="cursor-pointer px-3 py-2 text-[13px] text-red-400/70 focus:text-red-400 focus:bg-red-400/8 gap-2.5 [&_svg]:!size-[14px]">
+                     <DropdownMenuItem
+                        onClick={handleDelete}
+                        className="cursor-pointer px-3 py-2 text-[13px] text-red-400/70 focus:text-red-400 focus:bg-red-400/8 gap-2.5 [&_svg]:!size-[14px]"
+                     >
                         <Trash2 strokeWidth={1.5} />
                         Delete
                      </DropdownMenuItem>

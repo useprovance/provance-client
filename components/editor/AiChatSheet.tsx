@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Bot, ArrowUp, Sparkles } from "lucide-react";
+import Image from "next/image";
+import { ArrowUp } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -53,26 +54,20 @@ export function AiChatSheet({ open, onOpenChange }: AiChatSheetProps) {
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={onOpenChange} modal={false}>
       <SheetContent
         side="right"
         showCloseButton
-        className="w-full sm:max-w-[420px] bg-[#111] border-l border-[#2a2a2a] p-0 flex flex-col gap-0"
+        onInteractOutside={(e) => e.preventDefault()}
+        className="w-full sm:max-w-[420px] bg-[#0f0f0f] border-l border-sand/8 p-0 flex flex-col gap-0"
       >
         {/* Header */}
-        <SheetHeader className="px-5 py-4 border-b border-[#1e1e1e] shrink-0">
+        <SheetHeader className="px-5 py-4 border-b border-sand/8 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 flex items-center justify-center bg-orange/10 border border-orange/20">
-              <Bot size={15} strokeWidth={1.5} className="text-orange" />
-            </div>
-            <div>
-              <SheetTitle className="text-[13px] font-semibold text-sand">
-                AI Assistant
-              </SheetTitle>
-              <p className="text-[11px] text-sand/35 font-mono mt-0.5">
-                Ask anything about your workflow
-              </p>
-            </div>
+            <Image src="/icons/chat-sparkle.svg" alt="Provance Agent" width={20} height={20} />
+            <SheetTitle className="text-[13px] font-semibold text-sand">
+              Provance Agent
+            </SheetTitle>
           </div>
         </SheetHeader>
 
@@ -81,9 +76,7 @@ export function AiChatSheet({ open, onOpenChange }: AiChatSheetProps) {
           {messages.length === 0 ? (
             <div className="flex flex-col gap-5 mt-4">
               <div className="flex flex-col items-center gap-2 py-6">
-                <div className="w-10 h-10 flex items-center justify-center bg-orange/8 border border-orange/15">
-                  <Sparkles size={18} strokeWidth={1.5} className="text-orange/60" />
-                </div>
+                <Image src="/icons/chat-sparkle.svg" alt="Provance Agent" width={28} height={28} />
                 <p className="text-[13px] text-sand/40 text-center leading-relaxed max-w-[260px]">
                   Ask me to help build, fix, or explain anything in your workflow.
                 </p>
@@ -115,7 +108,7 @@ export function AiChatSheet({ open, onOpenChange }: AiChatSheetProps) {
                     className={`max-w-[85%] px-3.5 py-2.5 text-[13px] leading-relaxed ${
                       msg.role === "user"
                         ? "bg-orange/10 border border-orange/20 text-sand"
-                        : "bg-[#1a1a1a] border border-[#2a2a2a] text-sand/80"
+                        : "bg-sand/5 border border-sand/8 text-sand/80"
                     }`}
                   >
                     {msg.content}
@@ -131,8 +124,8 @@ export function AiChatSheet({ open, onOpenChange }: AiChatSheetProps) {
         </div>
 
         {/* Input */}
-        <div className="shrink-0 border-t border-[#1e1e1e] p-4">
-          <div className="relative flex items-end gap-2 border border-[#2a2a2a] bg-[#0c0c0c] focus-within:border-sand/30 focus-within:ring-2 focus-within:ring-sand/10 transition-colors">
+        <div className="shrink-0 border-t border-sand/8 p-4">
+          <div className="relative flex items-end gap-2 border border-sand/10 bg-sand/4 focus-within:border-sand/25 focus-within:ring-1 focus-within:ring-sand/8 transition-colors">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
