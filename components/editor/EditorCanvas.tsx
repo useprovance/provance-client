@@ -23,7 +23,6 @@ import { NodeConfigSheet } from "./NodeConfigSheet";
 import { EditorBottomPanel } from "./EditorBottomPanel";
 import { EditorProvider, useEditor } from "./EditorContext";
 import { Skeleton } from "@/components/ui/skeleton";
-import { type AgentEdge } from "./editor.constants";
 
 const CANVAS_KEY = (id: string) => `provance_canvas_${id}`;
 const VIEWPORT_KEY = (id: string) => `provance_viewport_${id}`;
@@ -59,8 +58,8 @@ function writeViewport(workflowId: string, viewport: Viewport) {
 function Canvas({ workflowId }: { workflowId: string }) {
    const savedViewport = useMemo(() => readViewport(workflowId), [workflowId]);
 
-   const [nodes, setNodes, onNodesChange] = useNodesState([]);
-   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
    const [ready, setReady] = useState(false);
 
    const nodeTypes = useMemo(() => ({ agent: AgentNodeComponent }), []);
@@ -69,8 +68,8 @@ function Canvas({ workflowId }: { workflowId: string }) {
    useLayoutEffect(() => {
       const saved = readCanvas(workflowId);
       if (saved.nodes.length > 0 || saved.edges.length > 0) {
-         setNodes(saved.nodes as never[]);
-         setEdges(saved.edges as never[]);
+         setNodes(saved.nodes);
+         setEdges(saved.edges);
       }
       setReady(true);
    }, [workflowId]);
@@ -86,7 +85,7 @@ function Canvas({ workflowId }: { workflowId: string }) {
 
    const onConnect = useCallback(
       (connection: Connection) =>
-         setEdges((eds) => addEdge(connection, eds) as AgentEdge[]),
+         setEdges((eds) => addEdge(connection, eds)),
       [setEdges],
    );
 
