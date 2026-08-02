@@ -5,7 +5,7 @@ import { createContext, useContext, useState, useCallback, type ReactNode } from
 interface EditorContextValue {
    sourceNodeId: string | null;
    isSheetOpen: boolean;
-   openSheet: (sourceNodeId: string) => void;
+   openSheet: (sourceNodeId: string | null) => void;
    closeSheet: () => void;
    configNodeId: string | null;
    isConfigOpen: boolean;
@@ -21,7 +21,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
    const [configNodeId, setConfigNodeId] = useState<string | null>(null);
    const [isConfigOpen, setIsConfigOpen] = useState(false);
 
-   const openSheet = useCallback((id: string) => {
+   const openSheet = useCallback((id: string | null) => {
       setSourceNodeId(id);
       setIsSheetOpen(true);
    }, []);

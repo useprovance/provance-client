@@ -539,7 +539,8 @@ function AgentDetailModal({
    );
 }
 
-export function AddAgentSheet() {
+export function AddAgentSheet({ workflowId }: { workflowId: string }) {
+   void workflowId;
    const { isSheetOpen, closeSheet, sourceNodeId } = useEditor();
    const { addNodes, addEdges, getNode } = useReactFlow();
    const [search, setSearch] = useState("");
@@ -572,29 +573,32 @@ export function AddAgentSheet() {
    };
 
    const handleAddToCanvas = (agent: AgentDef) => {
-      if (!sourceNodeId) return;
-      const source = getNode(sourceNodeId);
       const newId = `${Date.now()}`;
+      const source = sourceNodeId ? getNode(sourceNodeId) : null;
+
       addNodes([
          {
             id: newId,
             type: "agent" as const,
-            position: {
-               x: (source?.position.x ?? 0) + 110,
-               y: source?.position.y ?? 0,
-            },
+            position: source
+               ? { x: source.position.x + 110, y: source.position.y }
+               : { x: 0, y: 0 },
             data: { label: agent.label, icon: agent.icon },
          },
       ]);
-      addEdges([
-         {
-            id: `e${sourceNodeId}-${newId}`,
-            source: sourceNodeId,
-            target: newId,
-            type: "smoothstep",
-            style: EDGE_STYLE,
-         },
-      ]);
+
+      if (sourceNodeId) {
+         addEdges([
+            {
+               id: `e${sourceNodeId}-${newId}`,
+               source: sourceNodeId,
+               target: newId,
+               type: "smoothstep",
+               style: EDGE_STYLE,
+            },
+         ]);
+      }
+
       closeSheet();
       setSearch("");
    };

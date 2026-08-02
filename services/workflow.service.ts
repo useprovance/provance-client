@@ -21,6 +21,36 @@ export interface UpdateWorkflowInput {
   published?: boolean;
 }
 
+export interface WorkflowNode {
+  id: string;
+  workflowId: string;
+  agentId: string;
+  label: string;
+  icon: string;
+  position: { x: number; y: number };
+  createdAt: string;
+}
+
+export interface WorkflowEdge {
+  id: string;
+  workflowId: string;
+  source: string;
+  target: string;
+}
+
+export interface AddNodeInput {
+  workflowId: string;
+  agentId: string;
+  label: string;
+  icon: string;
+  position: { x: number; y: number };
+}
+
+export interface UpdateNodePositionInput {
+  nodeId: string;
+  position: { x: number; y: number };
+}
+
 export class WorkflowService {
   static async create(input: CreateWorkflowInput): Promise<Workflow> {
     // TODO: wire to Supabase
@@ -59,5 +89,29 @@ export class WorkflowService {
   static async delete(id: string): Promise<void> {
     // TODO: wire to Supabase
     void id;
+  }
+
+  static async addNode(input: AddNodeInput): Promise<WorkflowNode> {
+    // TODO: wire to Supabase
+    const now = new Date().toISOString();
+    return {
+      id: crypto.randomUUID(),
+      workflowId: input.workflowId,
+      agentId: input.agentId,
+      label: input.label,
+      icon: input.icon,
+      position: input.position,
+      createdAt: now,
+    };
+  }
+
+  static async removeNode(nodeId: string): Promise<void> {
+    // TODO: wire to Supabase
+    void nodeId;
+  }
+
+  static async updateNodePosition(input: UpdateNodePositionInput): Promise<void> {
+    // TODO: wire to Supabase
+    void input;
   }
 }

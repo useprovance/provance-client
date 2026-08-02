@@ -9,7 +9,7 @@ import {
    useUpdateNodeInternals,
    type NodeProps,
 } from "@xyflow/react";
-import { Plus, Zap } from "lucide-react";
+import { Plus } from "lucide-react";
 import { NodeToolbar } from "./NodeToolbar";
 import { useEditor } from "./EditorContext";
 import type { AgentNode } from "./editor.constants";
@@ -69,13 +69,11 @@ export function AgentNodeComponent({
                onMouseLeave={hideToolbar}
             />
 
-            {!data.isTrigger && (
-               <Handle
-                  type="target"
-                  position={Position.Left}
-                  className="!w-2.5 !h-2.5 !bg-[#2d2d2d] !border !border-sand/50 !rounded-full"
-               />
-            )}
+            <Handle
+               type="target"
+               position={Position.Left}
+               className="!w-2.5 !h-2.5 !bg-[#2d2d2d] !border !border-sand/50 !rounded-full"
+            />
             {hasOutgoing && (
                <Handle
                   type="source"
@@ -92,13 +90,6 @@ export function AgentNodeComponent({
                className="object-contain"
             />
 
-            {data.isTrigger && (
-               <Zap
-                  size={12}
-                  strokeWidth={2}
-                  className="absolute -left-5 top-1/2 -translate-y-1/2 text-orange fill-orange"
-               />
-            )}
          </div>
 
          {/* Label */}

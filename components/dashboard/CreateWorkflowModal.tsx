@@ -5,16 +5,7 @@ import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { FormInput } from "@/components/ui/form-input";
-import { FormSelector } from "@/components/ui/form-selector";
 import { useWorkflowStore } from "@/stores/useWorkflowStore";
-
-const TRIGGER_OPTIONS = [
-  { value: "schedule", label: "Schedule", description: "Run on a time interval or cron" },
-  { value: "webhook", label: "Webhook", description: "Triggered by an incoming HTTP request" },
-  { value: "onchain", label: "On-chain Event", description: "Fires on a smart contract event" },
-  { value: "price", label: "Price Alert", description: "Triggers when a token hits a price threshold" },
-  { value: "manual", label: "Manual", description: "Run only when you trigger it yourself" },
-];
 
 interface CreateWorkflowModalProps {
   open: boolean;
@@ -26,25 +17,23 @@ export function CreateWorkflowModal({ open, onOpenChange }: CreateWorkflowModalP
   const createWorkflow = useWorkflowStore((s) => s.create);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [trigger, setTrigger] = useState("");
   const [nameTouched, setNameTouched] = useState(false);
 
   const nameError = !name.trim() ? "Workflow name is required" : undefined;
-  const canCreate = name.trim() !== "" && trigger !== "";
+  const canCreate = name.trim() !== "";
 
   function handleClose() {
     onOpenChange(false);
     setTimeout(() => {
       setName("");
       setDescription("");
-      setTrigger("");
       setNameTouched(false);
     }, 200);
   }
 
   function handleCreate() {
     if (!canCreate) return;
-    const workflow = createWorkflow({ name: name.trim(), description: description.trim(), trigger });
+    const workflow = createWorkflow({ name: name.trim(), description: description.trim() });
     handleClose();
     router.push(`/dashboard/workflows/${workflow.id}`);
   }
@@ -93,15 +82,7 @@ export function CreateWorkflowModal({ open, onOpenChange }: CreateWorkflowModalP
             rows={3}
           />
 
-          <FormSelector
-            label="Trigger Type"
-            value={trigger}
-            onChange={setTrigger}
-            placeholder="Select a trigger..."
-            options={TRIGGER_OPTIONS}
-            required
-            searchable={false}
-          />
+
         </div>
 
         {/* Footer */}

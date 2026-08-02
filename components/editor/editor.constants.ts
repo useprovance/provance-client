@@ -3,7 +3,6 @@ import type { Node, Edge } from "@xyflow/react";
 export type AgentNodeData = {
    label: string;
    icon: string;
-   isTrigger?: boolean;
 };
 
 export type AgentNode = Node<AgentNodeData, "agent">;
