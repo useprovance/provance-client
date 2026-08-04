@@ -50,7 +50,6 @@ export function CreateWorkflowModal({ open, onOpenChange }: CreateWorkflowModalP
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#1e1e1e] shrink-0">
           <div>
             <p className="text-[15px] font-semibold text-sand">Create Workflow</p>
-            <p className="text-[11px] text-sand/35 mt-0.5">Set the basics before building</p>
           </div>
           <button
             onClick={handleClose}

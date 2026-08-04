@@ -77,20 +77,20 @@ export function AiChatSheet({ open, onOpenChange }: AiChatSheetProps) {
             <div className="flex flex-col gap-5 mt-4">
               <div className="flex flex-col items-center gap-2 py-6">
                 <Image src="/icons/chat-sparkle.svg" alt="Provance Agent" width={28} height={28} />
-                <p className="text-[13px] text-sand/40 text-center leading-relaxed max-w-[260px]">
+                <p className="text-[13px] text-sand text-center leading-relaxed max-w-[260px]">
                   Ask me to help build, fix, or explain anything in your workflow.
                 </p>
               </div>
 
               <div className="flex flex-col gap-2">
-                <p className="text-[10px] font-mono uppercase tracking-widest text-sand/25 mb-1">
+                <p className="text-[10px] font-mono uppercase tracking-widest text-sand/60 mb-1">
                   Suggestions
                 </p>
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s}
                     onClick={() => send(s)}
-                    className="text-left px-3 py-2.5 text-[12px] text-sand/50 hover:text-sand border border-[#222] hover:border-sand/20 bg-[#0c0c0c] hover:bg-[#161616] transition-colors cursor-pointer leading-relaxed"
+                    className="text-left px-3 py-2.5 text-[12px] text-sand hover:text-white border border-[#2a2a2a] hover:border-sand/40 bg-[#161616] hover:bg-[#1e1e1e] transition-colors cursor-pointer leading-relaxed"
                   >
                     {s}
                   </button>
@@ -107,13 +107,13 @@ export function AiChatSheet({ open, onOpenChange }: AiChatSheetProps) {
                   <div
                     className={`max-w-[85%] px-3.5 py-2.5 text-[13px] leading-relaxed ${
                       msg.role === "user"
-                        ? "bg-orange/10 border border-orange/20 text-sand"
-                        : "bg-sand/5 border border-sand/8 text-sand/80"
+                        ? "bg-orange/15 border border-orange/30 text-sand"
+                        : "bg-[#1a1a1a] border border-[#2a2a2a] text-sand"
                     }`}
                   >
                     {msg.content}
                   </div>
-                  <span className="text-[10px] text-sand/20 px-1">
+                  <span className="text-[10px] text-sand/50 px-1">
                     {msg.role === "user" ? "You" : "AI"}
                   </span>
                 </div>
@@ -124,15 +124,15 @@ export function AiChatSheet({ open, onOpenChange }: AiChatSheetProps) {
         </div>
 
         {/* Input */}
-        <div className="shrink-0 border-t border-sand/8 p-4">
-          <div className="relative flex items-end gap-2 border border-sand/10 bg-sand/4 focus-within:border-sand/25 focus-within:ring-1 focus-within:ring-sand/8 transition-colors">
+        <div className="shrink-0 border-t border-sand/12 p-4">
+          <div className="relative flex items-end gap-2 border border-sand/20 bg-[#161616] focus-within:border-sand/40 focus-within:ring-1 focus-within:ring-sand/10 transition-colors">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask the AI anything..."
               rows={3}
-              className="flex-1 bg-transparent text-[13px] text-sand placeholder:text-sand/20 px-3 py-3 outline-none resize-none"
+              className="flex-1 bg-transparent text-[13px] text-sand placeholder:text-sand/40 px-3 py-3 outline-none resize-none"
             />
             <button
               onClick={() => send(input)}
@@ -142,7 +142,7 @@ export function AiChatSheet({ open, onOpenChange }: AiChatSheetProps) {
               <ArrowUp size={13} strokeWidth={2.5} className="text-white" />
             </button>
           </div>
-          <p className="text-[10px] text-sand/20 mt-2 font-mono">
+          <p className="text-[10px] text-sand/50 mt-2 font-mono">
             Enter to send · Shift+Enter for new line
           </p>
         </div>

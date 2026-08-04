@@ -21,325 +21,7 @@ import {
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useEditor } from "./EditorContext";
 import { EDGE_STYLE } from "./editor.constants";
-
-interface AgentDef {
-   id: string;
-   label: string;
-   description: string;
-   author: string;
-   downloads: string;
-   rating: number;
-   icon: string;
-   version: string;
-   category: string;
-   identifier: string;
-   publishedAt: string;
-   lastReleased: string;
-   features: string[];
-}
-
-// Agents the user already has installed (matches canvas)
-const DEFAULT_INSTALLED: AgentDef[] = [
-   {
-      id: "trigger",
-      label: "DeFi Protocol Trigger",
-      description:
-         "Starts your workflow on a schedule, webhook, or manual run. Supports cron expressions, webhooks, and one-click manual triggers.",
-      author: "Provance",
-      downloads: "12.4K",
-      rating: 5,
-      icon: "/icons/agents/trigger.svg",
-      version: "1.2.0",
-      category: "Triggers",
-      identifier: "provance.trigger-agent",
-      publishedAt: "8 months ago",
-      lastReleased: "2 weeks ago",
-      features: [
-         "Schedule via cron expression",
-         "Webhook trigger support",
-         "Manual one-click run",
-         "Retry on failure",
-      ],
-   },
-   {
-      id: "defillama",
-      label: "DefiLlama Agent",
-      description:
-         "Fetches TVL, volume, and fee data from DeFiLlama across protocols. Monitors threshold breaches and passes structured data downstream.",
-      author: "Provance",
-      downloads: "7.2K",
-      rating: 4.5,
-      icon: "/icons/agents/defillama.svg",
-      version: "1.0.4",
-      category: "DeFi Data",
-      identifier: "provance.defillama-agent",
-      publishedAt: "6 months ago",
-      lastReleased: "1 month ago",
-      features: [
-         "TVL tracking across chains",
-         "Volume and fee metrics",
-         "Multi-protocol support",
-         "Threshold alerting",
-      ],
-   },
-   {
-      id: "dune",
-      label: "Dune Analytics Agent",
-      description:
-         "Runs Dune queries and pulls on-chain analytics into your workflow. Returns structured results ready for downstream processing.",
-      author: "Provance",
-      downloads: "5.8K",
-      rating: 4.5,
-      icon: "/icons/agents/dune.svg",
-      version: "1.1.0",
-      category: "On-chain Analytics",
-      identifier: "provance.dune-agent",
-      publishedAt: "5 months ago",
-      lastReleased: "3 weeks ago",
-      features: [
-         "Custom query execution",
-         "Scheduled refresh",
-         "Structured JSON output",
-         "Dune API key support",
-      ],
-   },
-   {
-      id: "goplus",
-      label: "GoPlus Agent",
-      description:
-         "Runs on-chain security checks on token contracts and flags risks. Detects honeypots, rug pulls, and other vulnerabilities.",
-      author: "Provance",
-      downloads: "4.9K",
-      rating: 4,
-      icon: "/icons/agents/goplus.png",
-      version: "1.0.2",
-      category: "Security",
-      identifier: "provance.goplus-agent",
-      publishedAt: "4 months ago",
-      lastReleased: "5 weeks ago",
-      features: [
-         "Honeypot detection",
-         "Rug pull analysis",
-         "Multi-chain support",
-         "Risk level scoring",
-      ],
-   },
-   {
-      id: "openai",
-      label: "OpenAI Agent",
-      description:
-         "Summarises all collected DeFi signals into a human-readable risk report using GPT-4o. Configurable system prompt and temperature.",
-      author: "Provance",
-      downloads: "18.3K",
-      rating: 5,
-      icon: "/icons/agents/openai.svg",
-      version: "2.0.1",
-      category: "AI",
-      identifier: "provance.openai-agent",
-      publishedAt: "10 months ago",
-      lastReleased: "1 week ago",
-      features: [
-         "GPT-4o support",
-         "Custom system prompt",
-         "Temperature control",
-         "Max token limit",
-         "Structured output mode",
-      ],
-   },
-   {
-      id: "telegram",
-      label: "Telegram Agent",
-      description:
-         "Sends formatted alerts to a Telegram channel or group when risk is detected. Supports custom message templates with dynamic variables.",
-      author: "Provance",
-      downloads: "9.1K",
-      rating: 4.5,
-      icon: "/icons/agents/telegram.svg",
-      version: "1.3.0",
-      category: "Notifications",
-      identifier: "provance.telegram-agent",
-      publishedAt: "7 months ago",
-      lastReleased: "2 weeks ago",
-      features: [
-         "Channel and group support",
-         "Custom message templates",
-         "Dynamic variable injection",
-         "Markdown formatting",
-      ],
-   },
-];
-
-// Agents available in the marketplace (not yet installed)
-const MARKETPLACE_AGENTS: AgentDef[] = [
-   {
-      id: "gmail-agent",
-      label: "Gmail Agent",
-      description:
-         "Read, send, and manage emails via Gmail. Supports filters, labels, and reply threading.",
-      author: "Provance",
-      downloads: "8.1K",
-      rating: 4.5,
-      icon: "/icons/agents/gmail.svg",
-      version: "1.0.0",
-      category: "Communication",
-      identifier: "provance.gmail-agent",
-      publishedAt: "5 months ago",
-      lastReleased: "1 month ago",
-      features: [
-         "Send and receive emails",
-         "Label and filter support",
-         "Thread replies",
-         "Attachment handling",
-      ],
-   },
-   {
-      id: "whatsapp-agent",
-      label: "WhatsApp Agent",
-      description:
-         "Send and receive WhatsApp messages automatically via the WhatsApp Business API.",
-      author: "Provance",
-      downloads: "6.3K",
-      rating: 4,
-      icon: "/icons/agents/whatsapp.svg",
-      version: "1.0.1",
-      category: "Communication",
-      identifier: "provance.whatsapp-agent",
-      publishedAt: "4 months ago",
-      lastReleased: "6 weeks ago",
-      features: [
-         "Business API support",
-         "Template messages",
-         "Media attachments",
-         "Read receipts",
-      ],
-   },
-   {
-      id: "contract-analyzer",
-      label: "Contract Analyzer",
-      description:
-         "Scans smart contracts for red flags and vulnerabilities using static analysis and AI.",
-      author: "Web3 Labs",
-      downloads: "5.2K",
-      rating: 4.5,
-      icon: "/icons/agents/contract-analyzer.svg",
-      version: "0.9.5",
-      category: "Security",
-      identifier: "web3labs.contract-analyzer",
-      publishedAt: "3 months ago",
-      lastReleased: "2 months ago",
-      features: [
-         "Static analysis",
-         "AI-powered review",
-         "Solidity and Vyper support",
-         "Risk report output",
-      ],
-   },
-   {
-      id: "price-monitor",
-      label: "Price Monitor",
-      description:
-         "Watches token prices and triggers alerts on threshold breaches via any price oracle.",
-      author: "DeFi Tools",
-      downloads: "9.8K",
-      rating: 4,
-      icon: "/icons/agents/price-monitor.svg",
-      version: "1.1.2",
-      category: "DeFi Data",
-      identifier: "defiprice.price-monitor",
-      publishedAt: "6 months ago",
-      lastReleased: "3 weeks ago",
-      features: [
-         "Multi-oracle support",
-         "Percentage threshold alerts",
-         "Price history tracking",
-         "Token watchlist",
-      ],
-   },
-   {
-      id: "alert-agent",
-      label: "Alert Agent",
-      description:
-         "Sends alerts to Telegram, Discord, or email depending on configured channels.",
-      author: "Provance",
-      downloads: "7.4K",
-      rating: 5,
-      icon: "/icons/agents/alert.svg",
-      version: "1.2.0",
-      category: "Notifications",
-      identifier: "provance.alert-agent",
-      publishedAt: "7 months ago",
-      lastReleased: "1 month ago",
-      features: [
-         "Telegram, Discord, email support",
-         "Custom alert templates",
-         "Severity levels",
-         "Rate limiting",
-      ],
-   },
-   {
-      id: "wallet-tracker",
-      label: "Wallet Tracker",
-      description:
-         "Tracks on-chain activity for a watched list of wallet addresses across multiple chains.",
-      author: "ChainWatch",
-      downloads: "4.1K",
-      rating: 4,
-      icon: "/icons/agents/wallet-tracker.svg",
-      version: "1.0.0",
-      category: "On-chain Analytics",
-      identifier: "chainwatch.wallet-tracker",
-      publishedAt: "3 months ago",
-      lastReleased: "2 months ago",
-      features: [
-         "Multi-wallet tracking",
-         "Cross-chain support",
-         "Transaction alerts",
-         "Balance monitoring",
-      ],
-   },
-   {
-      id: "risk-scorer",
-      label: "Risk Scorer",
-      description:
-         "Combines on-chain signals into a Low, Medium, or High risk score using a configurable model.",
-      author: "Web3 Labs",
-      downloads: "3.6K",
-      rating: 4.5,
-      icon: "/icons/agents/risk-scorer.svg",
-      version: "0.8.2",
-      category: "Security",
-      identifier: "web3labs.risk-scorer",
-      publishedAt: "2 months ago",
-      lastReleased: "1 month ago",
-      features: [
-         "Configurable scoring model",
-         "Multi-signal aggregation",
-         "Low/Medium/High output",
-         "Explainable scores",
-      ],
-   },
-   {
-      id: "webhook",
-      label: "Webhook Agent",
-      description:
-         "Send structured data payloads to any external HTTP endpoint with custom headers and auth.",
-      author: "Provance",
-      downloads: "8.8K",
-      rating: 4.5,
-      icon: "/icons/agents/webhook.svg",
-      version: "1.0.3",
-      category: "Integrations",
-      identifier: "provance.webhook-agent",
-      publishedAt: "8 months ago",
-      lastReleased: "2 weeks ago",
-      features: [
-         "Custom headers",
-         "Bearer and API key auth",
-         "Retry on failure",
-         "Response validation",
-      ],
-   },
-];
+import { AGENTS, type Agent } from "@/services/agent.service";
 
 type ModalTab = "details" | "features" | "changelog";
 
@@ -372,9 +54,9 @@ function SectionHeader({
          <ChevronDown
             size={11}
             strokeWidth={2.5}
-            className={`text-sand/25 transition-transform shrink-0 ${open ? "" : "-rotate-90"}`}
+            className={`text-sand/50 transition-transform shrink-0 ${open ? "" : "-rotate-90"}`}
          />
-         <span className="text-[11px] font-semibold uppercase tracking-widest text-sand/35 flex-1 text-left">
+         <span className="text-[11px] font-semibold uppercase tracking-widest text-sand/55 flex-1 text-left">
             {label}
          </span>
          <span className="w-5 h-5 flex items-center justify-center text-[10px] font-bold text-ink bg-sand rounded-full leading-none shrink-0">
@@ -391,11 +73,11 @@ function AgentRow({
    onOpenDetail,
    onAddToCanvas,
 }: {
-   agent: AgentDef;
+   agent: Agent;
    installed: boolean;
-   onInstall: (agent: AgentDef) => void;
-   onOpenDetail: (agent: AgentDef) => void;
-   onAddToCanvas: (agent: AgentDef) => void;
+   onInstall: (agent: Agent) => void;
+   onOpenDetail: (agent: Agent) => void;
+   onAddToCanvas: (agent: Agent) => void;
 }) {
    return (
       <div
@@ -475,11 +157,11 @@ function AgentDetailModal({
    onInstall,
    onAddToCanvas,
 }: {
-   agent: AgentDef;
+   agent: Agent;
    installed: boolean;
    onClose: () => void;
-   onInstall: (agent: AgentDef) => void;
-   onAddToCanvas: (agent: AgentDef) => void;
+   onInstall: (agent: Agent) => void;
+   onAddToCanvas: (agent: Agent) => void;
 }) {
    const [tab, setTab] = useState<ModalTab>("details");
 
@@ -728,22 +410,15 @@ export function AddAgentSheet({ workflowId }: { workflowId: string }) {
    const { addNodes, addEdges, getNode } = useReactFlow();
    const [search, setSearch] = useState("");
    const [installedAgents, setInstalledAgents] =
-      useState<AgentDef[]>(DEFAULT_INSTALLED);
-   const [detailAgent, setDetailAgent] = useState<AgentDef | null>(null);
+      useState<Agent[]>(AGENTS);
+   const [detailAgent, setDetailAgent] = useState<Agent | null>(null);
    const [installedOpen, setInstalledOpen] = useState(true);
-   const [recommendedOpen, setRecommendedOpen] = useState(true);
-
    const installedIds = useMemo(
       () => new Set(installedAgents.map((a) => a.id)),
       [installedAgents],
    );
 
-   const marketplaceAgents = useMemo(
-      () => MARKETPLACE_AGENTS.filter((a) => !installedIds.has(a.id)),
-      [installedIds],
-   );
-
-   const filterFn = (a: AgentDef) => {
+   const filterFn = (a: Agent) => {
       const q = search.toLowerCase();
       return (
          a.label.toLowerCase().includes(q) ||
@@ -753,13 +428,12 @@ export function AddAgentSheet({ workflowId }: { workflowId: string }) {
    };
 
    const filteredInstalled = installedAgents.filter(filterFn);
-   const filteredRecommended = marketplaceAgents.filter(filterFn);
 
-   const handleInstall = (agent: AgentDef) => {
+   const handleInstall = (agent: Agent) => {
       setInstalledAgents((prev) => [...prev, agent]);
    };
 
-   const handleAddToCanvas = (agent: AgentDef) => {
+   const handleAddToCanvas = (agent: Agent) => {
       const newId = `${Date.now()}`;
       const source = sourceNodeId ? getNode(sourceNodeId) : null;
 
@@ -770,7 +444,11 @@ export function AddAgentSheet({ workflowId }: { workflowId: string }) {
             position: source
                ? { x: source.position.x + 110, y: source.position.y }
                : { x: 0, y: 0 },
-            data: { label: agent.label, icon: agent.icon },
+            data: {
+               label: agent.label,
+               icon: agent.icon,
+               agentId: agent.id,
+            },
          },
       ]);
 
@@ -859,34 +537,11 @@ export function AddAgentSheet({ workflowId }: { workflowId: string }) {
                      </>
                   )}
 
-                  {filteredRecommended.length > 0 && (
-                     <>
-                        <SectionHeader
-                           label="Recommended"
-                           count={filteredRecommended.length}
-                           open={recommendedOpen}
-                           onToggle={() => setRecommendedOpen((v) => !v)}
-                        />
-                        {recommendedOpen &&
-                           filteredRecommended.map((a) => (
-                              <AgentRow
-                                 key={a.id}
-                                 agent={a}
-                                 installed={false}
-                                 onInstall={handleInstall}
-                                 onOpenDetail={setDetailAgent}
-                                 onAddToCanvas={handleAddToCanvas}
-                              />
-                           ))}
-                     </>
+                  {filteredInstalled.length === 0 && (
+                     <p className="text-xs text-sand/30 text-center py-10">
+                        No agents found
+                     </p>
                   )}
-
-                  {filteredInstalled.length === 0 &&
-                     filteredRecommended.length === 0 && (
-                        <p className="text-xs text-sand/30 text-center py-10">
-                           No agents found
-                        </p>
-                     )}
                </div>
             </SheetContent>
          </Sheet>

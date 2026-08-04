@@ -6,7 +6,6 @@ import {
    ReactFlowProvider,
    Background,
    BackgroundVariant,
-   Panel,
    addEdge,
    useNodesState,
    useEdgesState,
@@ -16,8 +15,8 @@ import {
    type Viewport,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { Plus } from "lucide-react";
 import { AgentNodeComponent } from "./AgentNode";
+import { TriggerNodeComponent } from "./TriggerNode";
 import { AddAgentSheet } from "./AddAgentSheet";
 import { NodeConfigSheet } from "./NodeConfigSheet";
 import { EditorBottomPanel } from "./EditorBottomPanel";
@@ -62,7 +61,10 @@ function Canvas({ workflowId }: { workflowId: string }) {
    const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
    const [ready, setReady] = useState(false);
 
-   const nodeTypes = useMemo(() => ({ agent: AgentNodeComponent }), []);
+   const nodeTypes = useMemo(() => ({
+      agent: AgentNodeComponent,
+      trigger: TriggerNodeComponent,
+   }), []);
    const { openSheet } = useEditor();
 
    useLayoutEffect(() => {
@@ -70,6 +72,13 @@ function Canvas({ workflowId }: { workflowId: string }) {
       if (saved.nodes.length > 0 || saved.edges.length > 0) {
          setNodes(saved.nodes);
          setEdges(saved.edges);
+      } else {
+         setNodes([{
+            id: "trigger",
+            type: "trigger",
+            position: { x: 100, y: 100 },
+            data: { label: "Workflow Trigger", icon: "/icons/agents/trigger.svg", agentId: "trigger" },
+         }]);
       }
       setReady(true);
    }, [workflowId]);
@@ -111,10 +120,8 @@ function Canvas({ workflowId }: { workflowId: string }) {
             snapToGrid
             snapGrid={[20, 20]}
             onMoveEnd={onMoveEnd}
-            {...(savedViewport
-               ? { defaultViewport: savedViewport }
-               : { fitView: true, fitViewOptions: { maxZoom: 1 } }
-            )}
+            maxZoom={3}
+            defaultViewport={savedViewport ?? { x: 400, y: 280, zoom: 1 }}
             proOptions={{ hideAttribution: true }}
             style={{ background: "transparent" }}
          >
@@ -122,24 +129,13 @@ function Canvas({ workflowId }: { workflowId: string }) {
                variant={BackgroundVariant.Dots}
                gap={20}
                size={1}
-               color="#e3d8c559"
+               color="#e3d8c540"
             />
-            {nodes.length === 0 && (
-               <Panel position="top-center" style={{ top: "50%", transform: "translateY(-50%)", margin: 0 }}>
-                  <button
-                     onClick={() => openSheet(null)}
-                     style={{ cursor: "pointer" }}
-                     className="w-9 h-9 rounded-full bg-[#2d2d2d] border border-[#3a3a3a] text-sand/40 hover:border-orange hover:text-orange transition-colors inline-flex items-center justify-center"
-                  >
-                     <Plus size={16} strokeWidth={2} />
-                  </button>
-               </Panel>
-            )}
          </ReactFlow>
          <AddAgentSheet workflowId={workflowId} />
          <NodeConfigSheet />
          </div>
-         <EditorBottomPanel />
+         <EditorBottomPanel workflowId={workflowId} />
       </div>
    );
 }

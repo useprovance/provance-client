@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { workflowService, type LogEntry } from "@/services/workflow.service";
 
 interface EditorContextValue {
    sourceNodeId: string | null;
@@ -11,6 +12,9 @@ interface EditorContextValue {
    isConfigOpen: boolean;
    openConfig: (nodeId: string) => void;
    closeConfig: () => void;
+   logs: LogEntry[];
+   logsOpen: boolean;
+   setLogsOpen: (open: boolean) => void;
 }
 
 const EditorContext = createContext<EditorContextValue | null>(null);
@@ -20,6 +24,8 @@ export function EditorProvider({ children }: { children: ReactNode }) {
    const [isSheetOpen, setIsSheetOpen] = useState(false);
    const [configNodeId, setConfigNodeId] = useState<string | null>(null);
    const [isConfigOpen, setIsConfigOpen] = useState(false);
+   const [logs, setLogs] = useState<LogEntry[]>([]);
+   const [logsOpen, setLogsOpen] = useState(false);
 
    const openSheet = useCallback((id: string | null) => {
       setSourceNodeId(id);
@@ -41,8 +47,21 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       setConfigNodeId(null);
    }, []);
 
+   const addLog = useCallback((entry: LogEntry) => {
+      setLogs((prev) => [...prev, entry]);
+      setLogsOpen(true);
+   }, []);
+
+   useEffect(() => {
+      workflowService.registerLogger(addLog);
+   }, [addLog]);
+
    return (
-      <EditorContext.Provider value={{ sourceNodeId, isSheetOpen, openSheet, closeSheet, configNodeId, isConfigOpen, openConfig, closeConfig }}>
+      <EditorContext.Provider value={{
+         sourceNodeId, isSheetOpen, openSheet, closeSheet,
+         configNodeId, isConfigOpen, openConfig, closeConfig,
+         logs, logsOpen, setLogsOpen,
+      }}>
          {children}
       </EditorContext.Provider>
    );

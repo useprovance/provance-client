@@ -51,7 +51,25 @@ export interface UpdateNodePositionInput {
   position: { x: number; y: number };
 }
 
+export interface LogEntry {
+  message: string;
+  time: string;
+}
+
 export class WorkflowService {
+  private logCallback?: (entry: LogEntry) => void;
+
+  registerLogger(callback: (entry: LogEntry) => void) {
+    this.logCallback = callback;
+  }
+
+  log(message: string) {
+    this.logCallback?.({
+      message,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+    });
+  }
+
   static async create(input: CreateWorkflowInput): Promise<Workflow> {
     // TODO: wire to Supabase
     const now = new Date().toISOString();
@@ -115,3 +133,5 @@ export class WorkflowService {
     void input;
   }
 }
+
+export const workflowService = new WorkflowService();

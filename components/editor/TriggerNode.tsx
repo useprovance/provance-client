@@ -1,38 +1,29 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
    Handle,
    Position,
-   useReactFlow,
    useEdges,
-   useUpdateNodeInternals,
+   useReactFlow,
    type NodeProps,
 } from "@xyflow/react";
-import { Plus } from "lucide-react";
+import { Plus, Zap, FlaskConical } from "lucide-react";
+import { CursorClick } from "@/assets/CursorClick";
+import { workflowService } from "@/services/workflow.service";
 import { NodeToolbar } from "./NodeToolbar";
 import { useEditor } from "./EditorContext";
 import type { AgentNode } from "./editor.constants";
-import Image from "next/image";
 
 const BOX_SIZE = 64;
 
-export function AgentNodeComponent({
-   id,
-   data,
-   selected,
-}: NodeProps<AgentNode>) {
-   const { deleteElements } = useReactFlow();
+export function TriggerNodeComponent({ id, selected }: NodeProps<AgentNode>) {
    const { openSheet, openConfig } = useEditor();
-   const updateNodeInternals = useUpdateNodeInternals();
+   const { deleteElements } = useReactFlow();
    const edges = useEdges();
    const hasOutgoing = edges.some((e) => e.source === id);
    const [toolbarVisible, setToolbarVisible] = useState(false);
    const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-   useEffect(() => {
-      updateNodeInternals(id);
-   }, [id, hasOutgoing, updateNodeInternals]);
 
    const showToolbar = () => {
       if (hideTimer.current) clearTimeout(hideTimer.current);
@@ -50,16 +41,50 @@ export function AgentNodeComponent({
          onMouseEnter={showToolbar}
          onMouseLeave={hideToolbar}
       >
+         {/* Zap — slides out left on hover */}
+         <div
+            className="absolute pointer-events-none transition-all duration-200"
+            style={{
+               left: -28,
+               top: BOX_SIZE / 2,
+               transform: toolbarVisible ? "translateY(-50%) translateX(-8px)" : "translateY(-50%) translateX(0)",
+               opacity: toolbarVisible ? 0 : 1,
+            }}
+         >
+            <Zap size={16} strokeWidth={0} fill="#d95e28" />
+         </div>
+
+         {/* Execute button — slides in from left on hover */}
+         <button
+            onClick={(e) => { e.stopPropagation(); workflowService.log("Execute workflow clicked"); }}
+            className="nodrag absolute flex items-center gap-1.5 px-3 py-1.5 bg-orange text-white text-[11px] font-semibold rounded-sm transition-all duration-200 cursor-pointer hover:bg-orange/90 whitespace-nowrap"
+            style={{
+               right: "100%",
+               top: BOX_SIZE / 2,
+               transform: toolbarVisible ? "translateY(-50%) translateX(-10px)" : "translateY(-50%) translateX(0)",
+               opacity: toolbarVisible ? 1 : 0,
+               pointerEvents: toolbarVisible ? "auto" : "none",
+               marginRight: 8,
+            }}
+         >
+            <FlaskConical size={11} strokeWidth={2} />
+            Execute workflow
+         </button>
+
          {/* Box */}
          <div
             onClick={() => openConfig(id)}
-            style={{ width: BOX_SIZE, height: BOX_SIZE }}
+            style={{
+               width: BOX_SIZE,
+               height: BOX_SIZE,
+               borderRadius: "23px 6px 6px 23px",
+            }}
             className={`
-               relative flex items-center justify-center rounded-md border
-               bg-[#2d2d2d] transition-colors cursor-pointer
-               ${toolbarVisible ? "ring-1 ring-sand/20" : ""}
-               ${selected ? "border-orange shadow-[0_0_0_1px_#d95e28]" : "border-[#3a3a3a]"}
-            `}
+          relative flex items-center justify-center border
+          bg-[#2d2d2d] transition-colors cursor-pointer
+          ${toolbarVisible ? "ring-1 ring-orange/30" : ""}
+          ${selected ? "border-orange shadow-[0_0_0_1px_#d95e28]" : "border-[#3a3a3a]"}
+        `}
          >
             <NodeToolbar
                visible={toolbarVisible || (selected ?? false)}
@@ -72,29 +97,21 @@ export function AgentNodeComponent({
             <Handle
                type="target"
                position={Position.Left}
+               className="!opacity-0 !w-1 !h-1 !pointer-events-none"
+            />
+
+            <Handle
+               type="source"
+               position={Position.Right}
                className="!w-2.5 !h-2.5 !bg-[#2d2d2d] !border !border-sand/50 !rounded-full"
             />
-            {hasOutgoing && (
-               <Handle
-                  type="source"
-                  position={Position.Right}
-                  className="!w-2.5 !h-2.5 !bg-[#2d2d2d] !border !border-sand/50 !rounded-full"
-               />
-            )}
 
-            <Image
-               src={data.icon}
-               alt={data.label}
-               width={28}
-               height={28}
-               className="object-contain"
-            />
-
+            <CursorClick size={42} color="#e3d8c5" strokeWidth={1.45} />
          </div>
 
          {/* Label */}
          <p className="mt-2 text-[11px] font-medium text-sand text-center leading-snug w-25 -translate-x-[18.1px]">
-            {data.label}
+            Workflow Trigger
          </p>
 
          {/* Plus button */}
