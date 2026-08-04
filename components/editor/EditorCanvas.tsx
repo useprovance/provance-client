@@ -17,6 +17,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { AgentNodeComponent } from "./AgentNode";
 import { TriggerNodeComponent } from "./TriggerNode";
+import { EditorEdge } from "./EditorEdge";
 import { AddAgentSheet } from "./AddAgentSheet";
 import { NodeConfigSheet } from "./NodeConfigSheet";
 import { EditorBottomPanel } from "./EditorBottomPanel";
@@ -61,13 +62,14 @@ function Canvas({ workflowId }: { workflowId: string }) {
       agent: AgentNodeComponent,
       trigger: TriggerNodeComponent,
    }), []);
+   const edgeTypes = useMemo(() => ({ provance: EditorEdge }), []);
    const { openSheet, configNodeId } = useEditor();
 
    useLayoutEffect(() => {
       const saved = workflowService.loadCanvas(workflowId);
       if (saved.nodes.length > 0 || saved.edges.length > 0) {
          setNodes(saved.nodes.map(toRFNode));
-         setEdges(saved.edges.map((e) => ({ ...e, type: "smoothstep" })));
+         setEdges(saved.edges.map((e) => ({ ...e, type: "provance" })));
       } else {
          setNodes([{
             id: "trigger",
@@ -104,8 +106,9 @@ function Canvas({ workflowId }: { workflowId: string }) {
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
             defaultEdgeOptions={{
-               type: "smoothstep",
+               type: "provance",
                style: { stroke: "rgba(227,216,197,0.3)", strokeWidth: 1.5 },
             }}
             snapToGrid

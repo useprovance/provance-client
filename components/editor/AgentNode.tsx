@@ -32,7 +32,7 @@ export function AgentNodeComponent({
 
    useEffect(() => {
       updateNodeInternals(id);
-   }, [id, hasOutgoing, updateNodeInternals]);
+   }, [id, updateNodeInternals]);
 
    const showToolbar = () => {
       if (hideTimer.current) clearTimeout(hideTimer.current);
@@ -74,13 +74,11 @@ export function AgentNodeComponent({
                position={Position.Left}
                className="!w-2.5 !h-2.5 !bg-[#2d2d2d] !border !border-sand/50 !rounded-full"
             />
-            {hasOutgoing && (
-               <Handle
-                  type="source"
-                  position={Position.Right}
-                  className="!w-2.5 !h-2.5 !bg-[#2d2d2d] !border !border-sand/50 !rounded-full"
-               />
-            )}
+            <Handle
+               type="source"
+               position={Position.Right}
+               className="!w-2.5 !h-2.5 !bg-[#2d2d2d] !border !border-sand/50 !rounded-full !z-20"
+            />
 
             <Image
                src={data.icon}
@@ -97,7 +95,7 @@ export function AgentNodeComponent({
             {data.label}
          </p>
 
-         {/* Plus button */}
+         {/* Plus button — only when no outgoing connection */}
          {!hasOutgoing && (
             <div
                className="nodrag absolute flex items-center"
@@ -105,6 +103,7 @@ export function AgentNodeComponent({
                   top: BOX_SIZE / 2,
                   left: BOX_SIZE,
                   transform: "translateY(-50%)",
+                  zIndex: 0,
                }}
             >
                <div className="w-6 h-px bg-sand/20" />
@@ -114,11 +113,6 @@ export function AgentNodeComponent({
                >
                   <Plus size={10} strokeWidth={2} />
                </button>
-               <Handle
-                  type="source"
-                  position={Position.Right}
-                  className="!opacity-0 !w-1 !h-1"
-               />
             </div>
          )}
       </div>

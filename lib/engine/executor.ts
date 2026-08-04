@@ -47,19 +47,14 @@ function buildInputItems(
 ): Record<string, unknown>[] {
   if (parentIds.length === 0) return [{}];
 
-  // Find the parent with the most items (the one we iterate over)
-  let iterItems: Record<string, unknown>[] = [{}];
-  for (const parentId of parentIds) {
-    const items = context.get(parentId) ?? [{}];
-    if (items.length > iterItems.length) iterItems = items;
-  }
+  const allItems = parentIds.map((id) => context.get(id) ?? [{}]);
+  const maxLen = Math.max(...allItems.map((a) => a.length));
 
-  // Merge single-item parents into every iteration
-  return iterItems.map((item) => {
-    const merged: Record<string, unknown> = { ...item };
-    for (const parentId of parentIds) {
-      const items = context.get(parentId) ?? [{}];
-      if (items.length === 1) Object.assign(merged, items[0]);
+  // Zip all parents: iteration i gets item[i] from each parent (or item[0] if that parent has only 1)
+  return Array.from({ length: maxLen }, (_, i) => {
+    const merged: Record<string, unknown> = {};
+    for (const items of allItems) {
+      Object.assign(merged, items[i] ?? items[0]);
     }
     return merged;
   });
@@ -124,6 +119,7 @@ export async function executeWorkflow(
     let nodeErrored = false;
 
     for (let i = 0; i < resolvedItems.length; i++) {
+      if (i > 0) await new Promise((r) => setTimeout(r, 1000));
       const input = resolvedItems[i];
       const nodeStart = new Date().toISOString();
       const t0 = Date.now();

@@ -451,7 +451,7 @@ export function AddAgentSheet({ workflowId }: { workflowId: string }) {
             id: `e${sourceNodeId}-${newId}`,
             source: sourceNodeId,
             target: newId,
-            type: "smoothstep",
+            type: "provance",
             style: EDGE_STYLE,
          }]);
       }
