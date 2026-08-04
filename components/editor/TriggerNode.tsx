@@ -11,6 +11,8 @@ import {
 import { Plus, Zap, FlaskConical } from "lucide-react";
 import { CursorClick } from "@/assets/CursorClick";
 import { workflowService } from "@/services/workflow.service";
+import { executeWorkflow } from "@/lib/engine/executor";
+import type { NodeRunResult } from "@/lib/engine/types";
 import { NodeToolbar } from "./NodeToolbar";
 import { useEditor } from "./EditorContext";
 import type { AgentNode } from "./editor.constants";
@@ -18,7 +20,7 @@ import type { AgentNode } from "./editor.constants";
 const BOX_SIZE = 64;
 
 export function TriggerNodeComponent({ id, selected }: NodeProps<AgentNode>) {
-   const { openSheet, openConfig } = useEditor();
+   const { workflowId, openSheet, openConfig, addRun } = useEditor();
    const { deleteElements } = useReactFlow();
    const edges = useEdges();
    const hasOutgoing = edges.some((e) => e.source === id);
@@ -56,7 +58,20 @@ export function TriggerNodeComponent({ id, selected }: NodeProps<AgentNode>) {
 
          {/* Execute button — slides in from left on hover */}
          <button
-            onClick={(e) => { e.stopPropagation(); workflowService.log("Execute workflow clicked"); }}
+            onClick={(e) => {
+               e.stopPropagation();
+               const canvas = workflowService.loadCanvas(workflowId);
+               workflowService.log("Starting workflow...");
+               executeWorkflow(workflowId, canvas, (result: NodeRunResult) => {
+                  const icon = result.status === "success" ? "✓" : "✗";
+                  workflowService.log(`${icon} ${result.label} — ${result.durationMs}ms${result.error ? `: ${result.error}` : ""}`);
+               }).then((run) => {
+                  addRun(run);
+                  workflowService.log(run.status === "success" ? "Workflow completed. See Runs tab for output." : `Workflow failed: ${run.error ?? "unknown error"}`);
+               }).catch((err: unknown) => {
+                  workflowService.log(`Error: ${err instanceof Error ? err.message : String(err)}`);
+               });
+            }}
             className="nodrag absolute flex items-center gap-1.5 px-3 py-1.5 bg-orange text-white text-[11px] font-semibold rounded-sm transition-all duration-200 cursor-pointer hover:bg-orange/90 whitespace-nowrap"
             style={{
                right: "100%",

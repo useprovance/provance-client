@@ -15,6 +15,7 @@ import { PublishModal } from "./PublishModal";
 import { AiChatSheet } from "./AiChatSheet";
 import { useEditor } from "./EditorContext";
 import type { WorkflowRun, NodeRunResult } from "@/lib/engine/types";
+// WorkflowRun used by RunHistoryRow prop type
 
 type PanelTab = "logs" | "runs";
 
@@ -105,10 +106,9 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
   const [aiOpen, setAiOpen] = useState(false);
   const [running, setRunning] = useState(false);
   const [lastRun, setLastRun] = useState<WorkflowRun | null>(null);
-  const [runHistory, setRunHistory] = useState<WorkflowRun[]>([]);
 
   const { getNodes, getEdges } = useReactFlow();
-  const { logs, logsOpen, setLogsOpen } = useEditor();
+  const { logs, logsOpen, setLogsOpen, runs } = useEditor();
   const collapsed = !logsOpen;
 
   const handleTestRun = useCallback(async () => {
@@ -130,7 +130,6 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
       const json = await res.json();
       if (json.success) {
         setLastRun(json.data);
-        setRunHistory((prev) => [json.data, ...prev.slice(0, 49)]);
       } else {
         console.error("Run failed:", json.error);
       }
@@ -245,14 +244,14 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
 
             {tab === "runs" && (
               <>
-                {runHistory.length === 0 ? (
+                {runs.length === 0 ? (
                   <div className="flex-1 flex items-center justify-center">
                     <p className="text-[13px] text-sand/30 text-center max-w-xs leading-relaxed">
-                      No runs yet. Click Test Run to start.
+                      No runs yet. Hit Execute on the trigger to start.
                     </p>
                   </div>
                 ) : (
-                  runHistory.map((run) => (
+                  runs.map((run) => (
                     <RunHistoryRow key={run.id} run={run} nodeLabels={nodeLabels} />
                   ))
                 )}

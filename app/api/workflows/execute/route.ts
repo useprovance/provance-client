@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeWorkflow } from "@/lib/engine/executor";
-import type { WorkflowCanvas } from "@/lib/engine/types";
+import type { EngineCanvas } from "@/lib/engine/types";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { workflowId, canvas } = body as {
       workflowId: string;
-      canvas: WorkflowCanvas;
+      canvas: EngineCanvas;
     };
 
     if (!workflowId || !canvas) {

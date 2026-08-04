@@ -133,7 +133,7 @@ function Canvas({ workflowId }: { workflowId: string }) {
 
 export function EditorCanvas({ workflowId }: { workflowId: string }) {
    return (
-      <EditorProvider>
+      <EditorProvider workflowId={workflowId}>
          <ReactFlowProvider>
             <Canvas workflowId={workflowId} />
          </ReactFlowProvider>

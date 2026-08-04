@@ -1,30 +1,27 @@
-export type NodeStatus = "pending" | "running" | "success" | "error" | "skipped";
+export type NodeStatus = "pending" | "running" | "success" | "error";
 
-export interface WorkflowNode {
+export interface EngineNode {
   id: string;
-  type: string;
-  data: {
-    label: string;
-    icon: string;
-    agentId?: string;
-    config?: Record<string, unknown>;
-  };
+  nodeId: string;
+  type: "agent" | "trigger";
   position: { x: number; y: number };
+  config: Record<string, Record<string, string>>;
 }
 
-export interface WorkflowEdge {
+export interface EngineEdge {
   id: string;
   source: string;
   target: string;
 }
 
-export interface WorkflowCanvas {
-  nodes: WorkflowNode[];
-  edges: WorkflowEdge[];
+export interface EngineCanvas {
+  nodes: EngineNode[];
+  edges: EngineEdge[];
 }
 
 export interface NodeRunResult {
   nodeId: string;
+  label: string;
   status: NodeStatus;
   output: Record<string, unknown>;
   error?: string;
@@ -36,7 +33,7 @@ export interface NodeRunResult {
 export interface WorkflowRun {
   id: string;
   workflowId: string;
-  status: "running" | "success" | "error" | "cancelled";
+  status: "running" | "success" | "error";
   startedAt: string;
   finishedAt?: string;
   nodeResults: NodeRunResult[];
