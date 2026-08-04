@@ -3,6 +3,29 @@ import { callAgent } from "./agent-registry";
 import { agentService } from "@/services/agent.service";
 import type { EngineCanvas, WorkflowRun, NodeRunResult } from "./types";
 
+async function orchestrateInput(
+  sourceOutput: Record<string, unknown>,
+  targetAgentId: string
+): Promise<Record<string, unknown>> {
+  try {
+    console.log(`[orchestrator] calling AI to map input for "${targetAgentId}"...`);
+    const res = await fetch("/api/ai/orchestrate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sourceOutput, targetAgentId }),
+    });
+    const json = await res.json() as { success: boolean; data: Record<string, unknown> };
+    if (json.success) {
+      console.log(`[orchestrator] "${targetAgentId}" mapped input:`, json.data);
+      return json.data;
+    }
+    console.warn(`[orchestrator] AI mapping failed for "${targetAgentId}", using raw output`);
+  } catch (err) {
+    console.error(`[orchestrator] error for "${targetAgentId}":`, err);
+  }
+  return sourceOutput;
+}
+
 // If an output object contains an array of objects, extract those as individual items.
 // DexScreener returns { tokens: [{token_address, chain, ...}] } — we iterate over tokens.
 // If no array is found, treat the whole output as a single item.
@@ -72,19 +95,39 @@ export async function executeWorkflow(
     const agentLabel = agentService.getById(agentId)?.label ?? agentId;
     const graphNode = graph.get(node.id)!;
 
-    // Build the list of inputs — one per iteration
-    const inputItems = startNodes.has(node.id)
-      ? [{ ...(node.config?.parameters ?? {}) }]
-      : buildInputItems(graphNode.parents, context);
+    const staticConfig = (node.config?.parameters ?? {}) as Record<string, string>;
+    const links = (node.config?.["__links"] ?? {}) as Record<string, string>;
+    const linkedFieldKeys = new Set(Object.keys(links));
 
+    // Static config only for fields the user did NOT link to a parent output
+    const staticOverrides = Object.fromEntries(
+      Object.entries(staticConfig).filter(([k]) => !linkedFieldKeys.has(k))
+    );
+
+    const isStartNode = startNodes.has(node.id);
+    const parentItems = isStartNode ? [{}] : buildInputItems(graphNode.parents, context);
+
+    const resolvedItems = await Promise.all(
+      parentItems.map(async (item) => {
+        const orchestrated = isStartNode ? item : await orchestrateInput(item, agentId);
+        // Explicitly linked fields: pull the exact key the user chose from parent output
+        const linkedValues = Object.fromEntries(
+          Object.entries(links)
+            .map(([field, parentKey]) => [field, item[parentKey]])
+            .filter(([, v]) => v !== undefined)
+        );
+        // Priority: AI baseline → explicit linked values → static (unlinked) config
+        return { ...orchestrated, ...linkedValues, ...staticOverrides };
+      })
+    );
     const nodeOutputItems: Record<string, unknown>[] = [];
     let nodeErrored = false;
 
-    for (let i = 0; i < inputItems.length; i++) {
-      const input = inputItems[i];
+    for (let i = 0; i < resolvedItems.length; i++) {
+      const input = resolvedItems[i];
       const nodeStart = new Date().toISOString();
       const t0 = Date.now();
-      const iterLabel = inputItems.length > 1 ? `${agentLabel} [${i + 1}/${inputItems.length}]` : agentLabel;
+      const iterLabel = resolvedItems.length > 1 ? `${agentLabel} [${i + 1}/${resolvedItems.length}]` : agentLabel;
 
       let result: NodeRunResult;
 
@@ -96,6 +139,7 @@ export async function executeWorkflow(
           nodeId: node.id,
           label: iterLabel,
           status: "success",
+          input,
           output,
           startedAt: nodeStart,
           finishedAt: new Date().toISOString(),
@@ -109,6 +153,7 @@ export async function executeWorkflow(
           nodeId: node.id,
           label: iterLabel,
           status: "error",
+          input,
           output: {},
           error,
           startedAt: nodeStart,

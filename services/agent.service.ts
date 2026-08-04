@@ -6,6 +6,11 @@ export interface AgentField {
    options?: string[];
 }
 
+export interface AgentOutput {
+   key: string;
+   label: string;
+}
+
 export interface NodeConfig {
    key: string;
    label: string;
@@ -29,6 +34,7 @@ export interface Agent {
    lastReleased: string;
    url: string;
    config: NodeConfig[];
+   outputs: AgentOutput[];
 }
 
 const SETTINGS_CONFIG: NodeConfig = {
@@ -57,6 +63,18 @@ export const AGENTS: Agent[] = [
       publishedAt: "2 months ago",
       lastReleased: "1 week ago",
       url: "http://localhost:3101",
+      outputs: [
+         { key: "token_address", label: "Token address" },
+         { key: "symbol", label: "Symbol" },
+         { key: "name", label: "Name" },
+         { key: "chain", label: "Chain" },
+         { key: "price_usd", label: "Price (USD)" },
+         { key: "liquidity_usd", label: "Liquidity (USD)" },
+         { key: "volume_24h", label: "Volume 24h" },
+         { key: "age_minutes", label: "Age (minutes)" },
+         { key: "dex", label: "DEX" },
+         { key: "url", label: "DexScreener URL" },
+      ],
       features: [
          "New token detection on Base",
          "Liquidity and volume filtering",
@@ -92,6 +110,18 @@ export const AGENTS: Agent[] = [
       publishedAt: "4 months ago",
       lastReleased: "5 weeks ago",
       url: "http://localhost:3102",
+      outputs: [
+         { key: "token_address", label: "Token address" },
+         { key: "chain", label: "Chain" },
+         { key: "is_honeypot", label: "Is honeypot" },
+         { key: "passed", label: "Passed security check" },
+         { key: "risk_level", label: "Risk level" },
+         { key: "risk_flags", label: "Risk flags" },
+         { key: "buy_tax", label: "Buy tax (%)" },
+         { key: "sell_tax", label: "Sell tax (%)" },
+         { key: "owner_renounced", label: "Ownership renounced" },
+         { key: "holder_count", label: "Holder count" },
+      ],
       features: [
          "Honeypot detection",
          "Rug pull analysis",
@@ -126,6 +156,14 @@ export const AGENTS: Agent[] = [
       publishedAt: "2 months ago",
       lastReleased: "2 weeks ago",
       url: "http://localhost:3103",
+      outputs: [
+         { key: "token_address", label: "Token address" },
+         { key: "is_honeypot", label: "Is honeypot" },
+         { key: "can_sell", label: "Can sell" },
+         { key: "buy_tax", label: "Buy tax (%)" },
+         { key: "sell_tax", label: "Sell tax (%)" },
+         { key: "gas_estimate", label: "Gas estimate" },
+      ],
       features: [
          "Live buy/sell simulation",
          "Tax detection from simulation",
@@ -159,6 +197,12 @@ export const AGENTS: Agent[] = [
       publishedAt: "2 months ago",
       lastReleased: "1 week ago",
       url: "http://localhost:3104",
+      outputs: [
+         { key: "decision", label: "Decision (buy / ignore)" },
+         { key: "confidence", label: "Confidence (%)" },
+         { key: "reasoning", label: "Reasoning" },
+         { key: "token_address", label: "Token address" },
+      ],
       features: [
          "GPT-4o powered analysis",
          "Hard reject rules",
@@ -193,6 +237,11 @@ export const AGENTS: Agent[] = [
       publishedAt: "7 months ago",
       lastReleased: "2 weeks ago",
       url: "http://localhost:3105",
+      outputs: [
+         { key: "sent", label: "Message sent" },
+         { key: "message_id", label: "Message ID" },
+         { key: "chat_id", label: "Chat ID" },
+      ],
       features: [
          "Channel and group support",
          "Custom message templates",

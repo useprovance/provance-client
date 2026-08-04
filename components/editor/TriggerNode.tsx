@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useCallback } from "react";
 import {
    Handle,
    Position,
@@ -26,6 +26,21 @@ export function TriggerNodeComponent({ id, selected }: NodeProps<AgentNode>) {
    const hasOutgoing = edges.some((e) => e.source === id);
    const [toolbarVisible, setToolbarVisible] = useState(false);
    const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+   const handleExecute = useCallback(async () => {
+      const canvas = workflowService.loadCanvas(workflowId);
+      workflowService.log("Starting workflow...");
+      try {
+         const run = await executeWorkflow(workflowId, canvas, (result: NodeRunResult) => {
+            const icon = result.status === "success" ? "✓" : "✗";
+            workflowService.log(`${icon} ${result.label} — ${result.durationMs}ms${result.error ? `: ${result.error}` : ""}`);
+         });
+         addRun(run);
+         workflowService.log(run.status === "success" ? "Workflow completed. See Runs tab for output." : `Workflow failed: ${run.error ?? "unknown error"}`);
+      } catch (err) {
+         workflowService.log(`Error: ${err instanceof Error ? err.message : String(err)}`);
+      }
+   }, [workflowId, addRun]);
 
    const showToolbar = () => {
       if (hideTimer.current) clearTimeout(hideTimer.current);
@@ -58,20 +73,7 @@ export function TriggerNodeComponent({ id, selected }: NodeProps<AgentNode>) {
 
          {/* Execute button — slides in from left on hover */}
          <button
-            onClick={(e) => {
-               e.stopPropagation();
-               const canvas = workflowService.loadCanvas(workflowId);
-               workflowService.log("Starting workflow...");
-               executeWorkflow(workflowId, canvas, (result: NodeRunResult) => {
-                  const icon = result.status === "success" ? "✓" : "✗";
-                  workflowService.log(`${icon} ${result.label} — ${result.durationMs}ms${result.error ? `: ${result.error}` : ""}`);
-               }).then((run) => {
-                  addRun(run);
-                  workflowService.log(run.status === "success" ? "Workflow completed. See Runs tab for output." : `Workflow failed: ${run.error ?? "unknown error"}`);
-               }).catch((err: unknown) => {
-                  workflowService.log(`Error: ${err instanceof Error ? err.message : String(err)}`);
-               });
-            }}
+            onClick={(e) => { e.stopPropagation(); void handleExecute(); }}
             className="nodrag absolute flex items-center gap-1.5 px-3 py-1.5 bg-orange text-white text-[11px] font-semibold rounded-sm transition-all duration-200 cursor-pointer hover:bg-orange/90 whitespace-nowrap"
             style={{
                right: "100%",

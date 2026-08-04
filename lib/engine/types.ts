@@ -23,6 +23,7 @@ export interface NodeRunResult {
   nodeId: string;
   label: string;
   status: NodeStatus;
+  input: Record<string, unknown>;
   output: Record<string, unknown>;
   error?: string;
   startedAt: string;

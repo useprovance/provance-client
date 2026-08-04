@@ -15,7 +15,6 @@ import { PublishModal } from "./PublishModal";
 import { AiChatSheet } from "./AiChatSheet";
 import { useEditor } from "./EditorContext";
 import type { WorkflowRun, NodeRunResult } from "@/lib/engine/types";
-// WorkflowRun used by RunHistoryRow prop type
 
 type PanelTab = "logs" | "runs";
 
@@ -55,14 +54,23 @@ function NodeResultRow({ result, label }: { result: NodeRunResult; label: string
         <span className="text-[11px] text-sand/50 shrink-0">{formatTime(result.startedAt)}</span>
       </button>
       {expanded && (
-        <div className="px-4 pb-3">
-          {result.error ? (
-            <p className="text-[11px] text-red-400 font-mono leading-relaxed">{result.error}</p>
-          ) : (
-            <pre className="text-[10px] text-sand/80 font-mono leading-relaxed overflow-x-auto whitespace-pre-wrap break-all">
-              {JSON.stringify(result.output, null, 2)}
+        <div className="px-4 pb-3 flex flex-col gap-3">
+          <div>
+            <p className="text-[10px] text-sand/40 uppercase tracking-wider mb-1">Input</p>
+            <pre className="text-[10px] text-sand/70 font-mono leading-relaxed overflow-x-auto whitespace-pre-wrap break-all">
+              {JSON.stringify(result.input, null, 2)}
             </pre>
-          )}
+          </div>
+          <div>
+            <p className="text-[10px] text-sand/40 uppercase tracking-wider mb-1">Output</p>
+            {result.error ? (
+              <p className="text-[11px] text-red-400 font-mono leading-relaxed">{result.error}</p>
+            ) : (
+              <pre className="text-[10px] text-sand/80 font-mono leading-relaxed overflow-x-auto whitespace-pre-wrap break-all">
+                {JSON.stringify(result.output, null, 2)}
+              </pre>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -90,8 +98,8 @@ function RunHistoryRow({ run, nodeLabels }: { run: WorkflowRun; nodeLabels: Reco
       </button>
       {expanded && run.nodeResults.length > 0 && (
         <div className="pl-6 pb-2">
-          {run.nodeResults.map((r) => (
-            <NodeResultRow key={r.nodeId} result={r} label={nodeLabels[r.nodeId] ?? r.nodeId} />
+          {run.nodeResults.map((r, i) => (
+            <NodeResultRow key={`${r.nodeId}-${i}`} result={r} label={r.label} />
           ))}
         </div>
       )}

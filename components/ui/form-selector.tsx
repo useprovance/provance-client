@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
+import Image from "next/image";
 import { Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -17,6 +18,7 @@ export interface SelectOption {
   value: string;
   label: string;
   description?: string;
+  icon?: string;
 }
 
 interface FormSelectorProps {
@@ -31,6 +33,7 @@ interface FormSelectorProps {
   error?: string;
   touched?: boolean;
   className?: string;
+  prefix?: ReactNode;
 }
 
 export function FormSelector({
@@ -45,6 +48,7 @@ export function FormSelector({
   error,
   touched = false,
   className,
+  prefix,
 }: FormSelectorProps) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<SelectOption | null>(null);
@@ -70,12 +74,12 @@ export function FormSelector({
 
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <button
+          <div
             id={id}
-            type="button"
-            disabled={disabled}
+            role="button"
+            aria-disabled={disabled}
             className={cn(
-              "flex h-[42px] w-full items-center justify-between rounded-sm border bg-[#0c0c0c] px-3 text-[13px] transition-colors outline-none",
+              "flex h-[42px] w-full items-center justify-between rounded-sm border bg-[#0c0c0c] text-[13px] transition-colors outline-none overflow-hidden cursor-pointer",
               hasError
                 ? "border-red-500/60"
                 : "border-[#2a2a2a] hover:border-sand/20 focus:border-sand/30 focus:ring-2 focus:ring-sand/10",
@@ -83,9 +87,17 @@ export function FormSelector({
               disabled && "opacity-50 cursor-not-allowed"
             )}
           >
-            <span className="truncate">{selected ? selected.label : placeholder}</span>
-            <ChevronDown size={14} strokeWidth={1.5} className={cn("text-sand/40 shrink-0 transition-transform", open && "rotate-180")} />
-          </button>
+            {prefix}
+            <span className="flex-1 flex items-center gap-2 px-3 min-w-0">
+              {selected?.icon && (
+                <Image src={selected.icon} alt="" width={16} height={16} className="object-contain shrink-0 opacity-80" />
+              )}
+              {selected
+                ? <span className="truncate">{selected.label}</span>
+                : <span className="text-sand/20">{placeholder}</span>}
+            </span>
+            <ChevronDown size={14} strokeWidth={1.5} className={cn("text-sand/40 shrink-0 transition-transform mr-3", open && "rotate-180")} />
+          </div>
         </PopoverTrigger>
 
         <PopoverContent
@@ -113,11 +125,11 @@ export function FormSelector({
                       onSelect={() => handleSelect(opt)}
                       className="flex items-center justify-between px-3 py-2.5 cursor-pointer rounded-none border-b border-[#1a1a1a] last:border-0 text-[13px] text-sand/60 hover:text-sand aria-selected:bg-white/5 aria-selected:text-sand"
                     >
-                      <div className="flex flex-col">
-                        <span className={cn(isSelected && "text-orange")}>{opt.label}</span>
-                        {opt.description && (
-                          <span className="text-[11px] text-sand/30 mt-0.5">{opt.description}</span>
+                      <div className="flex items-center gap-2.5">
+                        {opt.icon && (
+                          <Image src={opt.icon} alt="" width={18} height={18} className="object-contain shrink-0 opacity-80" />
                         )}
+                        <span className={cn(isSelected && "text-orange")}>{opt.label}</span>
                       </div>
                       <Check
                         size={13}
