@@ -5,152 +5,32 @@ import { Search, Store, Layers, TrendingUp, Users } from "lucide-react";
 import { FormInput } from "@/components/ui/form-input";
 import { AgentCard, type Agent } from "@/components/dashboard/AgentCard";
 import Footer from "@/components/landing-page/Footer";
+import { agentService } from "@/services/agent.service";
 
-type Category =
-   | "All"
-   | "DeFi"
-   | "NFT"
-   | "Social"
-   | "Analytics"
-   | "Notifications";
-
-const CATEGORIES: Category[] = [
-   "All",
-   "DeFi",
-   "NFT",
-   "Social",
-   "Analytics",
-   "Notifications",
-];
+const CATEGORIES = ["All", ...Array.from(new Set(agentService.getAll().map((a) => a.category)))];
 
 interface MarketplaceAgent extends Agent {
-   category: Category;
+   category: string;
    totalRuns: number;
 }
 
-const MARKETPLACE_AGENTS: MarketplaceAgent[] = [
-   {
-      id: "m1",
-      name: "DeFi Protocol Trigger",
-      icon: "/icons/agents/trigger.svg",
-      status: "active",
-      lastRun: "2 min ago",
-      runsToday: 142,
-      earned: "Free",
-      workflow: "DeFi",
-      author: "Provance",
-      category: "DeFi",
-      totalRuns: 48200,
-   },
-   {
-      id: "m2",
-      name: "DefiLlama Agent",
-      icon: "/icons/agents/defillama.svg",
-      status: "active",
-      lastRun: "5 min ago",
-      runsToday: 390,
-      earned: "Free",
-      workflow: "DeFi",
-      author: "Provance",
-      category: "DeFi",
-      totalRuns: 120400,
-   },
-   {
-      id: "m3",
-      name: "GoPlus Agent",
-      icon: "/icons/agents/goplus.png",
-      status: "active",
-      lastRun: "1 min ago",
-      runsToday: 210,
-      earned: "Free",
-      workflow: "DeFi",
-      author: "GoPlus Labs",
-      category: "DeFi",
-      totalRuns: 73100,
-   },
-   {
-      id: "m4",
-      name: "OpenAI Agent",
-      icon: "/icons/agents/openai.svg",
-      status: "active",
-      lastRun: "3 min ago",
-      runsToday: 870,
-      earned: "Free",
-      workflow: "Analytics",
-      author: "Provance",
-      category: "Analytics",
-      totalRuns: 310000,
-   },
-   {
-      id: "m5",
-      name: "Telegram Agent",
-      icon: "/icons/agents/telegram.svg",
-      status: "active",
-      lastRun: "10 min ago",
-      runsToday: 560,
-      earned: "Free",
-      workflow: "Notifications",
-      author: "Provance",
-      category: "Notifications",
-      totalRuns: 204000,
-   },
-   {
-      id: "m6",
-      name: "Wallet Tracker",
-      icon: "/icons/agents/wallet-tracker.svg",
-      status: "active",
-      lastRun: "4 min ago",
-      runsToday: 88,
-      earned: "Free",
-      workflow: "DeFi",
-      author: "ChainWatch",
-      category: "DeFi",
-      totalRuns: 29700,
-   },
-   {
-      id: "m7",
-      name: "NFT Floor Watcher",
-      icon: "/icons/agents/trigger.svg",
-      status: "active",
-      lastRun: "7 min ago",
-      runsToday: 320,
-      earned: "Free",
-      workflow: "NFT",
-      author: "NFTLabs",
-      category: "NFT",
-      totalRuns: 55000,
-   },
-   {
-      id: "m8",
-      name: "Twitter Sentiment",
-      icon: "/icons/agents/openai.svg",
-      status: "active",
-      lastRun: "15 min ago",
-      runsToday: 430,
-      earned: "Free",
-      workflow: "Social",
-      author: "SocialStack",
-      category: "Social",
-      totalRuns: 91000,
-   },
-   {
-      id: "m9",
-      name: "On-chain Analyst",
-      icon: "/icons/agents/defillama.svg",
-      status: "active",
-      lastRun: "2 min ago",
-      runsToday: 175,
-      earned: "Free",
-      workflow: "Analytics",
-      author: "ChainWatch",
-      category: "Analytics",
-      totalRuns: 43800,
-   },
-];
+const MARKETPLACE_AGENTS: MarketplaceAgent[] = agentService.getAll().map((a) => ({
+   id: a.id,
+   name: a.label,
+   icon: a.icon,
+   status: "active" as const,
+   lastRun: "Never",
+   runsToday: 0,
+   earned: "Free",
+   workflow: a.category,
+   author: a.author,
+   category: a.category,
+   totalRuns: parseInt(a.downloads) || 0,
+}));
 
 export default function MarketplacePage() {
    const [search, setSearch] = useState("");
-   const [category, setCategory] = useState<Category>("All");
+   const [category, setCategory] = useState("All");
 
    const filtered = MARKETPLACE_AGENTS.filter((a) => {
       const matchCat = category === "All" || a.category === category;

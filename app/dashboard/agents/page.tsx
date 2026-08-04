@@ -5,80 +5,24 @@ import { Plus, Bot, Activity, Zap, TrendingUp } from "lucide-react";
 import { AgentCard, type Agent } from "@/components/dashboard/AgentCard";
 import { SubmitAgentModal } from "@/components/dashboard/SubmitAgentModal";
 import Footer from "@/components/landing-page/Footer";
+import { agentService } from "@/services/agent.service";
 
-const MOCK_AGENTS: Agent[] = [
-   {
-      id: "1",
-      name: "DeFi Protocol Trigger",
-      icon: "/icons/agents/trigger.svg",
-      status: "active",
-      lastRun: "2 min ago",
-      runsToday: 142,
-      earned: "0.84 USDC",
-      workflow: "DeFi Risk Monitor",
-      author: "Provance",
-   },
-   {
-      id: "2",
-      name: "DefiLlama Agent",
-      icon: "/icons/agents/defillama.svg",
-      status: "active",
-      lastRun: "2 min ago",
-      runsToday: 142,
-      earned: "1.20 USDC",
-      workflow: "DeFi Risk Monitor",
-      author: "Provance",
-   },
-   {
-      id: "3",
-      name: "GoPlus Agent",
-      icon: "/icons/agents/goplus.png",
-      status: "active",
-      lastRun: "2 min ago",
-      runsToday: 98,
-      earned: "0.63 USDC",
-      workflow: "DeFi Risk Monitor",
-      author: "Provance",
-   },
-   {
-      id: "4",
-      name: "OpenAI Agent",
-      icon: "/icons/agents/openai.svg",
-      status: "paused",
-      lastRun: "1 hr ago",
-      runsToday: 0,
-      earned: "2.10 USDC",
-      workflow: "DeFi Risk Monitor",
-      author: "Provance",
-   },
-   {
-      id: "5",
-      name: "Telegram Agent",
-      icon: "/icons/agents/telegram.svg",
-      status: "idle",
-      lastRun: "3 hr ago",
-      runsToday: 3,
-      earned: "0.12 USDC",
-      workflow: "DeFi Risk Monitor",
-      author: "Provance",
-   },
-   {
-      id: "6",
-      name: "Wallet Tracker",
-      icon: "/icons/agents/wallet-tracker.svg",
-      status: "idle",
-      lastRun: "Yesterday",
-      runsToday: 0,
-      earned: "0.00 USDC",
-      workflow: "Whale Watch",
-      author: "ChainWatch",
-   },
-];
+const AGENTS: Agent[] = agentService.getAll().map((a) => ({
+   id: a.id,
+   name: a.label,
+   icon: a.icon,
+   status: "idle" as const,
+   lastRun: "Never",
+   runsToday: 0,
+   earned: "0.00 USDC",
+   workflow: a.category,
+   author: a.author,
+}));
 
 export default function AgentsPage() {
    const [submitOpen, setSubmitOpen] = useState(false);
-   const active = MOCK_AGENTS.filter((a) => a.status === "active").length;
-   const totalRuns = MOCK_AGENTS.reduce((s, a) => s + a.runsToday, 0);
+   const active = AGENTS.filter((a) => a.status === "active").length;
+   const totalRuns = AGENTS.reduce((s, a) => s + a.runsToday, 0);
 
    return (
       <>
@@ -131,7 +75,7 @@ export default function AgentsPage() {
                   {[
                      {
                         label: "Total Agents",
-                        display: String(MOCK_AGENTS.length).padStart(2, "0"),
+                        display: String(AGENTS.length).padStart(2, "0"),
                         icon: Bot,
                      },
                      {
@@ -169,7 +113,7 @@ export default function AgentsPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-               {MOCK_AGENTS.map((agent) => (
+               {AGENTS.map((agent) => (
                   <AgentCard key={agent.id} agent={agent} />
                ))}
             </div>

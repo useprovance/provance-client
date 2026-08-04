@@ -85,7 +85,7 @@ export const AGENTS: Agent[] = [
       author: "Provance",
       downloads: "4.9K",
       rating: 4,
-      icon: "/icons/agents/goplus.png",
+      icon: "/icons/agents/goplus.svg",
       version: "1.0.2",
       category: "Security",
       identifier: "provance.goplus-agent",

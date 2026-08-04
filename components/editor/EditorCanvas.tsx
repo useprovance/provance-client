@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import {
    ReactFlow,
    ReactFlowProvider,
@@ -21,57 +21,53 @@ import { AddAgentSheet } from "./AddAgentSheet";
 import { NodeConfigSheet } from "./NodeConfigSheet";
 import { EditorBottomPanel } from "./EditorBottomPanel";
 import { EditorProvider, useEditor } from "./EditorContext";
-import { Skeleton } from "@/components/ui/skeleton";
+import { workflowService, type WorkflowNode, type WorkflowEdge } from "@/services/workflow.service";
+import { agentService } from "@/services/agent.service";
+import { NODES } from "./editor.constants";
 
-const CANVAS_KEY = (id: string) => `provance_canvas_${id}`;
-const VIEWPORT_KEY = (id: string) => `provance_viewport_${id}`;
-
-function readCanvas(workflowId: string): { nodes: Node[]; edges: Edge[] } {
-   try {
-      const raw = localStorage.getItem(CANVAS_KEY(workflowId));
-      if (raw) return JSON.parse(raw);
-   } catch {}
-   return { nodes: [], edges: [] };
+function toRFNode(n: WorkflowNode): Node {
+   const def = agentService.getById(n.nodeId) ?? NODES.find((nd) => nd.id === n.nodeId);
+   return {
+      id: n.id,
+      type: n.type,
+      position: n.position,
+      data: { label: def?.label ?? n.nodeId, icon: def?.icon ?? "", agentId: n.nodeId },
+   };
 }
 
-function writeCanvas(workflowId: string, nodes: Node[], edges: Edge[]) {
-   try {
-      localStorage.setItem(CANVAS_KEY(workflowId), JSON.stringify({ nodes, edges }));
-   } catch {}
+function toWorkflowNode(n: Node): WorkflowNode {
+   const data = n.data as { agentId?: string };
+   return {
+      id: n.id,
+      nodeId: data.agentId ?? n.id,
+      type: (n.type ?? "agent") as "agent" | "trigger",
+      position: n.position,
+      config: {},
+   };
 }
 
-function readViewport(workflowId: string): Viewport | null {
-   try {
-      const raw = localStorage.getItem(VIEWPORT_KEY(workflowId));
-      if (raw) return JSON.parse(raw);
-   } catch {}
-   return null;
-}
-
-function writeViewport(workflowId: string, viewport: Viewport) {
-   try {
-      localStorage.setItem(VIEWPORT_KEY(workflowId), JSON.stringify(viewport));
-   } catch {}
+function toWorkflowEdge(e: Edge): WorkflowEdge {
+   return { id: e.id, source: e.source, target: e.target };
 }
 
 function Canvas({ workflowId }: { workflowId: string }) {
-   const savedViewport = useMemo(() => readViewport(workflowId), [workflowId]);
+   const savedViewport = useMemo(() => workflowService.loadViewport(workflowId), [workflowId]);
 
    const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
    const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-   const [ready, setReady] = useState(false);
+   const isReady = useRef(false);
 
    const nodeTypes = useMemo(() => ({
       agent: AgentNodeComponent,
       trigger: TriggerNodeComponent,
    }), []);
-   const { openSheet } = useEditor();
+   const { openSheet, configNodeId } = useEditor();
 
    useLayoutEffect(() => {
-      const saved = readCanvas(workflowId);
+      const saved = workflowService.loadCanvas(workflowId);
       if (saved.nodes.length > 0 || saved.edges.length > 0) {
-         setNodes(saved.nodes);
-         setEdges(saved.edges);
+         setNodes(saved.nodes.map(toRFNode));
+         setEdges(saved.edges.map((e) => ({ ...e, type: "smoothstep" })));
       } else {
          setNodes([{
             id: "trigger",
@@ -80,16 +76,16 @@ function Canvas({ workflowId }: { workflowId: string }) {
             data: { label: "Workflow Trigger", icon: "/icons/agents/trigger.svg", agentId: "trigger" },
          }]);
       }
-      setReady(true);
+      isReady.current = true;
    }, [workflowId]);
 
    useEffect(() => {
-      if (!ready) return;
-      writeCanvas(workflowId, nodes as Node[], edges as Edge[]);
-   }, [nodes, edges, workflowId, ready]);
+      if (!isReady.current || nodes.length === 0) return;
+      workflowService.saveCanvas(workflowId, nodes.map(toWorkflowNode), edges.map(toWorkflowEdge));
+   }, [nodes, edges, workflowId]);
 
    const onMoveEnd = useCallback((_: unknown, viewport: Viewport) => {
-      writeViewport(workflowId, viewport);
+      workflowService.saveViewport(workflowId, viewport);
    }, [workflowId]);
 
    const onConnect = useCallback(
@@ -101,11 +97,6 @@ function Canvas({ workflowId }: { workflowId: string }) {
    return (
       <div className="flex flex-col w-full h-full bg-[#0f0f0f]">
          <div className="relative flex-1">
-         {!ready && (
-            <div className="absolute inset-0 z-20 bg-[#0f0f0f] flex items-center justify-center">
-               <Skeleton className="w-16 h-16 rounded-full" />
-            </div>
-         )}
          <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -133,7 +124,7 @@ function Canvas({ workflowId }: { workflowId: string }) {
             />
          </ReactFlow>
          <AddAgentSheet workflowId={workflowId} />
-         <NodeConfigSheet />
+         <NodeConfigSheet key={configNodeId ?? ""} workflowId={workflowId} />
          </div>
          <EditorBottomPanel workflowId={workflowId} />
       </div>

@@ -405,7 +405,6 @@ function AgentDetailModal({
 }
 
 export function AddAgentSheet({ workflowId }: { workflowId: string }) {
-   void workflowId;
    const { isSheetOpen, closeSheet, sourceNodeId } = useEditor();
    const { addNodes, addEdges, getNode } = useReactFlow();
    const [search, setSearch] = useState("");
@@ -436,32 +435,25 @@ export function AddAgentSheet({ workflowId }: { workflowId: string }) {
    const handleAddToCanvas = (agent: Agent) => {
       const newId = `${Date.now()}`;
       const source = sourceNodeId ? getNode(sourceNodeId) : null;
+      const position = source
+         ? { x: source.position.x + 110, y: source.position.y }
+         : { x: 0, y: 0 };
 
-      addNodes([
-         {
-            id: newId,
-            type: "agent" as const,
-            position: source
-               ? { x: source.position.x + 110, y: source.position.y }
-               : { x: 0, y: 0 },
-            data: {
-               label: agent.label,
-               icon: agent.icon,
-               agentId: agent.id,
-            },
-         },
-      ]);
+      addNodes([{
+         id: newId,
+         type: "agent" as const,
+         position,
+         data: { label: agent.label, icon: agent.icon, agentId: agent.id },
+      }]);
 
       if (sourceNodeId) {
-         addEdges([
-            {
-               id: `e${sourceNodeId}-${newId}`,
-               source: sourceNodeId,
-               target: newId,
-               type: "smoothstep",
-               style: EDGE_STYLE,
-            },
-         ]);
+         addEdges([{
+            id: `e${sourceNodeId}-${newId}`,
+            source: sourceNodeId,
+            target: newId,
+            type: "smoothstep",
+            style: EDGE_STYLE,
+         }]);
       }
 
       closeSheet();

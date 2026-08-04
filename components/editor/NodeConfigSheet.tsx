@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useReactFlow } from "@xyflow/react";
 import Image from "next/image";
 import { X } from "lucide-react";
@@ -11,16 +11,15 @@ import { FormInput } from "@/components/ui/form-input";
 import { FormSelector } from "@/components/ui/form-selector";
 import { agentService, type AgentField } from "@/services/agent.service";
 import { NODES } from "./editor.constants";
+import { workflowService } from "@/services/workflow.service";
 
-function FormField({ field }: { field: AgentField }) {
-   const [value, setValue] = useState("");
-
+function FormField({ field, value, onChange }: { field: AgentField; value: string; onChange: (v: string) => void }) {
    if (field.type === "select") {
       return (
          <FormSelector
             label={field.label}
             value={value}
-            onChange={setValue}
+            onChange={onChange}
             options={(field.options ?? []).map((o) => ({ value: o, label: o }))}
             placeholder="Select..."
          />
@@ -31,7 +30,7 @@ function FormField({ field }: { field: AgentField }) {
       <FormInput
          label={field.label}
          value={value}
-         onChange={setValue}
+         onChange={onChange}
          placeholder={field.placeholder}
          type={field.type === "number" ? "number" : field.type === "textarea" ? "textarea" : "text"}
          rows={4}
@@ -39,22 +38,21 @@ function FormField({ field }: { field: AgentField }) {
    );
 }
 
-export function NodeConfigSheet() {
+export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
    const { isConfigOpen, closeConfig, configNodeId } = useEditor();
    const { getNode } = useReactFlow();
-   const [activeTab, setActiveTab] = useState("");
-
    const node = configNodeId ? (getNode(configNodeId) as AgentNode | undefined) : undefined;
-   const agentId = node?.data.agentId;
+   const agentId = node?.data.agentId as string | undefined;
    const agent = agentId
       ? (agentService.getById(agentId) ?? NODES.find((n) => n.id === agentId))
       : undefined;
 
-   useEffect(() => {
-      if (agent?.config?.length) {
-         setActiveTab(agent.config[0].key);
-      }
-   }, [node?.id, agent]);
+   const savedNode = configNodeId
+      ? workflowService.loadCanvas(workflowId).nodes.find((n) => n.id === configNodeId)
+      : undefined;
+
+   const [activeTab, setActiveTab] = useState(agent?.config[0]?.key ?? "");
+   const [config, setConfig] = useState<Record<string, Record<string, string>>>(savedNode?.config ?? {});
 
    if (!node || !agent) return null;
 
@@ -102,7 +100,17 @@ export function NodeConfigSheet() {
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-5">
-               {activeConfig?.fields.map((f) => <FormField key={f.key} field={f} />)}
+               {activeConfig?.fields.map((f) => (
+                  <FormField
+                     key={f.key}
+                     field={f}
+                     value={config[activeTab]?.[f.key] ?? ""}
+                     onChange={(v) => setConfig((prev) => ({
+                        ...prev,
+                        [activeTab]: { ...prev[activeTab], [f.key]: v },
+                     }))}
+                  />
+               ))}
             </div>
 
             {/* Footer */}
@@ -114,6 +122,11 @@ export function NodeConfigSheet() {
                   Cancel
                </button>
                <button
+                  onClick={() => {
+                     if (configNodeId) {
+                        workflowService.updateNodeConfig(workflowId, configNodeId, config);
+                     }
+                  }}
                   className="px-4 py-1.5 text-[13px] font-medium bg-orange text-white hover:bg-orange/90 transition-colors cursor-pointer"
                   style={{ clipPath: "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)" }}
                >
