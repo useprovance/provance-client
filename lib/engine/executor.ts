@@ -183,8 +183,12 @@ export async function executeWorkflow(
 
     if (nodeErrored) break;
 
-    // Store extracted items so downstream nodes can iterate
-    const extractedItems = nodeOutputItems.flatMap(extractItems);
+    // Store output merged with inherited parent data so all ancestor fields
+    // accumulate and stay available to every downstream node
+    const extractedItems = nodeOutputItems.flatMap((output, idx) => {
+      const inherited = parentItems[idx] ?? parentItems[0] ?? {};
+      return extractItems({ ...inherited, ...output });
+    });
     context.set(node.id, extractedItems);
   }
 

@@ -4,7 +4,8 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 
 interface TemplateVariable {
-  key: string;
+  id: string;   // unique: "nodeId::key"
+  key: string;  // just the output key, used in {{key}} template
   label: string;
   icon: string;
 }
@@ -251,7 +252,7 @@ export function MessageTemplateField({ value, onChange, variables }: MessageTemp
               )}
               {filtered.map((v) => (
                 <button
-                  key={v.key}
+                  key={v.id}
                   onMouseDown={(e) => { e.preventDefault(); handleSelect(v); }}
                   className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-[13px] text-sand/70 hover:text-sand hover:bg-white/5 border-b border-[#1e1e1e] last:border-0 cursor-pointer transition-colors"
                 >

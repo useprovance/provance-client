@@ -220,6 +220,7 @@ export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
                 [activeTab]: { ...prev[activeTab], [f.key]: v },
               }))}
               variables={parentOptions.map((o) => ({
+                id: o.value,
                 key: o.value.includes("::") ? o.value.split("::")[1] : o.value,
                 label: o.label,
                 icon: o.icon ?? "",
