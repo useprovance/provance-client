@@ -105,10 +105,13 @@ export async function executeWorkflow(
     const resolvedItems = await Promise.all(
       parentItems.map(async (item) => {
         const orchestrated = isStartNode ? item : await orchestrateInput(item, agentId);
-        // Explicitly linked fields: pull the exact key the user chose from parent output
+        // Explicitly linked fields: strip "agentId::" prefix to get the actual output key
         const linkedValues = Object.fromEntries(
           Object.entries(links)
-            .map(([field, parentKey]) => [field, item[parentKey]])
+            .map(([field, prefixedKey]) => {
+              const actualKey = prefixedKey.includes("::") ? prefixedKey.split("::")[1] : prefixedKey;
+              return [field, item[actualKey]];
+            })
             .filter(([, v]) => v !== undefined)
         );
         // Priority: AI baseline → explicit linked values → static (unlinked) config

@@ -176,7 +176,7 @@ export const AGENTS: Agent[] = [
             label: "Parameters",
             fields: [
                { key: "token_address", label: "Token address", type: "text", placeholder: "0x..." },
-               { key: "chain_id", label: "Chain ID", type: "number", placeholder: "8453" },
+               { key: "chain", label: "Chain", type: "select", options: ["base", "ethereum", "bsc", "polygon", "arbitrum"] },
             ],
          },
          SETTINGS_CONFIG,
@@ -198,10 +198,15 @@ export const AGENTS: Agent[] = [
       lastReleased: "1 week ago",
       url: "http://localhost:3104",
       outputs: [
+         { key: "token_address", label: "Token address" },
          { key: "decision", label: "Decision (buy / ignore)" },
          { key: "confidence", label: "Confidence (%)" },
          { key: "reasoning", label: "Reasoning" },
-         { key: "token_address", label: "Token address" },
+         { key: "security_score", label: "Security score" },
+         { key: "liquidity_score", label: "Liquidity score" },
+         { key: "risk_score", label: "Risk score" },
+         { key: "overall_score", label: "Overall score" },
+         { key: "hard_rejected", label: "Hard rejected" },
       ],
       features: [
          "GPT-4o powered analysis",

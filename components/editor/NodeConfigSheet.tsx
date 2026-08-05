@@ -9,6 +9,7 @@ import { FormInput } from "@/components/ui/form-input";
 import { FormSelector } from "@/components/ui/form-selector";
 import { useEditor } from "./EditorContext";
 import { NODES } from "./editor.constants";
+import { MessageTemplateField } from "./MessageTemplateField";
 import { agentService, type AgentField } from "@/services/agent.service";
 import { workflowService } from "@/services/workflow.service";
 import type { AgentNode } from "./editor.constants";
@@ -29,7 +30,7 @@ function getParentOutputFields(
          const parentAgent = agentId ? agentService.getById(agentId) : undefined;
          if (!parentAgent?.outputs?.length) return [];
          return parentAgent.outputs.map((o) => ({
-            value: o.key,
+            value: `${agentId}::${o.key}`,
             label: o.label,
             icon: parentAgent.icon,
          }));
@@ -192,7 +193,21 @@ export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-5">
-          {activeConfig?.fields.map((f) => (
+          {activeConfig?.fields.map((f) => f.key === "message" ? (
+            <MessageTemplateField
+              key={f.key}
+              value={config[activeTab]?.[f.key] ?? ""}
+              onChange={(v) => setConfig((prev) => ({
+                ...prev,
+                [activeTab]: { ...prev[activeTab], [f.key]: v },
+              }))}
+              variables={parentOptions.map((o) => ({
+                key: o.value.includes("::") ? o.value.split("::")[1] : o.value,
+                label: o.label,
+                icon: o.icon ?? "",
+              }))}
+            />
+          ) : (
             <Field
               key={f.key}
               field={f}
@@ -210,6 +225,7 @@ export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
             />
           ))}
         </div>
+
 
         <div className="px-5 py-4 border-t border-[#2a2a2a] flex justify-end gap-2">
           <button

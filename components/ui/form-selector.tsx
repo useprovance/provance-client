@@ -43,7 +43,7 @@ export function FormSelector({
   options,
   placeholder = "Select an option",
   required = false,
-  searchable = false,
+  searchable = true,
   disabled = false,
   error,
   touched = false,
@@ -106,7 +106,7 @@ export function FormSelector({
         >
           <Command className="bg-transparent">
             {searchable && (
-              <div className="border-b border-[#2a2a2a] px-3">
+              <div className="border-b border-[#2a2a2a]">
                 <CommandInput
                   placeholder="Search..."
                   className="h-9 bg-transparent text-[13px] text-sand placeholder:text-sand/30 outline-none border-0"
@@ -116,6 +116,7 @@ export function FormSelector({
             <CommandList>
               <CommandEmpty className="py-4 text-center text-[12px] text-sand/30">No options found.</CommandEmpty>
               <CommandGroup>
+                <div className="max-h-52 overflow-y-auto">
                 {options.map((opt) => {
                   const isSelected = selected?.value === opt.value;
                   return (
@@ -139,6 +140,7 @@ export function FormSelector({
                     </CommandItem>
                   );
                 })}
+                </div>
               </CommandGroup>
             </CommandList>
           </Command>
