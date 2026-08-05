@@ -103,19 +103,28 @@ export async function executeWorkflow(
     const parentItems = isStartNode ? [{}] : buildInputItems(graphNode.parents, context);
 
     const resolvedItems = await Promise.all(
-      parentItems.map(async (item) => {
+      parentItems.map(async (item, itemIndex) => {
         const orchestrated = isStartNode ? item : await orchestrateInput(item, agentId);
-        // Explicitly linked fields: strip "agentId::" prefix to get the actual output key
+        // Linked fields: format is "nodeId::outputKey"
+        // Pull the value directly from that specific ancestor's stored context output
         const linkedValues = Object.fromEntries(
           Object.entries(links)
             .map(([field, prefixedKey]) => {
-              const actualKey = prefixedKey.includes("::") ? prefixedKey.split("::")[1] : prefixedKey;
-              return [field, item[actualKey]];
+              if (!prefixedKey.includes("::")) return [field, item[prefixedKey]];
+              const sep = prefixedKey.indexOf("::");
+              const nodeId = prefixedKey.slice(0, sep);
+              const key = prefixedKey.slice(sep + 2);
+              // Look up from exact ancestor context first, fall back to merged item
+              const ancestorItems = context.get(nodeId);
+              const val = ancestorItems
+                ? (ancestorItems[itemIndex] ?? ancestorItems[0])?.[key]
+                : item[key];
+              return [field, val];
             })
             .filter(([, v]) => v !== undefined)
         );
-        // Priority: AI baseline → explicit linked values → static (unlinked) config
-        return { ...orchestrated, ...linkedValues, ...staticOverrides };
+        // Priority: raw parent data → AI remapping → explicit linked values → static config
+        return { ...item, ...orchestrated, ...linkedValues, ...staticOverrides };
       })
     );
     const nodeOutputItems: Record<string, unknown>[] = [];

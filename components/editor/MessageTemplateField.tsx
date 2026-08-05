@@ -25,13 +25,26 @@ function parseSegments(raw: string): { type: "text" | "var"; content: string }[]
 
 function serialize(el: HTMLElement): string {
   let out = "";
-  el.childNodes.forEach((node) => {
+
+  function walk(node: Node, firstChild: boolean) {
     if (node.nodeType === Node.TEXT_NODE) {
       out += node.textContent ?? "";
-    } else if (node instanceof HTMLElement && node.dataset.var) {
-      out += `{{${node.dataset.var}}}`;
+    } else if (node instanceof HTMLElement) {
+      if (node.dataset.var) {
+        // Chip — emit template token, don't recurse
+        out += `{{${node.dataset.var}}}`;
+      } else if (node.tagName === "BR") {
+        out += "\n";
+      } else {
+        // Block elements (div/p) that the browser inserts for new lines
+        const isBlock = node.tagName === "DIV" || node.tagName === "P";
+        if (isBlock && !firstChild) out += "\n";
+        node.childNodes.forEach((child, i) => walk(child, i === 0 && firstChild));
+      }
     }
-  });
+  }
+
+  el.childNodes.forEach((node, i) => walk(node, i === 0));
   return out;
 }
 

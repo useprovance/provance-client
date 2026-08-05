@@ -16,25 +16,43 @@ import type { AgentNode } from "./editor.constants";
 
 const LINKS_KEY = "__links";
 
-function getParentOutputFields(
-   configNodeId: string,
-   edges: ReturnType<ReturnType<typeof useReactFlow>["getEdges"]>,
-   getNode: ReturnType<typeof useReactFlow>["getNode"]
+// Walk all ancestors (BFS) and collect their outputs.
+// Value format: "nodeId::outputKey" — uses React Flow node ID so executor can
+// look up the exact ancestor's stored context, even across non-adjacent nodes.
+function getAncestorOutputFields(
+  configNodeId: string,
+  edges: ReturnType<ReturnType<typeof useReactFlow>["getEdges"]>,
+  getNode: ReturnType<typeof useReactFlow>["getNode"]
 ): { value: string; label: string; icon: string }[] {
-   return edges
-      .filter((e) => e.target === configNodeId)
-      .flatMap((e) => {
-         const parentNode = getNode(e.source);
-         if (!parentNode) return [];
-         const agentId = (parentNode.data as { agentId?: string })?.agentId;
-         const parentAgent = agentId ? agentService.getById(agentId) : undefined;
-         if (!parentAgent?.outputs?.length) return [];
-         return parentAgent.outputs.map((o) => ({
-            value: `${agentId}::${o.key}`,
-            label: o.label,
-            icon: parentAgent.icon,
-         }));
-      });
+  const results: { value: string; label: string; icon: string }[] = [];
+  const visited = new Set<string>();
+  const queue: string[] = [configNodeId];
+  const seen = new Set<string>(); // dedupe value strings
+
+  while (queue.length > 0) {
+    const nodeId = queue.shift()!;
+    if (visited.has(nodeId)) continue;
+    visited.add(nodeId);
+
+    for (const edge of edges.filter((e) => e.target === nodeId)) {
+      const ancestorNode = getNode(edge.source);
+      if (!ancestorNode) continue;
+      const agentId = (ancestorNode.data as { agentId?: string })?.agentId;
+      const agent = agentId ? agentService.getById(agentId) : undefined;
+      if (agent?.outputs?.length) {
+        for (const o of agent.outputs) {
+          const value = `${ancestorNode.id}::${o.key}`;
+          if (!seen.has(value)) {
+            seen.add(value);
+            results.push({ value, label: `${agent.label}: ${o.key}`, icon: agent.icon });
+          }
+        }
+      }
+      queue.push(edge.source);
+    }
+  }
+
+  return results;
 }
 
 interface FieldProps {
@@ -129,7 +147,7 @@ export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
   );
 
   const parentOptions = useMemo(
-    () => configNodeId ? getParentOutputFields(configNodeId, edges, getNode) : [],
+    () => configNodeId ? getAncestorOutputFields(configNodeId, edges, getNode) : [],
     [configNodeId, edges, getNode]
   );
 
