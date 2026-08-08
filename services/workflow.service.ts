@@ -38,6 +38,7 @@ export interface WorkflowEdge {
 export interface LogEntry {
   message: string;
   time: string;
+  level?: "info" | "warn" | "error";
 }
 
 export interface CanvasViewport {
@@ -144,9 +145,10 @@ export class WorkflowService {
     this.logCallback = callback;
   }
 
-  log(message: string) {
+  log(message: string, level: LogEntry["level"] = "info") {
     this.logCallback?.({
       message,
+      level,
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
     });
   }

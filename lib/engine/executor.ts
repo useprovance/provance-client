@@ -31,8 +31,12 @@ async function orchestrateInput(
 // If no array is found, treat the whole output as a single item.
 function extractItems(output: Record<string, unknown>): Record<string, unknown>[] {
   for (const value of Object.values(output)) {
-    if (Array.isArray(value) && value.length > 0 && value[0] !== null && typeof value[0] === "object") {
-      return value as Record<string, unknown>[];
+    if (Array.isArray(value)) {
+      // Empty array = no items to process; don't fall back to wrapper object
+      if (value.length === 0) return [];
+      if (value[0] !== null && typeof value[0] === "object") {
+        return value as Record<string, unknown>[];
+      }
     }
   }
   return [output];

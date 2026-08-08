@@ -98,36 +98,36 @@ function Canvas({ workflowId }: { workflowId: string }) {
 
    return (
       <div className="flex flex-col w-full h-full bg-[#0f0f0f]">
-         <div className="relative flex-1">
-         <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            defaultEdgeOptions={{
-               type: "provance",
-               style: { stroke: "rgba(227,216,197,0.3)", strokeWidth: 1.5 },
-            }}
-            snapToGrid
-            snapGrid={[20, 20]}
-            onMoveEnd={onMoveEnd}
-            maxZoom={3}
-            defaultViewport={savedViewport ?? { x: 400, y: 280, zoom: 1 }}
-            proOptions={{ hideAttribution: true }}
-            style={{ background: "transparent" }}
-         >
-            <Background
-               variant={BackgroundVariant.Dots}
-               gap={20}
-               size={1}
-               color="#e3d8c540"
-            />
-         </ReactFlow>
-         <AddAgentSheet workflowId={workflowId} />
-         <NodeConfigSheet key={configNodeId ?? ""} workflowId={workflowId} />
+         <div className="relative flex-1 min-h-0">
+            <ReactFlow
+               nodes={nodes}
+               edges={edges}
+               onNodesChange={onNodesChange}
+               onEdgesChange={onEdgesChange}
+               onConnect={onConnect}
+               nodeTypes={nodeTypes}
+               edgeTypes={edgeTypes}
+               defaultEdgeOptions={{
+                  type: "provance",
+                  style: { stroke: "rgba(227,216,197,0.3)", strokeWidth: 1.5 },
+               }}
+               snapToGrid
+               snapGrid={[20, 20]}
+               onMoveEnd={onMoveEnd}
+               maxZoom={3}
+               defaultViewport={savedViewport ?? { x: 400, y: 280, zoom: 1 }}
+               proOptions={{ hideAttribution: true }}
+               style={{ background: "transparent" }}
+            >
+               <Background
+                  variant={BackgroundVariant.Dots}
+                  gap={20}
+                  size={1}
+                  color="#e3d8c540"
+               />
+            </ReactFlow>
+            <AddAgentSheet workflowId={workflowId} />
+            <NodeConfigSheet key={configNodeId ?? ""} workflowId={workflowId} />
          </div>
          <EditorBottomPanel workflowId={workflowId} />
       </div>

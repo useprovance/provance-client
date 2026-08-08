@@ -23,7 +23,8 @@ export function AgentNodeComponent({
    selected,
 }: NodeProps<AgentNode>) {
    const { deleteElements } = useReactFlow();
-   const { openSheet, openConfig } = useEditor();
+   const { openSheet, openConfig, flowDirection } = useEditor();
+   const isVertical = flowDirection === "vertical";
    const updateNodeInternals = useUpdateNodeInternals();
    const edges = useEdges();
    const hasOutgoing = edges.some((e) => e.source === id);
@@ -71,12 +72,12 @@ export function AgentNodeComponent({
 
             <Handle
                type="target"
-               position={Position.Left}
+               position={isVertical ? Position.Top : Position.Left}
                className="!w-2.5 !h-2.5 !bg-[#2d2d2d] !border !border-sand/50 !rounded-full"
             />
             <Handle
                type="source"
-               position={Position.Right}
+               position={isVertical ? Position.Bottom : Position.Right}
                className="!w-2.5 !h-2.5 !bg-[#2d2d2d] !border !border-sand/50 !rounded-full !z-20"
             />
 
@@ -99,14 +100,20 @@ export function AgentNodeComponent({
          {!hasOutgoing && (
             <div
                className="nodrag absolute flex items-center"
-               style={{
+               style={isVertical ? {
+                  left: BOX_SIZE / 2,
+                  top: BOX_SIZE,
+                  transform: "translateX(-50%)",
+                  flexDirection: "column",
+                  zIndex: 0,
+               } : {
                   top: BOX_SIZE / 2,
                   left: BOX_SIZE,
                   transform: "translateY(-50%)",
                   zIndex: 0,
                }}
             >
-               <div className="w-6 h-px bg-sand/20" />
+               <div className={isVertical ? "h-6 w-px bg-sand/20" : "w-6 h-px bg-sand/20"} />
                <button
                   onClick={() => openSheet(id)}
                   className="w-5 h-5 rounded-full bg-[#2d2d2d] border border-[#3a3a3a] text-sand/40 hover:border-orange hover:text-orange transition-colors cursor-pointer inline-flex items-center justify-center shrink-0"

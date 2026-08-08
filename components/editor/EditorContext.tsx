@@ -4,6 +4,8 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 import { workflowService, type LogEntry } from "@/services/workflow.service";
 import type { WorkflowRun } from "@/lib/engine/types";
 
+export type FlowDirection = "horizontal" | "vertical";
+
 interface EditorContextValue {
    workflowId: string;
    sourceNodeId: string | null;
@@ -19,6 +21,8 @@ interface EditorContextValue {
    setLogsOpen: (open: boolean) => void;
    runs: WorkflowRun[];
    addRun: (run: WorkflowRun) => void;
+   flowDirection: FlowDirection;
+   setFlowDirection: (dir: FlowDirection) => void;
 }
 
 const EditorContext = createContext<EditorContextValue | null>(null);
@@ -31,6 +35,7 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
    const [logs, setLogs] = useState<LogEntry[]>([]);
    const [logsOpen, setLogsOpen] = useState(false);
    const [runs, setRuns] = useState<WorkflowRun[]>([]);
+   const [flowDirection, setFlowDirection] = useState<FlowDirection>("horizontal");
    const addRun = useCallback((run: WorkflowRun) => {
       setRuns((prev) => [run, ...prev.slice(0, 49)]);
    }, []);
@@ -71,6 +76,7 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
          configNodeId, isConfigOpen, openConfig, closeConfig,
          logs, logsOpen, setLogsOpen,
          runs, addRun,
+         flowDirection, setFlowDirection,
       }}>
          {children}
       </EditorContext.Provider>
