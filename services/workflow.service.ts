@@ -1,24 +1,5 @@
-export interface Workflow {
-  id: string;
-  name: string;
-  description: string;
-  published: boolean;
-  nodes: WorkflowNode[];
-  edges: WorkflowEdge[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateWorkflowInput {
-  name: string;
-  description?: string;
-}
-
-export interface UpdateWorkflowInput {
-  name?: string;
-  description?: string;
-  published?: boolean;
-}
+import { createBrowserClient } from "@supabase/ssr";
+import type { WorkflowRun } from "@/lib/engine/types";
 
 export interface WorkflowNode {
   id: string;
@@ -34,7 +15,6 @@ export interface WorkflowEdge {
   target: string;
 }
 
-
 export interface LogEntry {
   message: string;
   time: string;
@@ -49,27 +29,43 @@ export interface CanvasViewport {
 
 const CANVAS_KEY = (id: string) => `provance_canvas_${id}`;
 const VIEWPORT_KEY = (id: string) => `provance_viewport_${id}`;
+const isUUID = (s: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
 
 export class WorkflowService {
   private logCallback?: (entry: LogEntry) => void;
+  private _db: ReturnType<typeof createBrowserClient> | null = null;
+  private saveTimers: Record<string, ReturnType<typeof setTimeout>> = {};
 
-  // Canvas persistence
+  private get db() {
+    if (!this._db) {
+      this._db = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+      );
+    }
+    return this._db;
+  }
+
+  // ─── Canvas persistence ────────────────────────────────────────────────────
+
   loadCanvas(workflowId: string): { nodes: WorkflowNode[]; edges: WorkflowEdge[] } {
     try {
       const raw = localStorage.getItem(CANVAS_KEY(workflowId));
       if (!raw) return { nodes: [], edges: [] };
       const parsed = JSON.parse(raw);
-      // migrate old React Flow format to WorkflowNode format
-      const nodes: WorkflowNode[] = (parsed.nodes ?? []).map((n: WorkflowNode & { data?: { agentId?: string } }) => {
-        if (n.nodeId) return n;
-        return {
-          id: n.id,
-          nodeId: n.data?.agentId ?? n.id,
-          type: (n as { type?: string }).type as "agent" | "trigger" ?? "agent",
-          position: n.position,
-          config: {},
-        };
-      });
+      const nodes: WorkflowNode[] = (parsed.nodes ?? []).map(
+        (n: WorkflowNode & { data?: { agentId?: string } }) => {
+          if (n.nodeId) return n;
+          return {
+            id: n.id,
+            nodeId: n.data?.agentId ?? n.id,
+            type: (n as { type?: string }).type as "agent" | "trigger" ?? "agent",
+            position: n.position,
+            config: {},
+          };
+        }
+      );
       const edges: WorkflowEdge[] = (parsed.edges ?? []).map((e: WorkflowEdge) => ({
         id: e.id,
         source: e.source,
@@ -78,6 +74,24 @@ export class WorkflowService {
       return { nodes, edges };
     } catch {}
     return { nodes: [], edges: [] };
+  }
+
+  async fetchCanvas(workflowId: string): Promise<{ nodes: WorkflowNode[]; edges: WorkflowEdge[] } | null> {
+    if (!isUUID(workflowId)) return null;
+    try {
+      const { data, error } = await this.db
+        .from("workflows")
+        .select("canvas")
+        .eq("id", workflowId)
+        .single();
+      if (error || !data?.canvas) return null;
+      const canvas = data.canvas as { nodes: WorkflowNode[]; edges: WorkflowEdge[] };
+      // Update localStorage cache
+      localStorage.setItem(CANVAS_KEY(workflowId), JSON.stringify(canvas));
+      return canvas;
+    } catch {
+      return null;
+    }
   }
 
   saveCanvas(workflowId: string, nodes: WorkflowNode[], edges: WorkflowEdge[]) {
@@ -89,8 +103,11 @@ export class WorkflowService {
         config: Object.keys(n.config).length > 0 ? n.config : (savedConfig[n.id] ?? {}),
       }));
       localStorage.setItem(CANVAS_KEY(workflowId), JSON.stringify({ nodes: merged, edges }));
+      this.debouncedSaveToDb(workflowId, { nodes: merged, edges });
     } catch {}
   }
+
+  // ─── Viewport persistence ──────────────────────────────────────────────────
 
   loadViewport(workflowId: string): CanvasViewport | null {
     try {
@@ -100,11 +117,36 @@ export class WorkflowService {
     return null;
   }
 
+  async fetchViewport(workflowId: string): Promise<CanvasViewport | null> {
+    if (!isUUID(workflowId)) return null;
+    try {
+      const { data, error } = await this.db
+        .from("workflows")
+        .select("viewport")
+        .eq("id", workflowId)
+        .single();
+      if (error || !data?.viewport) return null;
+      const vp = data.viewport as CanvasViewport;
+      localStorage.setItem(VIEWPORT_KEY(workflowId), JSON.stringify(vp));
+      return vp;
+    } catch {
+      return null;
+    }
+  }
+
   saveViewport(workflowId: string, viewport: CanvasViewport) {
     try {
       localStorage.setItem(VIEWPORT_KEY(workflowId), JSON.stringify(viewport));
     } catch {}
+    if (isUUID(workflowId)) {
+      void this.db
+        .from("workflows")
+        .upsert({ id: workflowId, viewport, updated_at: new Date().toISOString() })
+        .then(() => {});
+    }
   }
+
+  // ─── Canvas mutations (sync, callers don't need to await) ──────────────────
 
   addNode(workflowId: string, node: WorkflowNode) {
     const canvas = this.loadCanvas(workflowId);
@@ -116,16 +158,17 @@ export class WorkflowService {
     this.saveCanvas(
       workflowId,
       canvas.nodes.filter((n) => n.id !== nodeId),
-      canvas.edges.filter((e) => e.source !== nodeId && e.target !== nodeId),
+      canvas.edges.filter((e) => e.source !== nodeId && e.target !== nodeId)
     );
   }
 
   updateNodePosition(workflowId: string, nodeId: string, position: { x: number; y: number }) {
     const canvas = this.loadCanvas(workflowId);
-    const updated = canvas.nodes.map((n) =>
-      n.id === nodeId ? { ...n, position } : n
+    this.saveCanvas(
+      workflowId,
+      canvas.nodes.map((n) => (n.id === nodeId ? { ...n, position } : n)),
+      canvas.edges
     );
-    this.saveCanvas(workflowId, updated, canvas.edges);
   }
 
   addEdge(workflowId: string, edge: WorkflowEdge) {
@@ -135,11 +178,55 @@ export class WorkflowService {
 
   updateNodeConfig(workflowId: string, nodeId: string, config: Record<string, Record<string, string>>) {
     const canvas = this.loadCanvas(workflowId);
-    const updated = canvas.nodes.map((n) =>
-      n.id === nodeId ? { ...n, config } : n
+    this.saveCanvas(
+      workflowId,
+      canvas.nodes.map((n) => (n.id === nodeId ? { ...n, config } : n)),
+      canvas.edges
     );
-    this.saveCanvas(workflowId, updated, canvas.edges);
   }
+
+  // ─── Run history ───────────────────────────────────────────────────────────
+
+  async saveRun(workflowId: string, run: WorkflowRun): Promise<void> {
+    if (!isUUID(workflowId)) return;
+    try {
+      await this.db.from("run_history").insert({
+        id: run.id,
+        workflow_id: workflowId,
+        status: run.status,
+        started_at: run.startedAt,
+        finished_at: run.finishedAt ?? null,
+        error: run.error ?? null,
+        node_results: run.nodeResults,
+      });
+    } catch {}
+  }
+
+  async fetchRuns(workflowId: string): Promise<WorkflowRun[]> {
+    if (!isUUID(workflowId)) return [];
+    try {
+      const { data, error } = await this.db
+        .from("run_history")
+        .select("id, workflow_id, status, started_at, finished_at, error, node_results")
+        .eq("workflow_id", workflowId)
+        .order("started_at", { ascending: false })
+        .limit(50);
+      if (error || !data) return [];
+      return data.map((r: Record<string, unknown>) => ({
+        id: r.id as string,
+        workflowId: r.workflow_id as string,
+        status: r.status as WorkflowRun["status"],
+        startedAt: r.started_at as string,
+        finishedAt: (r.finished_at as string | null) ?? undefined,
+        error: (r.error as string | null) ?? undefined,
+        nodeResults: (r.node_results as WorkflowRun["nodeResults"]) ?? [],
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  // ─── Logger ────────────────────────────────────────────────────────────────
 
   registerLogger(callback: (entry: LogEntry) => void) {
     this.logCallback = callback;
@@ -149,46 +236,28 @@ export class WorkflowService {
     this.logCallback?.({
       message,
       level,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      }),
     });
   }
 
-  static async create(input: CreateWorkflowInput): Promise<Workflow> {
-    // TODO: wire to Supabase
-    const now = new Date().toISOString();
-    return {
-      id: crypto.randomUUID(),
-      name: input.name,
-      description: input.description ?? "",
-      published: false,
-      nodes: [],
-      edges: [],
-      createdAt: now,
-      updatedAt: now,
-    };
-  }
+  // ─── Static CRUD ───────────────────────────────────────────────────────────
 
-  static async list(): Promise<Workflow[]> {
-    // TODO: wire to Supabase
-    return [];
-  }
 
-  static async get(id: string): Promise<Workflow | null> {
-    // TODO: wire to Supabase
-    void id;
-    return null;
-  }
+  // ─── Private helpers ───────────────────────────────────────────────────────
 
-  static async update(id: string, input: UpdateWorkflowInput): Promise<Workflow | null> {
-    // TODO: wire to Supabase
-    void id;
-    void input;
-    return null;
-  }
-
-  static async delete(id: string): Promise<void> {
-    // TODO: wire to Supabase
-    void id;
+  private debouncedSaveToDb(workflowId: string, canvas: { nodes: WorkflowNode[]; edges: WorkflowEdge[] }) {
+    if (!isUUID(workflowId)) return;
+    if (this.saveTimers[workflowId]) clearTimeout(this.saveTimers[workflowId]);
+    this.saveTimers[workflowId] = setTimeout(() => {
+      void this.db
+        .from("workflows")
+        .upsert({ id: workflowId, canvas, updated_at: new Date().toISOString() })
+        .then(() => {});
+    }, 500);
   }
 }
 

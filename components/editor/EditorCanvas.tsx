@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
    ReactFlow,
    ReactFlowProvider,
@@ -52,7 +52,8 @@ function toWorkflowEdge(e: Edge): WorkflowEdge {
 }
 
 function Canvas({ workflowId }: { workflowId: string }) {
-   const savedViewport = useMemo(() => workflowService.loadViewport(workflowId), [workflowId]);
+   const [defaultViewport, setDefaultViewport] = useState<Viewport | null>(null);
+   const viewportReady = useRef(false);
 
    const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
    const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -63,23 +64,53 @@ function Canvas({ workflowId }: { workflowId: string }) {
       trigger: TriggerNodeComponent,
    }), []);
    const edgeTypes = useMemo(() => ({ provance: EditorEdge }), []);
-   const { openSheet, configNodeId } = useEditor();
+   const { openSheet, configNodeId, addRun, registerCanvasActions } = useEditor();
 
+   // Load canvas — check Supabase first, fall back to localStorage
    useLayoutEffect(() => {
-      const saved = workflowService.loadCanvas(workflowId);
-      if (saved.nodes.length > 0 || saved.edges.length > 0) {
-         setNodes(saved.nodes.map(toRFNode));
-         setEdges(saved.edges.map((e) => ({ ...e, type: "provance" })));
-      } else {
-         setNodes([{
-            id: "trigger",
-            type: "trigger",
-            position: { x: 100, y: 100 },
-            data: { label: "Workflow Trigger", icon: "/icons/agents/trigger.svg", agentId: "trigger" },
-         }]);
+      const local = workflowService.loadCanvas(workflowId);
+      const localVp = workflowService.loadViewport(workflowId);
+
+      const applyCanvas = (saved: { nodes: typeof local.nodes; edges: typeof local.edges }) => {
+         if (saved.nodes.length > 0 || saved.edges.length > 0) {
+            setNodes(saved.nodes.map(toRFNode));
+            setEdges(saved.edges.map((e) => ({ ...e, type: "provance" })));
+         } else {
+            setNodes([{
+               id: "trigger",
+               type: "trigger",
+               position: { x: 100, y: 100 },
+               data: { label: "Workflow Trigger", icon: "/icons/agents/trigger.svg", agentId: "trigger" },
+            }]);
+         }
+      };
+
+      // Apply local data immediately for fast paint
+      applyCanvas(local);
+      if (!viewportReady.current) {
+         setDefaultViewport(localVp ?? { x: 400, y: 280, zoom: 1 });
+         viewportReady.current = true;
       }
       isReady.current = true;
+
+      // Hydrate from Supabase in background — refreshes if another device saved newer data
+      void (async () => {
+         const [dbCanvas, dbVp] = await Promise.all([
+            workflowService.fetchCanvas(workflowId),
+            workflowService.fetchViewport(workflowId),
+         ]);
+         if (dbCanvas) applyCanvas(dbCanvas);
+         if (dbVp && !localVp) setDefaultViewport(dbVp);
+      })();
    }, [workflowId]);
+
+   // Load persisted run history from Supabase
+   useEffect(() => {
+      void (async () => {
+         const runs = await workflowService.fetchRuns(workflowId);
+         runs.forEach((r) => addRun(r));
+      })();
+   }, [workflowId, addRun]);
 
    useEffect(() => {
       if (!isReady.current || nodes.length === 0) return;
@@ -95,6 +126,38 @@ function Canvas({ workflowId }: { workflowId: string }) {
          setEdges((eds) => addEdge(connection, eds)),
       [setEdges],
    );
+
+   // Register canvas mutation actions for AI tool calling
+   useEffect(() => {
+      registerCanvasActions({
+         addNode: (agentId: string) => {
+            const agent = agentService.getById(agentId);
+            const newId = crypto.randomUUID();
+            const newNode: Node = {
+               id: newId,
+               type: "agent",
+               position: { x: 300 + Math.random() * 200, y: 200 + Math.random() * 200 },
+               data: { label: agent?.label ?? agentId, icon: agent?.icon ?? "", agentId },
+            };
+            setNodes((prev) => [...prev, newNode]);
+            return newId;
+         },
+         connectNodes: (sourceId: string, targetId: string) => {
+            const edgeId = `e-${sourceId}-${targetId}`;
+            setEdges((prev) => [
+               ...prev.filter((e) => e.id !== edgeId),
+               { id: edgeId, source: sourceId, target: targetId, type: "provance", style: { stroke: "rgba(227,216,197,0.3)", strokeWidth: 1.5 } },
+            ]);
+         },
+         configureNode: (nodeId: string, params: Record<string, string>) => {
+            workflowService.updateNodeConfig(workflowId, nodeId, { parameters: params });
+         },
+         removeNode: (nodeId: string) => {
+            setNodes((prev) => prev.filter((n) => n.id !== nodeId));
+            setEdges((prev) => prev.filter((e) => e.source !== nodeId && e.target !== nodeId));
+         },
+      });
+   }, [registerCanvasActions, setNodes, setEdges, workflowId]);
 
    return (
       <div className="flex flex-col w-full h-full bg-[#0f0f0f]">
@@ -115,7 +178,7 @@ function Canvas({ workflowId }: { workflowId: string }) {
                snapGrid={[20, 20]}
                onMoveEnd={onMoveEnd}
                maxZoom={3}
-               defaultViewport={savedViewport ?? { x: 400, y: 280, zoom: 1 }}
+               defaultViewport={defaultViewport ?? { x: 400, y: 280, zoom: 1 }}
                proOptions={{ hideAttribution: true }}
                style={{ background: "transparent" }}
             >

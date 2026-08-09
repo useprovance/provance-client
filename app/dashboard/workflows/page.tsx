@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { WorkflowCard } from "@/components/dashboard/WorkflowCard";
 import { CreateWorkflowModal } from "@/components/dashboard/CreateWorkflowModal";
@@ -14,8 +14,10 @@ const STRIPE = {
 };
 
 export default function WorkflowsPage() {
-  const workflows = useWorkflowStore((s) => s.workflows);
+  const { workflows, fetch } = useWorkflowStore();
   const [createOpen, setCreateOpen] = useState(false);
+
+  useEffect(() => { void fetch(); }, [fetch]);
 
   return (
     <div className="flex flex-col h-full bg-[#181818] overflow-y-auto">

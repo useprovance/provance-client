@@ -55,6 +55,7 @@ export function TriggerNodeComponent({ id, selected }: NodeProps<AgentNode>) {
             }
          });
          addRun(run);
+         void workflowService.saveRun(workflowId, run);
          if (run.status === "success") {
             workflowService.log("Workflow completed. Open the Runs tab to see full output.", "info");
          } else {

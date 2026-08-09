@@ -316,7 +316,7 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
         </div>}
       </div>
 
-      <AiChatSheet open={aiOpen} onOpenChange={setAiOpen} />
+      <AiChatSheet open={aiOpen} onOpenChange={setAiOpen} workflowId={workflowId} />
 
       <PublishModal
         open={publishOpen}

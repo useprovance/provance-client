@@ -1,7 +1,8 @@
 "use client";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createBrowserClient } from "@supabase/ssr";
+
 export interface Workflow {
   id: string;
   name: string;
@@ -17,55 +18,84 @@ export interface Workflow {
 export interface CreateWorkflowInput {
   name: string;
   description?: string;
-  trigger?: string;
+}
+
+function db() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+  );
 }
 
 type WorkflowStore = {
   workflows: Workflow[];
-  create: (input: CreateWorkflowInput) => Workflow;
-  update: (id: string, input: Partial<Workflow>) => void;
-  remove: (id: string) => void;
+  loading: boolean;
+  fetch: () => Promise<void>;
+  create: (input: CreateWorkflowInput) => Promise<Workflow>;
+  remove: (id: string) => Promise<void>;
   get: (id: string) => Workflow | undefined;
 };
 
-export const useWorkflowStore = create<WorkflowStore>()(
-  persist(
-    (set, get) => ({
-      workflows: [],
+export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
+  workflows: [],
+  loading: false,
 
-      create: (input) => {
-        const now = new Date().toISOString();
-        const workflow: Workflow = {
-          id: crypto.randomUUID(),
-          name: input.name,
-          description: input.description ?? "",
-          published: false,
-          nodeCount: 0,
-          lastRun: null,
-          runs: 0,
-          createdAt: now,
-          updatedAt: now,
-        };
-        set((s) => ({ workflows: [workflow, ...s.workflows] }));
-        return workflow;
-      },
-
-      update: (id, input) => {
-        set((s) => ({
-          workflows: s.workflows.map((w) =>
-            w.id === id ? { ...w, ...input, updatedAt: new Date().toISOString() } : w
-          ),
-        }));
-      },
-
-      remove: (id) => {
-        set((s) => ({ workflows: s.workflows.filter((w) => w.id !== id) }));
-      },
-
-      get: (id) => get().workflows.find((w) => w.id === id),
-    }),
-    {
-      name: "provance_workflows",
+  fetch: async () => {
+    set({ loading: true });
+    try {
+      const { data } = await db()
+        .from("workflows")
+        .select("id, name, created_at, updated_at")
+        .order("updated_at", { ascending: false });
+      if (data) {
+        set({
+          workflows: data.map((w) => ({
+            id: w.id,
+            name: w.name,
+            description: "",
+            published: false,
+            nodeCount: 0,
+            lastRun: null,
+            runs: 0,
+            createdAt: w.created_at,
+            updatedAt: w.updated_at,
+          })),
+        });
+      }
+    } finally {
+      set({ loading: false });
     }
-  )
-);
+  },
+
+  create: async (input) => {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+
+    // Insert into Supabase
+    await db()
+      .from("workflows")
+      .insert({ id, name: input.name, canvas: { nodes: [], edges: [] }, viewport: null });
+
+    const workflow: Workflow = {
+      id,
+      name: input.name,
+      description: input.description ?? "",
+      published: false,
+      nodeCount: 0,
+      lastRun: null,
+      runs: 0,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    set((s) => ({ workflows: [workflow, ...s.workflows] }));
+    return workflow;
+  },
+
+  remove: async (id) => {
+    await db().from("workflows").delete().eq("id", id);
+    set((s) => ({ workflows: s.workflows.filter((w) => w.id !== id) }));
+  },
+
+  get: (id) => get().workflows.find((w) => w.id === id),
+}));

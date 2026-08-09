@@ -31,9 +31,9 @@ export function CreateWorkflowModal({ open, onOpenChange }: CreateWorkflowModalP
     }, 200);
   }
 
-  function handleCreate() {
+  async function handleCreate() {
     if (!canCreate) return;
-    const workflow = createWorkflow({ name: name.trim(), description: description.trim() });
+    const workflow = await createWorkflow({ name: name.trim(), description: description.trim() });
     handleClose();
     router.push(`/dashboard/workflows/${workflow.id}`);
   }
@@ -42,6 +42,7 @@ export function CreateWorkflowModal({ open, onOpenChange }: CreateWorkflowModalP
     <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); }}>
       <DialogContent
         aria-describedby={undefined}
+        aria-description="Create a new workflow"
         className="w-full max-w-lg bg-[#0f0f0f] border border-[#2a2a2a] p-0 gap-0 flex flex-col [&>button]:hidden"
       >
         <DialogTitle className="sr-only">Create Workflow</DialogTitle>
@@ -93,7 +94,7 @@ export function CreateWorkflowModal({ open, onOpenChange }: CreateWorkflowModalP
             Cancel
           </button>
           <button
-            onClick={handleCreate}
+            onClick={() => void handleCreate()}
             disabled={!canCreate}
             className="flex items-center gap-1.5 bg-orange text-white text-[12px] font-bold px-6 py-2 disabled:opacity-30 hover:bg-orange/90 transition-colors cursor-pointer"
             style={{ clipPath: "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)" }}
