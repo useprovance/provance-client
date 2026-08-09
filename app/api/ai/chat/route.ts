@@ -39,15 +39,12 @@ function buildSystemPrompt(canvas: Canvas, logs: LogEntry[]): string {
       ? canvas.nodes.map((n) => {
            if (n.type === "trigger") return `- [Trigger] id="${n.id}"`;
            const agent = agentService.getById(n.nodeId);
-           const params = (n.config?.parameters ?? {}) as Record<
-              string,
-              string
-           >;
-           const configStr = Object.entries(params)
-              .filter(([, v]) => v)
-              .map(([k, v]) => `${k}=${v}`)
-              .join(", ");
-           return `- [Agent] ${agent?.label ?? n.nodeId} id="${n.id}"${configStr ? ` [${configStr}]` : ""}`;
+           const params = (n.config?.parameters ?? {}) as Record<string, string>;
+           const links = (n.config?.__links ?? {}) as Record<string, string>;
+           const configStr = Object.entries(params).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`).join(", ");
+           const linksStr = Object.entries(links).map(([k, v]) => `${k}→${v}`).join(", ");
+           const parts = [configStr, linksStr ? `links: ${linksStr}` : ""].filter(Boolean).join(" | ");
+           return `- [Agent] ${agent?.label ?? n.nodeId} id="${n.id}"${parts ? ` [${parts}]` : ""}`;
         })
       : ["Canvas is empty."];
 
@@ -70,6 +67,8 @@ When building a workflow with multiple nodes:
 2. After all nodes are added, call connect_nodes to link them in sequence using the returned ids.
 3. The canvas positions nodes automatically left to right — do not skip the connect step.
 
+When configuring a node, pass static values normally. If a param should receive its value from an upstream node's output, pass "sourceNodeId::outputKey" as the value instead — the UI will render it as a linked field automatically. Only link fields that match the same data (e.g. token_address → token_address). Never pass "<dynamic>" or placeholder strings.
+
 Available agents:
 ${agentService.getAll().map((a) => {
   const fields = a.config.find((c) => c.key === "parameters")?.fields ?? [];
@@ -77,7 +76,8 @@ ${agentService.getAll().map((a) => {
     const opts = f.type === "select" && f.options?.length ? ` [${f.options.join("|")}]` : "";
     return `${f.key}${opts}`;
   }).join(", ");
-  return `- ${a.id}: ${a.label} — ${a.description}${params ? `\n  params: ${params}` : ""}`;
+  const outputs = a.outputs?.map((o: { key: string }) => o.key).join(", ") ?? "";
+  return `- ${a.id}: ${a.label} — ${a.description}${params ? `\n  params: ${params}` : ""}${outputs ? `\n  outputs: ${outputs}` : ""}`;
 }).join("\n")}
 
 CANVAS:
@@ -104,6 +104,15 @@ export async function POST(req: Request) {
       temperature: 0.4,
       maxOutputTokens: 1024,
       stopWhen: isStepCount(5),
+      onStepFinish({ text, toolCalls }) {
+         if (toolCalls?.length) {
+            console.log("\n[AI] Tool calls:");
+            for (const tc of toolCalls) {
+               console.log(`  → ${tc.toolName}`, JSON.stringify(tc.input, null, 4));
+            }
+         }
+         if (text) console.log(`\n[AI] Text: ${text}`);
+      },
       tools: {
          add_node: {
             description: "Add an agent node to the workflow canvas.",

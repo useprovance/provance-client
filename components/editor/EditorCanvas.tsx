@@ -158,11 +158,21 @@ function Canvas({ workflowId }: { workflowId: string }) {
                { id: edgeId, source: sourceId, target: targetId, type: "provance", style: { stroke: "rgba(227,216,197,0.3)", strokeWidth: 1.5 } },
             ]);
          },
-         configureNode: (nodeId: string, params: Record<string, string>) => {
+         configureNode: (nodeId: string, params: Record<string, string>, links?: Record<string, string>) => {
             setNodes((prev) => prev.map((n) => {
                if (n.id !== nodeId) return n;
                const existing = (n.data as { config?: Record<string, Record<string, string>> }).config ?? {};
-               return { ...n, data: { ...n.data, config: { ...existing, parameters: params } } };
+               return {
+                  ...n,
+                  data: {
+                     ...n.data,
+                     config: {
+                        ...existing,
+                        parameters: { ...(existing.parameters ?? {}), ...params },
+                        ...(links ? { __links: { ...(existing.__links ?? {}), ...links } } : {}),
+                     },
+                  },
+               };
             }));
          },
          removeNode: (nodeId: string) => {

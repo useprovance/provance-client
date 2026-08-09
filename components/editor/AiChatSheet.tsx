@@ -71,7 +71,14 @@ export function AiChatSheet({ open, onOpenChange, workflowId }: AiChatSheetProps
         canvasActions.connectNodes(input.sourceId as string, input.targetId as string);
         addToolOutput({ tool: "connect_nodes", toolCallId, output: "done" });
       } else if (toolName === "configure_node") {
-        canvasActions.configureNode(input.nodeId as string, input.params as Record<string, string>);
+        const raw = input.params as Record<string, string>;
+        const staticParams: Record<string, string> = {};
+        const links: Record<string, string> = {};
+        for (const [key, val] of Object.entries(raw)) {
+          if (val.includes("::")) links[key] = val;
+          else staticParams[key] = val;
+        }
+        canvasActions.configureNode(input.nodeId as string, staticParams, links);
         addToolOutput({ tool: "configure_node", toolCallId, output: "done" });
       } else if (toolName === "remove_node") {
         canvasActions.removeNode(input.nodeId as string);

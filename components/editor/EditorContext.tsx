@@ -9,7 +9,7 @@ export type FlowDirection = "horizontal" | "vertical";
 export interface CanvasActions {
   addNode: (agentId: string) => string;
   connectNodes: (sourceId: string, targetId: string) => void;
-  configureNode: (nodeId: string, params: Record<string, string>) => void;
+  configureNode: (nodeId: string, params: Record<string, string>, links?: Record<string, string>) => void;
   removeNode: (nodeId: string) => void;
 }
 

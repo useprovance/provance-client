@@ -135,6 +135,7 @@ export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
     : undefined;
 
   const nodeConfig = (node?.data as { config?: Record<string, Record<string, string>> })?.config ?? {};
+  const nodeConfigKey = JSON.stringify(nodeConfig);
   const hasParentEdges = edges.some((e) => e.target === configNodeId);
 
   const [activeTab, setActiveTab] = useState(agent?.config[0]?.key ?? "");
@@ -151,7 +152,7 @@ export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
     setLinked(hasParentEdges ? (freshConfig[LINKS_KEY] ?? {}) as Record<string, string> : {});
     setActiveTab(agent?.config[0]?.key ?? "");
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isConfigOpen, configNodeId]);
+  }, [isConfigOpen, configNodeId, nodeConfigKey]);
 
   const parentOptions = useMemo(
     () => configNodeId ? getAncestorOutputFields(configNodeId, edges, getNode) : [],
