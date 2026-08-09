@@ -45,14 +45,14 @@ export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
     try {
       const { data } = await db()
         .from("workflows")
-        .select("id, name, created_at, updated_at")
+        .select("id, name, description, created_at, updated_at")
         .order("updated_at", { ascending: false });
       if (data) {
         set({
           workflows: data.map((w) => ({
             id: w.id,
             name: w.name,
-            description: "",
+            description: (w.description as string) ?? "",
             published: false,
             nodeCount: 0,
             lastRun: null,
@@ -71,10 +71,17 @@ export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
 
-    // Insert into Supabase
-    await db()
+    const { error } = await db()
       .from("workflows")
-      .insert({ id, name: input.name, canvas: { nodes: [], edges: [] }, viewport: null });
+      .insert({
+        id,
+        name: input.name,
+        description: input.description ?? "",
+        canvas: { nodes: [], edges: [] },
+        viewport: { x: 0, y: 0, zoom: 1 },
+      });
+
+    if (error) throw new Error(error.message);
 
     const workflow: Workflow = {
       id,

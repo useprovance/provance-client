@@ -37,13 +37,13 @@ function toRFNode(n: WorkflowNode): Node {
 }
 
 function toWorkflowNode(n: Node): WorkflowNode {
-   const data = n.data as { agentId?: string };
+   const data = n.data as { agentId?: string; config?: Record<string, Record<string, string>> };
    return {
       id: n.id,
       nodeId: data.agentId ?? n.id,
       type: (n.type ?? "agent") as "agent" | "trigger",
       position: n.position,
-      config: {},
+      config: data.config ?? {},
    };
 }
 
@@ -133,13 +133,22 @@ function Canvas({ workflowId }: { workflowId: string }) {
          addNode: (agentId: string) => {
             const agent = agentService.getById(agentId);
             const newId = crypto.randomUUID();
-            const newNode: Node = {
-               id: newId,
-               type: "agent",
-               position: { x: 300 + Math.random() * 200, y: 200 + Math.random() * 200 },
-               data: { label: agent?.label ?? agentId, icon: agent?.icon ?? "", agentId },
-            };
-            setNodes((prev) => [...prev, newNode]);
+            setNodes((prev) => {
+               const rightmost = prev.reduce<Node | null>(
+                  (best, n) => (!best || n.position.x > best.position.x ? n : best),
+                  null,
+               );
+               const position = rightmost
+                  ? { x: rightmost.position.x + 200, y: rightmost.position.y }
+                  : { x: 100, y: 250 };
+               const newNode: Node = {
+                  id: newId,
+                  type: "agent",
+                  position,
+                  data: { label: agent?.label ?? agentId, icon: agent?.icon ?? "", agentId },
+               };
+               return [...prev, newNode];
+            });
             return newId;
          },
          connectNodes: (sourceId: string, targetId: string) => {
@@ -150,7 +159,11 @@ function Canvas({ workflowId }: { workflowId: string }) {
             ]);
          },
          configureNode: (nodeId: string, params: Record<string, string>) => {
-            workflowService.updateNodeConfig(workflowId, nodeId, { parameters: params });
+            setNodes((prev) => prev.map((n) => {
+               if (n.id !== nodeId) return n;
+               const existing = (n.data as { config?: Record<string, Record<string, string>> }).config ?? {};
+               return { ...n, data: { ...n.data, config: { ...existing, parameters: params } } };
+            }));
          },
          removeNode: (nodeId: string) => {
             setNodes((prev) => prev.filter((n) => n.id !== nodeId));

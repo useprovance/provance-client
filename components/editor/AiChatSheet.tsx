@@ -57,24 +57,25 @@ export function AiChatSheet({ open, onOpenChange, workflowId }: AiChatSheetProps
       if (toolCall.dynamic) return;
       if (!canvasActions) return;
 
-      const { toolName, input } = toolCall as {
+      const { toolName, input, toolCallId } = toolCall as {
         toolName: string;
-        input: Record<string, string>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        input: any;
         toolCallId: string;
       };
 
       if (toolName === "add_node") {
-        const nodeId = canvasActions.addNode(input.agentId);
-        addToolOutput({ tool: "add_node", toolCallId: toolCall.toolCallId, output: nodeId ?? "done" });
+        const nodeId = canvasActions.addNode(input.agentId as string);
+        addToolOutput({ tool: "add_node", toolCallId, output: nodeId ?? "done" });
       } else if (toolName === "connect_nodes") {
-        canvasActions.connectNodes(input.sourceId, input.targetId);
-        addToolOutput({ tool: "connect_nodes", toolCallId: toolCall.toolCallId, output: "done" });
+        canvasActions.connectNodes(input.sourceId as string, input.targetId as string);
+        addToolOutput({ tool: "connect_nodes", toolCallId, output: "done" });
       } else if (toolName === "configure_node") {
-        canvasActions.configureNode(input.nodeId, input as Record<string, string>);
-        addToolOutput({ tool: "configure_node", toolCallId: toolCall.toolCallId, output: "done" });
+        canvasActions.configureNode(input.nodeId as string, input.params as Record<string, string>);
+        addToolOutput({ tool: "configure_node", toolCallId, output: "done" });
       } else if (toolName === "remove_node") {
-        canvasActions.removeNode(input.nodeId);
-        addToolOutput({ tool: "remove_node", toolCallId: toolCall.toolCallId, output: "done" });
+        canvasActions.removeNode(input.nodeId as string);
+        addToolOutput({ tool: "remove_node", toolCallId, output: "done" });
       }
     },
     onFinish({ message }) {

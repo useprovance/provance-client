@@ -96,14 +96,10 @@ export class WorkflowService {
 
   saveCanvas(workflowId: string, nodes: WorkflowNode[], edges: WorkflowEdge[]) {
     try {
-      const existing = this.loadCanvas(workflowId);
-      const savedConfig = Object.fromEntries(existing.nodes.map((n) => [n.id, n.config]));
-      const merged = nodes.map((n) => ({
-        ...n,
-        config: Object.keys(n.config).length > 0 ? n.config : (savedConfig[n.id] ?? {}),
-      }));
-      localStorage.setItem(CANVAS_KEY(workflowId), JSON.stringify({ nodes: merged, edges }));
-      this.debouncedSaveToDb(workflowId, { nodes: merged, edges });
+      // localStorage only caches positions — config is authoritative in Supabase + React state
+      const cached = nodes.map((n) => ({ ...n, config: {} }));
+      localStorage.setItem(CANVAS_KEY(workflowId), JSON.stringify({ nodes: cached, edges }));
+      this.debouncedSaveToDb(workflowId, { nodes, edges });
     } catch {}
   }
 
@@ -176,13 +172,15 @@ export class WorkflowService {
     this.saveCanvas(workflowId, canvas.nodes, [...canvas.edges, edge]);
   }
 
-  updateNodeConfig(workflowId: string, nodeId: string, config: Record<string, Record<string, string>>) {
-    const canvas = this.loadCanvas(workflowId);
-    this.saveCanvas(
-      workflowId,
-      canvas.nodes.map((n) => (n.id === nodeId ? { ...n, config } : n)),
-      canvas.edges
-    );
+  async updateNodeConfig(workflowId: string, nodeId: string, config: Record<string, Record<string, string>>) {
+    if (!isUUID(workflowId)) return;
+    try {
+      const { data } = await this.db.from("workflows").select("canvas").eq("id", workflowId).single();
+      if (!data?.canvas) return;
+      const canvas = data.canvas as { nodes: WorkflowNode[]; edges: WorkflowEdge[] };
+      const nodes = canvas.nodes.map((n) => (n.id === nodeId ? { ...n, config } : n));
+      await this.db.from("workflows").update({ canvas: { ...canvas, nodes }, updated_at: new Date().toISOString() }).eq("id", workflowId);
+    } catch {}
   }
 
   // ─── Run history ───────────────────────────────────────────────────────────

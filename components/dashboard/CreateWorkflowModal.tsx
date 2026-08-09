@@ -18,6 +18,8 @@ export function CreateWorkflowModal({ open, onOpenChange }: CreateWorkflowModalP
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [nameTouched, setNameTouched] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const nameError = !name.trim() ? "Workflow name is required" : undefined;
   const canCreate = name.trim() !== "";
@@ -32,10 +34,18 @@ export function CreateWorkflowModal({ open, onOpenChange }: CreateWorkflowModalP
   }
 
   async function handleCreate() {
-    if (!canCreate) return;
-    const workflow = await createWorkflow({ name: name.trim(), description: description.trim() });
-    handleClose();
-    router.push(`/dashboard/workflows/${workflow.id}`);
+    if (!canCreate || creating) return;
+    setCreating(true);
+    setCreateError(null);
+    try {
+      const workflow = await createWorkflow({ name: name.trim(), description: description.trim() });
+      handleClose();
+      router.push(`/dashboard/workflows/${workflow.id}`);
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : "Failed to create workflow");
+    } finally {
+      setCreating(false);
+    }
   }
 
   return (
@@ -87,19 +97,24 @@ export function CreateWorkflowModal({ open, onOpenChange }: CreateWorkflowModalP
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-[#1e1e1e] shrink-0 flex items-center justify-between">
-          <button
-            onClick={handleClose}
-            className="text-[13px] text-sand/40 hover:text-sand transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleClose}
+              className="text-[13px] text-sand/40 hover:text-sand transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            {createError && (
+              <p className="text-[12px] text-red-400">{createError}</p>
+            )}
+          </div>
           <button
             onClick={() => void handleCreate()}
-            disabled={!canCreate}
+            disabled={!canCreate || creating}
             className="flex items-center gap-1.5 bg-orange text-white text-[12px] font-bold px-6 py-2 disabled:opacity-30 hover:bg-orange/90 transition-colors cursor-pointer"
             style={{ clipPath: "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)" }}
           >
-            Create Workflow
+            {creating ? "Creating..." : "Create Workflow"}
           </button>
         </div>
       </DialogContent>

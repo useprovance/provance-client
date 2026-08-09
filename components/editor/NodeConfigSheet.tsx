@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useReactFlow, useEdges } from "@xyflow/react";
 import Image from "next/image";
 import { X, Link2, Unlink } from "lucide-react";
@@ -125,7 +125,7 @@ function Field({
 
 export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
   const { isConfigOpen, closeConfig, configNodeId } = useEditor();
-  const { getNode } = useReactFlow();
+  const { getNode, setNodes } = useReactFlow();
   const edges = useEdges();
 
   const node = configNodeId ? (getNode(configNodeId) as AgentNode | undefined) : undefined;
@@ -134,17 +134,24 @@ export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
     ? (agentService.getById(agentId) ?? NODES.find((n) => n.id === agentId))
     : undefined;
 
-  const savedNode = configNodeId
-    ? workflowService.loadCanvas(workflowId).nodes.find((n) => n.id === configNodeId)
-    : undefined;
-
+  const nodeConfig = (node?.data as { config?: Record<string, Record<string, string>> })?.config ?? {};
   const hasParentEdges = edges.some((e) => e.target === configNodeId);
 
   const [activeTab, setActiveTab] = useState(agent?.config[0]?.key ?? "");
-  const [config, setConfig] = useState<Record<string, Record<string, string>>>(savedNode?.config ?? {});
+  const [config, setConfig] = useState<Record<string, Record<string, string>>>(nodeConfig);
   const [linked, setLinked] = useState<Record<string, string>>(
-    hasParentEdges ? (savedNode?.config[LINKS_KEY] ?? {}) as Record<string, string> : {}
+    hasParentEdges ? (nodeConfig[LINKS_KEY] ?? {}) as Record<string, string> : {}
   );
+
+  useEffect(() => {
+    if (!isConfigOpen || !configNodeId) return;
+    const fresh = (getNode(configNodeId) as AgentNode | undefined);
+    const freshConfig = (fresh?.data as { config?: Record<string, Record<string, string>> })?.config ?? {};
+    setConfig(freshConfig);
+    setLinked(hasParentEdges ? (freshConfig[LINKS_KEY] ?? {}) as Record<string, string> : {});
+    setActiveTab(agent?.config[0]?.key ?? "");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConfigOpen, configNodeId]);
 
   const parentOptions = useMemo(
     () => configNodeId ? getAncestorOutputFields(configNodeId, edges, getNode) : [],
@@ -164,11 +171,13 @@ export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
 
   const handleSave = useCallback(() => {
     if (!configNodeId) return;
-    workflowService.updateNodeConfig(workflowId, configNodeId, {
-      ...config,
-      [LINKS_KEY]: linked,
-    });
-  }, [workflowId, configNodeId, config, linked]);
+    const fullConfig = { ...config, [LINKS_KEY]: linked };
+    setNodes((prev) => prev.map((n) => {
+      if (n.id !== configNodeId) return n;
+      return { ...n, data: { ...n.data, config: fullConfig } };
+    }));
+    void workflowService.updateNodeConfig(workflowId, configNodeId, fullConfig);
+  }, [workflowId, configNodeId, config, linked, setNodes]);
 
   if (!node || !agent) return null;
 
