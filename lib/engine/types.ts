@@ -1,4 +1,4 @@
-export type NodeStatus = "pending" | "running" | "success" | "error";
+export type NodeStatus = "pending" | "running" | "success" | "error" | "skipped";
 
 export interface EngineNode {
   id: string;

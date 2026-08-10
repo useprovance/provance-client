@@ -172,7 +172,9 @@ export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
 
   const handleSave = useCallback(() => {
     if (!configNodeId) return;
-    const fullConfig = { ...config, [LINKS_KEY]: linked };
+    // MessageTemplateField has no link button — if AI previously linked "message", clear it
+    const cleanedLinked = Object.fromEntries(Object.entries(linked).filter(([k]) => k !== "message"));
+    const fullConfig = { ...config, [LINKS_KEY]: cleanedLinked };
     setNodes((prev) => prev.map((n) => {
       if (n.id !== configNodeId) return n;
       return { ...n, data: { ...n.data, config: fullConfig } };

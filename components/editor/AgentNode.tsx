@@ -73,12 +73,12 @@ export function AgentNodeComponent({
             <Handle
                type="target"
                position={isVertical ? Position.Top : Position.Left}
-               className="!w-2.5 !h-2.5 !bg-[#2d2d2d] !border !border-sand/50 !rounded-full"
+               className="!w-2.5 !h-2.5 !bg-[#2d2d2d] !border !border-sand/20 !rounded-full"
             />
             <Handle
                type="source"
                position={isVertical ? Position.Bottom : Position.Right}
-               className="!w-2.5 !h-2.5 !bg-[#2d2d2d] !border !border-sand/50 !rounded-full !z-20"
+               className="!w-2.5 !h-2.5 !bg-[#2d2d2d] !border !border-sand/20 !rounded-full !z-20"
             />
 
             <Image

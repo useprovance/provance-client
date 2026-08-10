@@ -26,14 +26,20 @@ async function orchestrateInput(
   return sourceOutput;
 }
 
-// If an output object contains an array of objects, extract those as individual items.
-// DexScreener returns { tokens: [{token_address, chain, ...}] } — we iterate over tokens.
-// If no array is found, treat the whole output as a single item.
+// Determine whether an output is a collection wrapper (like DexScreener { tokens: [...] })
+// or a single entity result (like GoPlus { token_address, risk_flags: [], ... }).
+// Heuristic: if the output has 4+ non-array fields it is an entity — always one item.
+// If it has fewer, it is a wrapper — iterate over the first object array, or return [] if empty.
 function extractItems(output: Record<string, unknown>): Record<string, unknown>[] {
-  for (const value of Object.values(output)) {
-    if (Array.isArray(value) && value.length > 0 && value[0] !== null && typeof value[0] === "object") {
-      return value as Record<string, unknown>[];
-    }
+  const values = Object.values(output);
+  const nonArrayCount = values.filter((v) => !Array.isArray(v)).length;
+
+  if (nonArrayCount >= 4) return [output]; // entity result
+
+  for (const value of values) {
+    if (!Array.isArray(value)) continue;
+    if (value.length === 0) return []; // wrapper with empty list = nothing to pass downstream
+    if (value[0] !== null && typeof value[0] === "object") return value as Record<string, unknown>[];
   }
   return [output];
 }
@@ -92,15 +98,29 @@ export async function executeWorkflow(
 
     const staticConfig = (node.config?.parameters ?? {}) as Record<string, string>;
     const links = (node.config?.["__links"] ?? {}) as Record<string, string>;
-    const linkedFieldKeys = new Set(Object.keys(links));
 
-    // Static config only for fields the user did NOT link to a parent output
-    const staticOverrides = Object.fromEntries(
-      Object.entries(staticConfig).filter(([k]) => !linkedFieldKeys.has(k))
-    );
+    // Static config always wins — if a field is set manually it overrides any link
+    const staticOverrides = staticConfig;
 
     const isStartNode = startNodes.has(node.id);
     const parentItems = isStartNode ? [{}] : buildInputItems(graphNode.parents, context);
+
+    if (parentItems.length === 0) {
+      const skipped: NodeRunResult = {
+        nodeId: node.id,
+        label: agentLabel,
+        status: "skipped",
+        input: {},
+        output: {},
+        startedAt: new Date().toISOString(),
+        finishedAt: new Date().toISOString(),
+        durationMs: 0,
+      };
+      nodeResults.push(skipped);
+      onNodeUpdate?.(skipped);
+      context.set(node.id, []);
+      continue;
+    }
 
     const resolvedItems = await Promise.all(
       parentItems.map(async (item, itemIndex) => {
@@ -130,7 +150,11 @@ export async function executeWorkflow(
           Object.entries(merged).map(([k, v]) => {
             if (typeof v !== "string" || !v.includes("{{")) return [k, v];
             const resolved = v.replace(/\{\{([^}]+)\}\}/g, (_, ref: string) => {
-              if (!ref.includes("::")) return "";
+              if (!ref.includes("::")) {
+                // bare {{key}} — look up from the merged input directly
+                const val = merged[ref];
+                return val !== undefined ? String(val) : "";
+              }
               const sep = ref.indexOf("::");
               const nodeId = ref.slice(0, sep);
               const key = ref.slice(sep + 2);

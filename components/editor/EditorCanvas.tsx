@@ -6,10 +6,12 @@ import {
    ReactFlowProvider,
    Background,
    BackgroundVariant,
+   MiniMap,
    addEdge,
    useNodesState,
    useEdgesState,
    useReactFlow,
+   useOnViewportChange,
    type Connection,
    type Node,
    type Edge,
@@ -54,6 +56,18 @@ function toWorkflowEdge(e: Edge): WorkflowEdge {
 
 function Canvas({ workflowId }: { workflowId: string }) {
    const { setViewport } = useReactFlow();
+   const [minimapVisible, setMinimapVisible] = useState(false);
+   const minimapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+   useOnViewportChange({
+      onStart: () => {
+         if (minimapTimer.current) clearTimeout(minimapTimer.current);
+         setMinimapVisible(true);
+      },
+      onEnd: () => {
+         minimapTimer.current = setTimeout(() => setMinimapVisible(false), 1200);
+      },
+   });
 
    // Read localStorage synchronously so ReactFlow's first render uses the saved viewport — no jump
    const [initialViewport] = useState<Viewport>(
@@ -156,7 +170,7 @@ function Canvas({ workflowId }: { workflowId: string }) {
             const edgeId = `e-${sourceId}-${targetId}`;
             setEdges((prev) => [
                ...prev.filter((e) => e.id !== edgeId),
-               { id: edgeId, source: sourceId, target: targetId, type: "provance", style: { stroke: "rgba(227,216,197,0.3)", strokeWidth: 1.5 } },
+               { id: edgeId, source: sourceId, target: targetId, type: "provance", style: { stroke: "rgba(160,160,160,0.35)", strokeWidth: 1.5 } },
             ]);
          },
          configureNode: (nodeId: string, params: Record<string, string>, links?: Record<string, string>) => {
@@ -196,7 +210,7 @@ function Canvas({ workflowId }: { workflowId: string }) {
                edgeTypes={edgeTypes}
                defaultEdgeOptions={{
                   type: "provance",
-                  style: { stroke: "rgba(227,216,197,0.3)", strokeWidth: 1.5 },
+                  style: { stroke: "rgba(160,160,160,0.35)", strokeWidth: 1.5 },
                }}
                snapToGrid
                snapGrid={[20, 20]}
@@ -208,9 +222,28 @@ function Canvas({ workflowId }: { workflowId: string }) {
             >
                <Background
                   variant={BackgroundVariant.Dots}
-                  gap={20}
+                  gap={16}
                   size={1}
                   color="#e3d8c540"
+               />
+               <MiniMap
+                  position="bottom-left"
+                  nodeColor="rgba(180,180,180,0.7)"
+                  nodeStrokeColor="transparent"
+                  maskColor="rgba(150,150,150,0.6)"
+                  style={{
+                     background: "#111",
+                     border: "1px solid rgba(100,100,100,0.35)",
+                     borderRadius: 8,
+                     overflow: "hidden",
+                     opacity: minimapVisible ? 1 : 0,
+                     pointerEvents: minimapVisible ? "auto" : "none",
+                     transition: "opacity 0.3s ease",
+                     marginBottom: 92,
+                     marginLeft: 12,
+                     width: 240,
+                     height: 120,
+                  }}
                />
             </ReactFlow>
             <AddAgentSheet workflowId={workflowId} />

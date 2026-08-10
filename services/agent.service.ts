@@ -88,7 +88,7 @@ export const AGENTS: Agent[] = [
             fields: [
                { key: "chain", label: "Chain", type: "select", options: ["base", "ethereum", "bsc"] },
                { key: "min_liquidity_usd", label: "Min liquidity (USD)", type: "number", placeholder: "10000" },
-               { key: "max_age_minutes", label: "Max token age (minutes)", type: "number", placeholder: "60" },
+               { key: "max_age_minutes", label: "Max token age (minutes)", type: "number", placeholder: "2880" },
                { key: "limit", label: "Max tokens to return", type: "number", placeholder: "10" },
             ],
          },

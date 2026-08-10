@@ -2,7 +2,8 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { workflowService, type LogEntry } from "@/services/workflow.service";
-import type { WorkflowRun } from "@/lib/engine/types";
+import { executeWorkflow } from "@/lib/engine/executor";
+import type { WorkflowRun, NodeRunResult } from "@/lib/engine/types";
 
 export type FlowDirection = "horizontal" | "vertical";
 
@@ -32,6 +33,8 @@ interface EditorContextValue {
   setFlowDirection: (dir: FlowDirection) => void;
   registerCanvasActions: (actions: CanvasActions) => void;
   canvasActions: CanvasActions | null;
+  isRunning: boolean;
+  triggerRun: () => Promise<void>;
 }
 
 const EditorContext = createContext<EditorContextValue | null>(null);
@@ -46,6 +49,7 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
   const [runs, setRuns] = useState<WorkflowRun[]>([]);
   const [flowDirection, setFlowDirection] = useState<FlowDirection>("horizontal");
   const [canvasActions, setCanvasActions] = useState<CanvasActions | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
 
   const addRun = useCallback((run: WorkflowRun) => {
     setRuns((prev) => prev.some((r) => r.id === run.id) ? prev : [run, ...prev.slice(0, 49)]);
@@ -80,6 +84,36 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
     setCanvasActions(actions);
   }, []);
 
+  const triggerRun = useCallback(async () => {
+    if (isRunning) return;
+    setIsRunning(true);
+    const canvas = workflowService.loadCanvas(workflowId);
+    workflowService.log("Starting workflow...", "info");
+    try {
+      const run = await executeWorkflow(workflowId, canvas, (result: NodeRunResult) => {
+        if (result.status === "success") {
+          workflowService.log(`✓ ${result.label} — ${result.durationMs}ms`, "info");
+        } else if (result.status === "skipped") {
+          workflowService.log(`– ${result.label} skipped — no data from upstream`, "info");
+        } else {
+          workflowService.log(`✗ ${result.label} failed — ${result.error ?? "unknown error"}`, "error");
+        }
+      });
+      addRun(run);
+      void workflowService.saveRun(workflowId, run);
+      workflowService.log(
+        run.status === "success"
+          ? "Workflow completed. Open the Runs tab to see full output."
+          : `Workflow stopped: ${run.error ?? "unknown error"}`,
+        run.status === "success" ? "info" : "error"
+      );
+    } catch (err) {
+      workflowService.log(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`, "error");
+    } finally {
+      setIsRunning(false);
+    }
+  }, [workflowId, addRun, isRunning]);
+
   useEffect(() => {
     workflowService.registerLogger(addLog);
   }, [addLog]);
@@ -93,6 +127,7 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
       runs, addRun,
       flowDirection, setFlowDirection,
       registerCanvasActions, canvasActions,
+      isRunning, triggerRun,
     }}>
       {children}
     </EditorContext.Provider>

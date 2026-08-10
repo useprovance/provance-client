@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
-import { EyeOff, Globe, MoreHorizontal, Save, Share2, CheckCircle2, XCircle, Clock, ChevronUp, ChevronDown, ArrowRight, ArrowDown, Trash2 } from "lucide-react";
+import { EyeOff, Globe, MoreHorizontal, Save, Share2, CheckCircle2, XCircle, Clock, ChevronUp, ChevronDown, ArrowRight, ArrowDown, Trash2, MinusCircle, FlaskConical } from "lucide-react";
 import { useReactFlow } from "@xyflow/react";
 import { useRouter } from "next/navigation";
 import {
@@ -49,25 +49,32 @@ function getErrorHint(error: string): string {
 function NodeResultRow({ result, label }: { result: NodeRunResult; label: string }) {
   const [expanded, setExpanded] = useState(false);
   const hint = result.error ? getErrorHint(result.error) : "";
+  const isSkipped = result.status === "skipped";
 
   return (
     <div className="border-b border-[#1e1e1e] last:border-0">
       <button
-        onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center gap-2.5 px-4 py-2 hover:bg-white/3 transition-colors cursor-pointer text-left"
+        onClick={() => !isSkipped && setExpanded((v) => !v)}
+        className={`w-full flex items-center gap-2.5 px-4 py-2 transition-colors text-left ${isSkipped ? "cursor-default opacity-60" : "hover:bg-white/3 cursor-pointer"}`}
       >
-        {result.status === "success" ? (
-          <CheckCircle2 size={13} className="text-green-500 shrink-0" />
-        ) : (
-          <XCircle size={13} className="text-red-400 shrink-0" />
-        )}
-        <span className={`flex-1 text-[12px] truncate ${result.status === "error" ? "text-red-400" : "text-sand"}`}>
+        {result.status === "success" && <CheckCircle2 size={13} className="text-green-500 shrink-0" />}
+        {result.status === "error" && <XCircle size={13} className="text-red-400 shrink-0" />}
+        {result.status === "skipped" && <MinusCircle size={13} className="text-sand/30 shrink-0" />}
+        <span className={`flex-1 text-[12px] truncate ${
+          result.status === "error" ? "text-red-400"
+          : result.status === "skipped" ? "text-sand/35"
+          : "text-sand"
+        }`}>
           {label}
         </span>
-        <span className="text-[11px] text-sand/60 shrink-0 flex items-center gap-1">
-          <Clock size={10} />
-          {formatDuration(result.durationMs)}
-        </span>
+        {result.status === "skipped" ? (
+          <span className="text-[11px] text-sand/30 shrink-0 italic">no data</span>
+        ) : (
+          <span className="text-[11px] text-sand/60 shrink-0 flex items-center gap-1">
+            <Clock size={10} />
+            {formatDuration(result.durationMs)}
+          </span>
+        )}
         <span className="text-[11px] text-sand/50 shrink-0">{formatTime(result.startedAt)}</span>
       </button>
 
@@ -147,7 +154,7 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
   const { getNodes } = useReactFlow();
   const router = useRouter();
   const remove = useWorkflowStore((s) => s.remove);
-  const { logs, logsOpen, setLogsOpen, runs, flowDirection, setFlowDirection } = useEditor();
+  const { logs, logsOpen, setLogsOpen, runs, flowDirection, setFlowDirection, triggerRun, isRunning } = useEditor();
 
   const handleDelete = () => {
     void remove(workflowId).then(() => router.push("/dashboard/workflows"));
@@ -208,6 +215,16 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
           title="AI Chat"
         >
           <Image src="/icons/chat-sparkle.svg" alt="AI Chat" width={26} height={26} style={{ filter: "brightness(0)" }} />
+        </button>
+
+        {/* Run button — floats above panel on the left */}
+        <button
+          onClick={() => void triggerRun()}
+          disabled={isRunning}
+          className="absolute -top-14 left-4 flex items-center gap-2 px-4 h-10 bg-[#1e1e1e] border border-[#333] text-sand text-[12px] font-medium rounded-md shadow-lg hover:bg-[#2a2a2a] hover:border-sand/30 hover:text-sand transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed z-10"
+        >
+          <FlaskConical size={13} strokeWidth={2} />
+          {isRunning ? "Running..." : "Run workflow"}
         </button>
 
         {/* Tab bar */}
