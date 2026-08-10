@@ -69,6 +69,8 @@ When building a workflow with multiple nodes:
 
 When configuring a node, pass static values normally. If a param should receive its value from an upstream node's output, pass "sourceNodeId::outputKey" as the value instead — the UI will render it as a linked field automatically. Only link fields that match the same data (e.g. token_address → token_address). Never pass "<dynamic>" or placeholder strings.
 
+For message template fields (e.g. Telegram message), embed variables using the format {{nodeId::outputKey}}. Use the node IDs from the canvas and the output keys from the agent catalog. Example: if DexScreener node id is "abc123" and you want its token name, write {{abc123::name}}. Never use plain {{variable}} without the node ID.
+
 Available agents:
 ${agentService.getAll().map((a) => {
   const fields = a.config.find((c) => c.key === "parameters")?.fields ?? [];
@@ -131,7 +133,7 @@ export async function POST(req: Request) {
             description: "Set configuration parameters on a node.",
             inputSchema: z.object({
                nodeId: z.string(),
-               params: z.record(z.string(), z.string()),
+               params: z.record(z.string(), z.union([z.string(), z.number()]).transform(String)),
             }),
          },
          remove_node: {

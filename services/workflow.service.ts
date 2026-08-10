@@ -96,9 +96,7 @@ export class WorkflowService {
 
   saveCanvas(workflowId: string, nodes: WorkflowNode[], edges: WorkflowEdge[]) {
     try {
-      // localStorage only caches positions — config is authoritative in Supabase + React state
-      const cached = nodes.map((n) => ({ ...n, config: {} }));
-      localStorage.setItem(CANVAS_KEY(workflowId), JSON.stringify({ nodes: cached, edges }));
+      localStorage.setItem(CANVAS_KEY(workflowId), JSON.stringify({ nodes, edges }));
       this.debouncedSaveToDb(workflowId, { nodes, edges });
     } catch {}
   }
@@ -188,7 +186,7 @@ export class WorkflowService {
   async saveRun(workflowId: string, run: WorkflowRun): Promise<void> {
     if (!isUUID(workflowId)) return;
     try {
-      await this.db.from("run_history").insert({
+      await this.db.from("run_history").upsert({
         id: run.id,
         workflow_id: workflowId,
         status: run.status,

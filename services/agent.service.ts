@@ -259,7 +259,6 @@ export const AGENTS: Agent[] = [
             label: "Parameters",
             fields: [
                { key: "chat_id", label: "Chat ID", type: "text", placeholder: "1853974406" },
-               { key: "type", label: "Message type", type: "select", options: ["alert", "trade_report", "info", "error"] },
                { key: "message", label: "Message template", type: "textarea", placeholder: "Token {{symbol}} passed all checks." },
             ],
          },

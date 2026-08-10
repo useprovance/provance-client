@@ -68,9 +68,9 @@ const CHIP_STYLE = [
   "line-height:1.6",
 ].join(";");
 
-function buildChipEl(key: string, icon: string): HTMLSpanElement {
+function buildChipEl(id: string, displayKey: string, icon: string): HTMLSpanElement {
   const chip = document.createElement("span");
-  chip.dataset.var = key;
+  chip.dataset.var = id;
   chip.contentEditable = "false";
   chip.setAttribute("style", CHIP_STYLE);
   if (icon) {
@@ -79,15 +79,15 @@ function buildChipEl(key: string, icon: string): HTMLSpanElement {
     img.setAttribute("style", "width:12px;height:12px;object-fit:contain;opacity:0.7;display:block;flex-shrink:0");
     chip.appendChild(img);
   }
-  chip.appendChild(document.createTextNode(`{{${key}}}`));
+  chip.appendChild(document.createTextNode(`{{${displayKey}}}`));
   return chip;
 }
 
-function chipHtml(key: string, icon?: string): string {
+function chipHtml(id: string, displayKey: string, icon?: string): string {
   const iconTag = icon
     ? `<img src="${icon}" style="width:12px;height:12px;object-fit:contain;opacity:0.7;display:block;flex-shrink:0">`
     : "";
-  return `<span data-var="${key}" contenteditable="false" style="${CHIP_STYLE}">${iconTag}{{${key}}}</span>`;
+  return `<span data-var="${id}" contenteditable="false" style="${CHIP_STYLE}">${iconTag}{{${displayKey}}}</span>`;
 }
 
 export function MessageTemplateField({ value, onChange, variables }: MessageTemplateFieldProps) {
@@ -111,8 +111,9 @@ export function MessageTemplateField({ value, onChange, variables }: MessageTemp
         .map((seg) => {
           if (seg.type === "text")
             return seg.content.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/\n/g, "<br>");
-          const v = variables.find((x) => x.key === seg.content);
-          return chipHtml(seg.content, v?.icon);
+          const v = variables.find((x) => x.id === seg.content);
+          const displayKey = seg.content.includes("::") ? seg.content.split("::")[1] : seg.content;
+          return chipHtml(seg.content, displayKey, v?.icon);
         })
         .join(""),
     [variables]
@@ -195,7 +196,7 @@ export function MessageTemplateField({ value, onChange, variables }: MessageTemp
     sel.removeAllRanges();
     sel.addRange(range);
 
-    const chip = buildChipEl(v.key, v.icon);
+    const chip = buildChipEl(v.id, v.key, v.icon);
     range.insertNode(chip);
 
     // Place cursor directly after chip — no zero-width space so backspace deletes chip in one press

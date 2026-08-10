@@ -9,6 +9,7 @@ import {
    addEdge,
    useNodesState,
    useEdgesState,
+   useReactFlow,
    type Connection,
    type Node,
    type Edge,
@@ -32,7 +33,7 @@ function toRFNode(n: WorkflowNode): Node {
       id: n.id,
       type: n.type,
       position: n.position,
-      data: { label: def?.label ?? n.nodeId, icon: def?.icon ?? "", agentId: n.nodeId },
+      data: { label: def?.label ?? n.nodeId, icon: def?.icon ?? "", agentId: n.nodeId, config: n.config ?? {} },
    };
 }
 
@@ -52,8 +53,12 @@ function toWorkflowEdge(e: Edge): WorkflowEdge {
 }
 
 function Canvas({ workflowId }: { workflowId: string }) {
-   const [defaultViewport, setDefaultViewport] = useState<Viewport | null>(null);
-   const viewportReady = useRef(false);
+   const { setViewport } = useReactFlow();
+
+   // Read localStorage synchronously so ReactFlow's first render uses the saved viewport — no jump
+   const [initialViewport] = useState<Viewport>(
+      () => workflowService.loadViewport(workflowId) ?? { x: 400, y: 280, zoom: 1 }
+   );
 
    const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
    const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -69,7 +74,6 @@ function Canvas({ workflowId }: { workflowId: string }) {
    // Load canvas — check Supabase first, fall back to localStorage
    useLayoutEffect(() => {
       const local = workflowService.loadCanvas(workflowId);
-      const localVp = workflowService.loadViewport(workflowId);
 
       const applyCanvas = (saved: { nodes: typeof local.nodes; edges: typeof local.edges }) => {
          if (saved.nodes.length > 0 || saved.edges.length > 0) {
@@ -87,10 +91,6 @@ function Canvas({ workflowId }: { workflowId: string }) {
 
       // Apply local data immediately for fast paint
       applyCanvas(local);
-      if (!viewportReady.current) {
-         setDefaultViewport(localVp ?? { x: 400, y: 280, zoom: 1 });
-         viewportReady.current = true;
-      }
       isReady.current = true;
 
       // Hydrate from Supabase in background — refreshes if another device saved newer data
@@ -100,15 +100,16 @@ function Canvas({ workflowId }: { workflowId: string }) {
             workflowService.fetchViewport(workflowId),
          ]);
          if (dbCanvas) applyCanvas(dbCanvas);
-         if (dbVp && !localVp) setDefaultViewport(dbVp);
+         if (dbVp) setViewport(dbVp);
       })();
-   }, [workflowId]);
+   }, [workflowId, setViewport]);
 
    // Load persisted run history from Supabase
    useEffect(() => {
       void (async () => {
          const runs = await workflowService.fetchRuns(workflowId);
-         runs.forEach((r) => addRun(r));
+         const seen = new Set<string>();
+         runs.forEach((r) => { if (!seen.has(r.id)) { seen.add(r.id); addRun(r); } });
       })();
    }, [workflowId, addRun]);
 
@@ -201,7 +202,7 @@ function Canvas({ workflowId }: { workflowId: string }) {
                snapGrid={[20, 20]}
                onMoveEnd={onMoveEnd}
                maxZoom={3}
-               defaultViewport={defaultViewport ?? { x: 400, y: 280, zoom: 1 }}
+               defaultViewport={initialViewport}
                proOptions={{ hideAttribution: true }}
                style={{ background: "transparent" }}
             >

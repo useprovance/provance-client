@@ -31,12 +31,8 @@ async function orchestrateInput(
 // If no array is found, treat the whole output as a single item.
 function extractItems(output: Record<string, unknown>): Record<string, unknown>[] {
   for (const value of Object.values(output)) {
-    if (Array.isArray(value)) {
-      // Empty array = no items to process; don't fall back to wrapper object
-      if (value.length === 0) return [];
-      if (value[0] !== null && typeof value[0] === "object") {
-        return value as Record<string, unknown>[];
-      }
+    if (Array.isArray(value) && value.length > 0 && value[0] !== null && typeof value[0] === "object") {
+      return value as Record<string, unknown>[];
     }
   }
   return [output];
@@ -127,8 +123,24 @@ export async function executeWorkflow(
             })
             .filter(([, v]) => v !== undefined)
         );
-        // Priority: raw parent data → AI remapping → explicit linked values → static config
-        return { ...item, ...orchestrated, ...linkedValues, ...staticOverrides };
+        const merged = { ...item, ...orchestrated, ...linkedValues, ...staticOverrides };
+
+        // Resolve {{nodeId::outputKey}} in string values using the full context map
+        return Object.fromEntries(
+          Object.entries(merged).map(([k, v]) => {
+            if (typeof v !== "string" || !v.includes("{{")) return [k, v];
+            const resolved = v.replace(/\{\{([^}]+)\}\}/g, (_, ref: string) => {
+              if (!ref.includes("::")) return "";
+              const sep = ref.indexOf("::");
+              const nodeId = ref.slice(0, sep);
+              const key = ref.slice(sep + 2);
+              const nodeCtx = context.get(nodeId);
+              const val = nodeCtx ? (nodeCtx[0]?.[key] ?? "") : "";
+              return String(val);
+            });
+            return [k, resolved];
+          })
+        );
       })
     );
     const nodeOutputItems: Record<string, unknown>[] = [];

@@ -71,12 +71,13 @@ export function AiChatSheet({ open, onOpenChange, workflowId }: AiChatSheetProps
         canvasActions.connectNodes(input.sourceId as string, input.targetId as string);
         addToolOutput({ tool: "connect_nodes", toolCallId, output: "done" });
       } else if (toolName === "configure_node") {
-        const raw = input.params as Record<string, string>;
+        const raw = input.params as Record<string, unknown>;
         const staticParams: Record<string, string> = {};
         const links: Record<string, string> = {};
         for (const [key, val] of Object.entries(raw)) {
-          if (val.includes("::")) links[key] = val;
-          else staticParams[key] = val;
+          const strVal = String(val);
+          if (strVal.includes("::") && !strVal.includes("{{")) links[key] = strVal;
+          else staticParams[key] = strVal;
         }
         canvasActions.configureNode(input.nodeId as string, staticParams, links);
         addToolOutput({ tool: "configure_node", toolCallId, output: "done" });

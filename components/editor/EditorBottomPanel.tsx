@@ -2,8 +2,9 @@
 
 import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
-import { EyeOff, Globe, MoreHorizontal, Save, Share2, CheckCircle2, XCircle, Clock, ChevronUp, ChevronDown, ArrowRight, ArrowDown } from "lucide-react";
+import { EyeOff, Globe, MoreHorizontal, Save, Share2, CheckCircle2, XCircle, Clock, ChevronUp, ChevronDown, ArrowRight, ArrowDown, Trash2 } from "lucide-react";
 import { useReactFlow } from "@xyflow/react";
+import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +15,7 @@ import {
 import { PublishModal } from "./PublishModal";
 import { AiChatSheet } from "./AiChatSheet";
 import { useEditor } from "./EditorContext";
+import { useWorkflowStore } from "@/stores/useWorkflowStore";
 import type { WorkflowRun, NodeRunResult } from "@/lib/engine/types";
 
 type PanelTab = "logs" | "runs";
@@ -143,7 +145,13 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
   const [panelHeight, setPanelHeight] = useState(220);
 
   const { getNodes } = useReactFlow();
+  const router = useRouter();
+  const remove = useWorkflowStore((s) => s.remove);
   const { logs, logsOpen, setLogsOpen, runs, flowDirection, setFlowDirection } = useEditor();
+
+  const handleDelete = () => {
+    void remove(workflowId).then(() => router.push("/dashboard/workflows"));
+  };
   const collapsed = !logsOpen;
 
   const MIN_HEIGHT = 220;
@@ -233,31 +241,39 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
                   <MoreHorizontal size={14} strokeWidth={1.5} />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" side="top" className="w-44 bg-[#1c1c1c] border border-[#2a2a2a] p-1 mb-1">
+              <DropdownMenuContent align="end" side="top" className="w-44 bg-[#1c1c1c] border border-[#2a2a2a] p-0.5 mb-1">
                 <DropdownMenuItem
                   onClick={() => setFlowDirection(flowDirection === "horizontal" ? "vertical" : "horizontal")}
-                  className="cursor-pointer px-3 py-2 text-[13px] text-sand/70 focus:text-sand focus:bg-white/5 gap-2.5 [&_svg]:!size-[13px] [&_svg]:!text-current"
+                  className="cursor-pointer px-2.5 py-1.5 text-[12px] text-sand/70 focus:text-sand focus:bg-white/5 gap-2 [&_svg]:!size-[12px] [&_svg]:!text-current"
                 >
                   {flowDirection === "horizontal" ? <ArrowDown strokeWidth={1.5} /> : <ArrowRight strokeWidth={1.5} />}
                   {flowDirection === "horizontal" ? "Top to bottom" : "Left to right"}
                 </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-white/6 my-1" />
+                <DropdownMenuSeparator className="bg-white/6 my-0.5" />
                 <DropdownMenuItem
                   onClick={() => setPublishOpen(true)}
-                  className="cursor-pointer px-3 py-2 text-[13px] text-orange font-medium focus:text-orange focus:bg-orange/8 gap-2.5 [&_svg]:!size-[13px] [&_svg]:!text-current"
+                  className="cursor-pointer px-2.5 py-1.5 text-[12px] text-orange font-medium focus:text-orange focus:bg-orange/8 gap-2 [&_svg]:!size-[12px] [&_svg]:!text-current"
                 >
                   <Globe strokeWidth={1.5} />
                   Publish
                 </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-white/6 my-1" />
-                <DropdownMenuItem className="cursor-pointer px-3 py-2 text-[13px] text-sand/70 focus:text-sand focus:bg-white/5 gap-2.5 [&_svg]:!size-[13px] [&_svg]:!text-current">
+                <DropdownMenuSeparator className="bg-white/6 my-0.5" />
+                <DropdownMenuItem className="cursor-pointer px-2.5 py-1.5 text-[12px] text-sand/70 focus:text-sand focus:bg-white/5 gap-2 [&_svg]:!size-[12px] [&_svg]:!text-current">
                   <Save strokeWidth={1.5} />
                   Save
                 </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-white/6 my-1" />
-                <DropdownMenuItem className="cursor-pointer px-3 py-2 text-[13px] text-sand/70 focus:text-sand focus:bg-white/5 gap-2.5 [&_svg]:!size-[13px] [&_svg]:!text-current">
+                <DropdownMenuSeparator className="bg-white/6 my-0.5" />
+                <DropdownMenuItem className="cursor-pointer px-2.5 py-1.5 text-[12px] text-sand/70 focus:text-sand focus:bg-white/5 gap-2 [&_svg]:!size-[12px] [&_svg]:!text-current">
                   <Share2 strokeWidth={1.5} />
                   Share
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-white/6 my-0.5" />
+                <DropdownMenuItem
+                  onClick={handleDelete}
+                  className="cursor-pointer px-2.5 py-1.5 text-[12px] text-red-400/70 focus:text-red-400 focus:bg-red-400/8 gap-2 [&_svg]:!size-[12px] [&_svg]:!text-current"
+                >
+                  <Trash2 strokeWidth={1.5} />
+                  Delete workflow
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

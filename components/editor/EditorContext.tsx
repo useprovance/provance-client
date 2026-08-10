@@ -48,7 +48,7 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
   const [canvasActions, setCanvasActions] = useState<CanvasActions | null>(null);
 
   const addRun = useCallback((run: WorkflowRun) => {
-    setRuns((prev) => [run, ...prev.slice(0, 49)]);
+    setRuns((prev) => prev.some((r) => r.id === run.id) ? prev : [run, ...prev.slice(0, 49)]);
   }, []);
 
   const openSheet = useCallback((id: string | null) => {

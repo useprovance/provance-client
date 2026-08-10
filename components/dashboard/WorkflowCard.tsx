@@ -26,9 +26,7 @@ export function WorkflowCard({ workflow }: { workflow: Workflow }) {
    const remove = useWorkflowStore((s) => s.remove);
 
    const handleDelete = () => {
-      remove(workflow.id);
-      localStorage.removeItem(`provance_canvas_${workflow.id}`);
-      localStorage.removeItem(`provance_viewport_${workflow.id}`);
+      void remove(workflow.id);
       if (window.location.pathname.includes(workflow.id)) {
          router.push("/dashboard/workflows");
       }
