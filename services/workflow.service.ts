@@ -205,7 +205,7 @@ export class WorkflowService {
         .from("run_history")
         .select("id, workflow_id, status, started_at, finished_at, error, node_results")
         .eq("workflow_id", workflowId)
-        .order("started_at", { ascending: false })
+        .order("started_at", { ascending: true })
         .limit(50);
       if (error || !data) return [];
       return data.map((r: Record<string, unknown>) => ({

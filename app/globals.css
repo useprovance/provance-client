@@ -4,6 +4,27 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@keyframes shimmer-sweep {
+  0% { background-position: 300% center; }
+  100% { background-position: -300% center; }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(227, 216, 197, 0.35) 0%,
+    rgba(227, 216, 197, 0.35) 40%,
+    rgba(255, 248, 240, 0.95) 50%,
+    rgba(227, 216, 197, 0.35) 60%,
+    rgba(227, 216, 197, 0.35) 100%
+  );
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer-sweep 2s linear infinite;
+}
+
 @theme inline {
    --text-sm: 0.8rem;
    --text-sm--line-height: 1.25rem;

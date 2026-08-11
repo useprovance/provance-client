@@ -7,6 +7,7 @@ import {
    GitBranch,
    Bot,
    Store,
+   KeyRound,
    Settings,
    PanelLeftDashed,
 } from "lucide-react";
@@ -38,6 +39,7 @@ const topRoutes = [
    { key: "workflows", label: "Workflows", icon: GitBranch, href: "/dashboard/workflows" },
    { key: "agents", label: "My Agents", icon: Bot, href: "/dashboard/agents" },
    { key: "marketplace", label: "Marketplace", icon: Store, href: "/dashboard/marketplace" },
+   { key: "credentials", label: "Credentials", icon: KeyRound, href: "/dashboard/credentials" },
 ];
 const bottomRoutes = [
    { key: "settings", label: "Settings", icon: Settings, href: "/dashboard/settings" },

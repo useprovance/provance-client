@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { ArrowUp, Loader2 } from "lucide-react";
+import { ArrowUp, Loader2, Mic, Plus } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from "ai";
@@ -121,6 +121,10 @@ export function AiChatSheet({ open, onOpenChange, workflowId }: AiChatSheetProps
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    if (open) setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "instant" }), 80);
+  }, [open]);
+
   const send = useCallback((text: string) => {
     const trimmed = text.trim();
     if (!trimmed || thinking) return;
@@ -176,7 +180,7 @@ export function AiChatSheet({ open, onOpenChange, workflowId }: AiChatSheetProps
           </div>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto px-5 py-6 flex flex-col gap-8">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-5 py-6 flex flex-col gap-8">
           {messages.length === 0 ? (
             <div className="flex flex-col gap-5 mt-4">
               <div className="flex flex-col items-center gap-2 py-6">
@@ -208,10 +212,7 @@ export function AiChatSheet({ open, onOpenChange, workflowId }: AiChatSheetProps
                   return (
                     <div key={msg.id} className="flex flex-col items-start">
                       {thinking && (
-                        <div className="flex items-center gap-2 py-1">
-                          <Loader2 size={12} className="animate-spin text-sand/40" />
-                          <span className="text-[13px] text-sand/40">Thinking...</span>
-                        </div>
+                        <span className="shimmer text-[13px] text-sand/60">Thinking...</span>
                       )}
                     </div>
                   );
@@ -230,12 +231,9 @@ export function AiChatSheet({ open, onOpenChange, workflowId }: AiChatSheetProps
                 );
               })}
 
-              {thinking && messages[messages.length - 1]?.role === "user" && (
+              {thinking && (
                 <div className="flex flex-col items-start">
-                  <div className="flex items-center gap-2 py-1">
-                    <Loader2 size={12} className="animate-spin text-sand/40" />
-                    <span className="text-[13px] text-sand/40">Thinking...</span>
-                  </div>
+                  <span className="shimmer text-[13px] text-sand/60">Thinking...</span>
                 </div>
               )}
 
@@ -245,28 +243,37 @@ export function AiChatSheet({ open, onOpenChange, workflowId }: AiChatSheetProps
         </div>
 
         <div className="shrink-0 border-t border-sand/12 p-4">
-          <div className="relative flex items-end gap-2 border border-sand/20 bg-[#161616] focus-within:border-sand/40 focus-within:ring-1 focus-within:ring-sand/10 transition-colors">
+          <div className="flex flex-col border border-white/10 bg-[#141414] focus-within:border-white/20 transition-colors rounded-lg overflow-hidden">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Ask anything about your workflow..."
-              rows={3}
+              rows={2}
               disabled={thinking}
-              className="flex-1 bg-transparent text-[13px] text-sand placeholder:text-sand/40 px-3 py-3 outline-none resize-none disabled:opacity-50"
+              className="w-full bg-transparent text-[13px] text-sand placeholder:text-sand/40 px-3 pt-2.5 pb-0 outline-none resize-none disabled:opacity-50"
             />
-            <button
-              onClick={() => send(input)}
-              disabled={!input.trim() || thinking}
-              className="mb-2 mr-2 w-7 h-7 flex items-center justify-center bg-orange hover:bg-orange/90 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer shrink-0"
-            >
-              {thinking
-                ? <Loader2 size={12} className="animate-spin text-white" />
-                : <ArrowUp size={13} strokeWidth={2.5} className="text-white" />
-              }
-            </button>
+            <div className="flex items-center justify-between px-1.5 pb-1.5 pt-0">
+              <button className="w-9 h-9 flex items-center justify-center text-sand hover:text-white transition-colors cursor-pointer rounded-full hover:bg-white/5">
+                <Plus size={20} strokeWidth={2} />
+              </button>
+              <div className="flex items-center gap-1">
+                <button className="w-9 h-9 flex items-center justify-center text-sand hover:text-white transition-colors cursor-pointer rounded-full hover:bg-white/5">
+                  <Mic size={19} strokeWidth={2} />
+                </button>
+                <button
+                  onClick={() => send(input)}
+                  disabled={!input.trim() || thinking}
+                  className="w-9 h-9 flex items-center justify-center bg-orange hover:bg-orange/90 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer rounded-full"
+                >
+                  {thinking
+                    ? <Loader2 size={12} className="animate-spin text-white" />
+                    : <ArrowUp size={16} strokeWidth={2.5} className="text-white" />
+                  }
+                </button>
+              </div>
+            </div>
           </div>
-          <p className="text-[10px] text-sand/50 mt-2 font-mono">Enter to send · Shift+Enter for new line</p>
         </div>
       </SheetContent>
     </Sheet>

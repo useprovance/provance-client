@@ -20,9 +20,9 @@ export function MarkdownMessage({ content }: { content: string }) {
           li: ({ children }) => <li className="text-[15px] text-[#f5ede0] leading-relaxed">{children}</li>,
           code: ({ children, className }) =>
             className?.includes("language-")
-              ? <code className="block text-[13px] font-mono text-[#f5ede0] bg-white/6 border border-white/8 rounded px-2.5 py-2 my-1.5 overflow-x-auto whitespace-pre">{children}</code>
-              : <code className="text-[13px] font-mono text-[#f5ede0] bg-white/8 px-1 py-0.5 rounded">{children}</code>,
-          pre: ({ children }) => <div className="my-1.5">{children}</div>,
+              ? <code className="block text-[13px] font-mono text-[#f5ede0] bg-white/6 border border-white/8 rounded px-2.5 py-2 my-1.5 overflow-x-auto whitespace-pre break-all">{children}</code>
+              : <code className="text-[13px] font-mono text-[#f5ede0] bg-white/8 px-1 py-0.5 rounded break-all">{children}</code>,
+          pre: ({ children }) => <div className="my-1.5 w-full overflow-hidden">{children}</div>,
           hr: () => <div className="border-t border-white/10 my-2" />,
           a: ({ href, children }) => <a href={href} target="_blank" rel="noreferrer" className="text-orange underline underline-offset-2 hover:text-orange/80">{children}</a>,
         }}
