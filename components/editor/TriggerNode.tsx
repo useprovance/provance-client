@@ -105,6 +105,7 @@ export function TriggerNodeComponent({ id, selected }: NodeProps<AgentNode>) {
                type="source"
                position={isVertical ? Position.Bottom : Position.Right}
                className="!w-2.5 !h-2.5 !bg-[#2d2d2d] !border !border-sand/20 !rounded-full"
+               style={{ zIndex: 10 }}
             />
 
             <CursorClick size={42} color="#e3d8c5" strokeWidth={1.45} />
@@ -133,7 +134,7 @@ export function TriggerNodeComponent({ id, selected }: NodeProps<AgentNode>) {
                <div className={isVertical ? "h-6 w-px bg-sand/20" : "w-6 h-px bg-sand/20"} />
                <button
                   onClick={() => openSheet(id)}
-                  className="w-5 h-5 rounded-full bg-[#2d2d2d] border border-[#3a3a3a] text-sand/40 hover:border-orange hover:text-orange transition-colors cursor-pointer inline-flex items-center justify-center shrink-0"
+                  className="relative z-10 w-5 h-5 rounded-full bg-[#2d2d2d] border border-[#3a3a3a] text-sand/40 hover:border-orange hover:text-orange transition-colors cursor-pointer inline-flex items-center justify-center shrink-0"
                >
                   <Plus size={10} strokeWidth={2} />
                </button>

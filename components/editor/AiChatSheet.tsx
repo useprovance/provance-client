@@ -182,20 +182,23 @@ export function AiChatSheet({ open, onOpenChange, workflowId }: AiChatSheetProps
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden px-5 py-6 flex flex-col gap-8">
           {messages.length === 0 ? (
-            <div className="flex flex-col gap-5 mt-4">
-              <div className="flex flex-col items-center gap-2 py-6">
-                <Image src="/icons/chat-sparkle.svg" alt="Provance Agent" width={28} height={28} />
-                <p className="text-[13px] text-sand text-center leading-relaxed max-w-[260px]">
-                  Ask me anything about your workflow. I can see your canvas and recent runs.
-                </p>
+            <div className="flex flex-col flex-1 justify-center gap-8">
+              <div className="flex flex-col items-center gap-3">
+                <Image src="/icons/chat-sparkle.svg" alt="Provance Agent" width={36} height={36} />
+                <div className="flex flex-col items-center gap-1">
+                  <p className="text-[17px] font-semibold text-sand">Provance Agent</p>
+                  <p className="text-[12px] text-sand/50 text-center leading-relaxed max-w-[220px]">
+                    Ask me anything. I can see your canvas and recent runs.
+                  </p>
+                </div>
               </div>
               <div className="flex flex-col gap-2">
-                <p className="text-[10px] font-mono uppercase tracking-widest text-sand/60 mb-1">Suggestions</p>
+                <p className="text-[10px] font-mono uppercase tracking-widest text-sand/40 mb-0.5 px-0.5">Try asking</p>
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s}
                     onClick={() => send(s)}
-                    className="text-left px-3 py-2.5 text-[12px] text-sand hover:text-white border border-[#2a2a2a] hover:border-sand/40 bg-[#161616] hover:bg-[#1e1e1e] transition-colors cursor-pointer leading-relaxed"
+                    className="text-left px-3.5 py-3 text-[12.5px] text-sand/80 hover:text-sand border border-white/6 hover:border-white/14 bg-white/[0.03] hover:bg-white/[0.06] rounded-lg transition-all cursor-pointer leading-snug"
                   >
                     {s}
                   </button>
@@ -209,13 +212,7 @@ export function AiChatSheet({ open, onOpenChange, workflowId }: AiChatSheetProps
                 const text = textParts.map((p) => (p as { type: "text"; text: string }).text).join("");
 
                 if (!text && msg.role === "assistant") {
-                  return (
-                    <div key={msg.id} className="flex flex-col items-start">
-                      {thinking && (
-                        <span className="shimmer text-[13px] text-sand/60">Thinking...</span>
-                      )}
-                    </div>
-                  );
+                  return null;
                 }
 
                 return (

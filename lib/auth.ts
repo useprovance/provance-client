@@ -11,7 +11,7 @@ export type SessionUser = {
    email: string | null;
    avatar_url: string | null;
    provider: string;
-   wallet_address: string | null;
+   onboarded: boolean;
 };
 
 export async function createSessionToken(user: SessionUser): Promise<string> {

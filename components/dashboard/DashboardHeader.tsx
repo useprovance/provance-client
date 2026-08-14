@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
-import { Check, GitFork, Plus, Search, User, Settings2, LogOut, Wallet } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, GitFork, Plus, Search, User, Settings2, LogOut } from "lucide-react";
 import { useWorkflowStore } from "@/stores/useWorkflowStore";
 import {
    DropdownMenu,
@@ -31,23 +31,27 @@ import {
 import ProvanceLogo from "@/components/shared/ProvanceLogo";
 import { useAuthStore } from "@/stores/useAuthStore";
 
-const ORGS: Org[] = [
-   { id: "personal", name: "Personal", type: "personal" },
-];
-
-
 export default function DashboardHeader() {
    const router = useRouter();
    const pathname = usePathname();
    const user = useAuthStore((s) => s.user);
    const clearUser = useAuthStore((s) => s.clearUser);
-   const [selectedOrgId, setSelectedOrgId] = useState(ORGS[0].id);
+   const [orgs, setOrgs] = useState<Org[]>([]);
+   const [selectedOrgId, setSelectedOrgId] = useState<string>("");
    const [workflowOpen, setWorkflowOpen] = useState(false);
    const [workflowSearch, setWorkflowSearch] = useState("");
 
-   const orgs = user?.name
-      ? [{ id: "personal", name: user.name, type: "personal" as const }, ...ORGS.slice(1)]
-      : ORGS;
+   useEffect(() => {
+      fetch("/api/orgs")
+         .then((r) => r.ok ? r.json() : null)
+         .then((data: { orgs: { id: string; name: string }[] } | null) => {
+            if (!data?.orgs?.length) return;
+            const mapped: Org[] = data.orgs.map((o) => ({ id: o.id, name: o.name, type: "personal" as const }));
+            setOrgs(mapped);
+            setSelectedOrgId(mapped[0].id);
+         })
+         .catch(() => null);
+   }, []);
 
    const workflows = useWorkflowStore((s) => s.workflows);
    const isInEditor = /^\/dashboard\/workflows\/[^/]+$/.test(pathname ?? "");
@@ -183,14 +187,6 @@ export default function DashboardHeader() {
                <div className="px-3 py-2.5">
                   <p className="text-[13px] font-semibold text-sand leading-tight truncate">{user?.name ?? "—"}</p>
                   {user?.email && <p className="text-[11px] text-sand/40 truncate mt-0.5">{user.email}</p>}
-                  {user?.wallet_address && (
-                     <div className="flex items-center gap-1.5 mt-2 bg-[#252525] rounded-md px-2 py-1.5">
-                        <Wallet size={12} strokeWidth={1} className="text-sand/40 shrink-0" />
-                        <span className="text-[11px] text-sand/50 font-mono truncate">
-                           {user.wallet_address.slice(0, 6)}...{user.wallet_address.slice(-4)}
-                        </span>
-                     </div>
-                  )}
                </div>
 
                <DropdownMenuSeparator className="bg-[#2a2a2a]" />

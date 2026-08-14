@@ -2,10 +2,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { WorkflowStoreProvider } from "@/components/dashboard/WorkflowStoreProvider";
+import SessionSync from "@/components/dashboard/SessionSync";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
    return (
       <TooltipProvider delayDuration={0}>
+         <SessionSync />
          <WorkflowStoreProvider />
          <div className="h-screen flex flex-col overflow-hidden bg-ink text-sand">
             <DashboardHeader />

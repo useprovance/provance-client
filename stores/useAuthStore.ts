@@ -9,7 +9,7 @@ export type AuthUser = {
    email: string | null;
    avatar_url: string | null;
    provider: string;
-   wallet_address: string | null;
+   onboarded: boolean;
 };
 
 type AuthStore = {
