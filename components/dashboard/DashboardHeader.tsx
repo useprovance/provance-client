@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Check, GitFork, Plus, Search, User, Settings2, LogOut } from "lucide-react";
+import { Check, GitFork, Plus, Search, User, Settings2, LogOut, CircleUser } from "lucide-react";
 import { useWorkflowStore } from "@/stores/useWorkflowStore";
 import {
    DropdownMenu,
@@ -186,12 +186,19 @@ export default function DashboardHeader() {
                {/* User info */}
                <div className="px-3 py-2.5">
                   <p className="text-[13px] font-semibold text-sand leading-tight truncate">{user?.name ?? "—"}</p>
-                  {user?.email && <p className="text-[11px] text-sand/40 truncate mt-0.5">{user.email}</p>}
+                  {user?.email && <p className="text-[11px] text-sand/60 truncate mt-0.5">{user.email}</p>}
                </div>
 
                <DropdownMenuSeparator className="bg-[#2a2a2a]" />
 
-<DropdownMenuItem asChild className="cursor-pointer px-3 py-2 text-[13px] text-sand/60 focus:text-sand focus:bg-[#252525] gap-3 [&_svg]:!size-[18px] [&_svg]:!text-current">
+<DropdownMenuItem asChild className="cursor-pointer px-3 py-2 text-[13px] text-sand focus:text-sand focus:bg-[#252525] gap-3 [&_svg]:!size-[18px] [&_svg]:!text-current">
+                  <Link href="/dashboard/account/me">
+                     <CircleUser strokeWidth={1} className="shrink-0" />
+                     Account
+                  </Link>
+               </DropdownMenuItem>
+
+               <DropdownMenuItem asChild className="cursor-pointer px-3 py-2 text-[13px] text-sand focus:text-sand focus:bg-[#252525] gap-3 [&_svg]:!size-[18px] [&_svg]:!text-current">
                   <Link href="/dashboard/settings">
                      <Settings2 strokeWidth={1} className="shrink-0" />
                      Settings
@@ -202,7 +209,7 @@ export default function DashboardHeader() {
 
                <DropdownMenuItem
                   onSelect={handleLogout}
-                  className="cursor-pointer px-3 py-2 text-[13px] text-sand/40 focus:text-red-400 focus:bg-red-400/8 gap-3 [&_svg]:!size-[18px] [&_svg]:!text-current"
+                  className="cursor-pointer px-3 py-2 text-[13px] text-sand/70 focus:text-red-400 focus:bg-red-400/8 gap-3 [&_svg]:!size-[18px] [&_svg]:!text-current"
                >
                   <LogOut strokeWidth={1} className="shrink-0" />
                   Sign out
