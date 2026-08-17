@@ -1,3 +1,5 @@
+const NODES_URL = process.env.NEXT_PUBLIC_NODES_URL ?? "https://nodes.useprovance.xyz";
+
 export interface AgentField {
    key: string;
    label: string;
@@ -62,7 +64,7 @@ export const AGENTS: Agent[] = [
       identifier: "provance.dexscreener-agent",
       publishedAt: "2 months ago",
       lastReleased: "1 week ago",
-      url: "https://nodes.useprovance.xyz/dexscreener",
+      url: "`${NODES_URL}/dexscreener`",
       outputs: [
          { key: "token_address", label: "Token address" },
          { key: "symbol", label: "Symbol" },
@@ -109,7 +111,7 @@ export const AGENTS: Agent[] = [
       identifier: "provance.goplus-agent",
       publishedAt: "4 months ago",
       lastReleased: "5 weeks ago",
-      url: "https://nodes.useprovance.xyz/goplus",
+      url: "`${NODES_URL}/goplus`",
       outputs: [
          { key: "token_address", label: "Token address" },
          { key: "chain", label: "Chain" },
@@ -155,7 +157,7 @@ export const AGENTS: Agent[] = [
       identifier: "provance.honeypot-agent",
       publishedAt: "2 months ago",
       lastReleased: "2 weeks ago",
-      url: "https://nodes.useprovance.xyz/honeypot",
+      url: "`${NODES_URL}/honeypot`",
       outputs: [
          { key: "token_address", label: "Token address" },
          { key: "is_honeypot", label: "Is honeypot" },
@@ -196,7 +198,7 @@ export const AGENTS: Agent[] = [
       identifier: "provance.ai-decision-agent",
       publishedAt: "2 months ago",
       lastReleased: "1 week ago",
-      url: "https://nodes.useprovance.xyz/ai-decision",
+      url: "`${NODES_URL}/ai-decision`",
       outputs: [
          { key: "token_address", label: "Token address" },
          { key: "decision", label: "Decision (buy / ignore)" },
@@ -241,7 +243,7 @@ export const AGENTS: Agent[] = [
       identifier: "provance.telegram-agent",
       publishedAt: "7 months ago",
       lastReleased: "2 weeks ago",
-      url: "https://nodes.useprovance.xyz/telegram",
+      url: "`${NODES_URL}/telegram`",
       outputs: [
          { key: "sent", label: "Message sent" },
          { key: "message_id", label: "Message ID" },
@@ -279,7 +281,7 @@ export const AGENTS: Agent[] = [
       identifier: "provance.gruff-agent",
       publishedAt: "1 month ago",
       lastReleased: "1 month ago",
-      url: "https://nodes.useprovance.xyz/goat",
+      url: "`${NODES_URL}/goat`",
       outputs: [
          { key: "action", label: "Action performed" },
          { key: "success", label: "Success" },
@@ -321,7 +323,7 @@ export const AGENTS: Agent[] = [
       identifier: "provance.stellar-trader-agent",
       publishedAt: "Just now",
       lastReleased: "Just now",
-      url: "https://nodes.useprovance.xyz/blaze",
+      url: "`${NODES_URL}/blaze`",
       outputs: [
          { key: "action", label: "Action performed" },
          { key: "success", label: "Success" },
