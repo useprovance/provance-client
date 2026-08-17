@@ -268,7 +268,7 @@ export const AGENTS: Agent[] = [
       ],
    },
    {
-      id: "goat",
+      id: "gruff",
       nodeType: "agent",
       label: "Gruff",
       description: "AI-powered trading agent on GOAT Network (Bitcoin L2). Send a plain text message — it checks balances, gets quotes, and executes swaps via OKU.",
@@ -281,7 +281,7 @@ export const AGENTS: Agent[] = [
       identifier: "provance.gruff-agent",
       publishedAt: "1 month ago",
       lastReleased: "1 month ago",
-      url: "`${NODES_URL}/goat`",
+      url: "`${NODES_URL}/gruff`",
       outputs: [
          { key: "action", label: "Action performed" },
          { key: "success", label: "Success" },
