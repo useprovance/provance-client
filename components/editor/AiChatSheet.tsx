@@ -98,7 +98,13 @@ export function AiChatSheet({ open, onOpenChange, workflowId }: AiChatSheetProps
   });
 
   const [input, setInput] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const thinking = status === "streaming" || status === "submitted";
+
+  const autoResize = (el: HTMLTextAreaElement) => {
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  };
 
   // Load persisted messages on mount
   useEffect(() => {
@@ -131,6 +137,9 @@ export function AiChatSheet({ open, onOpenChange, workflowId }: AiChatSheetProps
     void chatService.saveMessage(workflowId, { role: "user", content: trimmed });
     setInput("");
     sendMessage({ text: trimmed });
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
   }, [thinking, workflowId, sendMessage]);
 
   const onDragMouseDown = useCallback((e: React.MouseEvent) => {
@@ -239,23 +248,24 @@ export function AiChatSheet({ open, onOpenChange, workflowId }: AiChatSheetProps
           )}
         </div>
 
-        <div className="shrink-0 border-t border-sand/12 p-4">
-          <div className="flex flex-col border border-white/10 bg-[#141414] focus-within:border-white/20 transition-colors rounded-lg overflow-hidden">
+        <div className="shrink-0 p-4">
+          <div className="flex flex-col bg-[#1a1a1a] rounded-lg overflow-hidden">
             <textarea
+              ref={textareaRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => { setInput(e.target.value); autoResize(e.target); }}
               onKeyDown={handleKeyDown}
               placeholder="Ask anything about your workflow..."
-              rows={2}
+              rows={1}
               disabled={thinking}
-              className="w-full bg-transparent text-[13px] text-sand placeholder:text-sand/40 px-3 pt-2.5 pb-0 outline-none resize-none disabled:opacity-50"
+              className="w-full bg-transparent text-[15px] text-white placeholder:text-white/30 px-3 pt-2.5 pb-2 outline-none resize-none disabled:opacity-50"
             />
             <div className="flex items-center justify-between px-1.5 pb-1.5 pt-0">
-              <button className="w-9 h-9 flex items-center justify-center text-sand hover:text-white transition-colors cursor-pointer rounded-full hover:bg-white/5">
+              <button className="w-9 h-9 flex items-center justify-center text-white/40 hover:text-white/80 transition-colors cursor-pointer rounded-full hover:bg-white/5">
                 <Plus size={20} strokeWidth={2} />
               </button>
               <div className="flex items-center gap-1">
-                <button className="w-9 h-9 flex items-center justify-center text-sand hover:text-white transition-colors cursor-pointer rounded-full hover:bg-white/5">
+                <button className="w-9 h-9 flex items-center justify-center text-white/40 hover:text-white/80 transition-colors cursor-pointer rounded-full hover:bg-white/5">
                   <Mic size={19} strokeWidth={2} />
                 </button>
                 <button

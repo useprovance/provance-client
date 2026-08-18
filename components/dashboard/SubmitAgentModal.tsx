@@ -208,6 +208,7 @@ export function SubmitAgentModal({
                           <span className="text-[13px] text-sand/30">{form.icon ? "Change icon" : "Upload icon (PNG, SVG)"}</span>
                         </label>
                       </div>
+                      <p className="text-[11px] text-sand/30">Recommended: 512 × 512px SVG or PNG with a filled background.</p>
                     </div>
                     <FormInput
                       label="Agent Name"

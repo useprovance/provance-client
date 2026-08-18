@@ -130,21 +130,21 @@ export function TriggerNodeComponent({ id, selected }: NodeProps<AgentNode>) {
                className="nodrag absolute flex items-center"
                style={isVertical ? {
                   left: BOX_SIZE / 2,
-                  top: BOX_SIZE,
+                  top: BOX_SIZE + 8,
                   transform: "translateX(-50%)",
                   flexDirection: "column",
                } : {
                   top: BOX_SIZE / 2,
-                  left: BOX_SIZE,
+                  left: BOX_SIZE + 4,
                   transform: "translateY(-50%)",
                }}
             >
-               <div className={isVertical ? "h-6 w-px bg-sand/20" : "w-6 h-px bg-sand/20"} />
+               <div className={isVertical ? "h-[60px] w-[2px] bg-[oklch(42%_0_0)]" : "w-[60px] h-[2px] bg-[oklch(42%_0_0)]"} />
                <button
                   onClick={() => openSheet(id)}
-                  className="relative z-10 w-5 h-5 rounded-full bg-[#2d2d2d] border border-[#3a3a3a] text-white/40 hover:border-orange hover:text-orange transition-colors cursor-pointer inline-flex items-center justify-center shrink-0"
+                  className="relative z-10 w-6 h-6 rounded-[4px] bg-[hsl(0,0%,17%)] text-[oklch(90.67%_0_89.88)] hover:bg-[oklch(31.71%_0_89.88)] hover:text-[oklch(95.51%_0_89.88)] transition-colors cursor-pointer inline-flex items-center justify-center shrink-0"
                >
-                  <Plus size={10} strokeWidth={2} />
+                  <Plus size={12} strokeWidth={3} />
                </button>
                <Handle
                   type="source"
