@@ -14,7 +14,7 @@ import { NodeToolbar } from "./NodeToolbar";
 import { useEditor } from "./EditorContext";
 import type { AgentNode } from "./editor.constants";
 
-const BOX_SIZE = 64;
+const BOX_SIZE = 96;
 
 export function TriggerNodeComponent({ id, selected }: NodeProps<AgentNode>) {
    const { openSheet, openConfig, flowDirection, triggerRun, isRunning } = useEditor();
@@ -51,7 +51,7 @@ export function TriggerNodeComponent({ id, selected }: NodeProps<AgentNode>) {
                opacity: toolbarVisible ? 0 : 1,
             }}
          >
-            <Zap size={16} strokeWidth={0} fill="#d95e28" />
+            <Zap size={20} strokeWidth={0} fill="#d95e28" />
          </div>
 
          {/* Execute button — slides in from left on hover */}
@@ -75,16 +75,12 @@ export function TriggerNodeComponent({ id, selected }: NodeProps<AgentNode>) {
          {/* Box */}
          <div
             onClick={() => openConfig(id)}
-            style={{
-               width: BOX_SIZE,
-               height: BOX_SIZE,
-               borderRadius: "23px 6px 6px 23px",
-            }}
+            style={{ width: BOX_SIZE, height: BOX_SIZE, borderRadius: "36px 8px 8px 36px", borderWidth: "1.5px" }}
             className={`
-          relative flex items-center justify-center border
-          bg-[#2d2d2d] transition-colors cursor-pointer
-          ${toolbarVisible ? "ring-1 ring-orange/30" : ""}
-          ${selected ? "border-orange shadow-[0_0_0_1px_#d95e28]" : "border-[#3a3a3a]"}
+          relative flex items-center justify-center
+          bg-[hsl(0,0%,17%)] [background-clip:padding-box] transition-shadow cursor-pointer
+          border border-[oklch(100%_0_89.88_/_0.2)]
+          ${selected ? "shadow-[0_0_0_6px_oklch(100%_0_89.88_/_0.4)]" : ""}
         `}
          >
             <NodeToolbar
@@ -104,15 +100,27 @@ export function TriggerNodeComponent({ id, selected }: NodeProps<AgentNode>) {
             <Handle
                type="source"
                position={isVertical ? Position.Bottom : Position.Right}
-               className="!w-2.5 !h-2.5 !bg-[#2d2d2d] !border !border-sand/20 !rounded-full"
+               className="!w-4 !h-4 !bg-[hsl(0,0%,17%)] !border !border-[oklch(0.5_0_0)] !rounded-full !transition-[transform,background,border-width] !duration-200 hover:!scale-150 hover:!border-[1.5px] hover:!border-[oklch(88.53%_0_89.88)] hover:!bg-[hsl(0,0%,38%)]"
                style={{ zIndex: 10 }}
             />
 
-            <CursorClick size={42} color="#e3d8c5" strokeWidth={1.45} />
+            <CursorClick size={48} color="#e3d8c5" strokeWidth={1.45} className="rounded-sm" />
          </div>
 
          {/* Label */}
-         <p className="mt-2 text-[11px] font-medium text-sand text-center leading-snug w-25 -translate-x-[18.1px]">
+         <p
+            className="absolute text-[1rem] font-medium text-white text-center leading-[1.25] pointer-events-none overflow-hidden"
+            style={{
+               top: "100%",
+               marginTop: 8,
+               left: "50%",
+               transform: "translateX(-50%)",
+               minWidth: BOX_SIZE * 2,
+               display: "-webkit-box",
+               WebkitBoxOrient: "vertical",
+               WebkitLineClamp: 2,
+            }}
+         >
             Workflow Trigger
          </p>
 
@@ -134,7 +142,7 @@ export function TriggerNodeComponent({ id, selected }: NodeProps<AgentNode>) {
                <div className={isVertical ? "h-6 w-px bg-sand/20" : "w-6 h-px bg-sand/20"} />
                <button
                   onClick={() => openSheet(id)}
-                  className="relative z-10 w-5 h-5 rounded-full bg-[#2d2d2d] border border-[#3a3a3a] text-sand/40 hover:border-orange hover:text-orange transition-colors cursor-pointer inline-flex items-center justify-center shrink-0"
+                  className="relative z-10 w-5 h-5 rounded-full bg-[#2d2d2d] border border-[#3a3a3a] text-white/40 hover:border-orange hover:text-orange transition-colors cursor-pointer inline-flex items-center justify-center shrink-0"
                >
                   <Plus size={10} strokeWidth={2} />
                </button>

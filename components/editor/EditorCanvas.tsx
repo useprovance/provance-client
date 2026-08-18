@@ -198,7 +198,7 @@ function Canvas({ workflowId }: { workflowId: string }) {
    }, [registerCanvasActions, setNodes, setEdges, workflowId]);
 
    return (
-      <div className="flex flex-col w-full h-full bg-[#0f0f0f]">
+      <div className="flex flex-col w-full h-full bg-[oklch(20.46%_0_89.88)]">
          <div className="relative flex-1 min-h-0">
             <ReactFlow
                nodes={nodes}
@@ -210,12 +210,13 @@ function Canvas({ workflowId }: { workflowId: string }) {
                edgeTypes={edgeTypes}
                defaultEdgeOptions={{
                   type: "provance",
-                  style: { stroke: "rgba(160,160,160,0.35)", strokeWidth: 1.5 },
+                  style: { stroke: "oklch(42% 0 0)", strokeWidth: 2, strokeLinecap: "square" },
                }}
                snapToGrid
                snapGrid={[20, 20]}
                onMoveEnd={onMoveEnd}
-               maxZoom={3}
+               minZoom={0}
+               maxZoom={4}
                defaultViewport={initialViewport}
                proOptions={{ hideAttribution: true }}
                style={{ background: "transparent" }}
@@ -224,7 +225,7 @@ function Canvas({ workflowId }: { workflowId: string }) {
                   variant={BackgroundVariant.Dots}
                   gap={16}
                   size={1}
-                  color="#e3d8c540"
+                  color="oklch(38.67% 0 89.88)"
                />
                <MiniMap
                   position="bottom-left"

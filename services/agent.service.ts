@@ -275,7 +275,7 @@ export const AGENTS: Agent[] = [
       author: "Provance",
       downloads: "1.2K",
       rating: 4.7,
-      icon: "/icons/agents/goat.svg",
+      icon: "/icons/agents/gruff.svg",
       version: "1.0.0",
       category: "DeFi",
       identifier: "provance.gruff-agent",

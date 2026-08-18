@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, useReactFlow, type EdgeProps } from "@xyflow/react";
+import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, MarkerType, useReactFlow, type EdgeProps } from "@xyflow/react";
 import { useEditor } from "./EditorContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -16,22 +16,28 @@ export function EditorEdge({
   const { deleteElements } = useReactFlow();
   const { openSheet } = useEditor();
 
-  const arrowColor = hovered ? "#9a8e82" : "#4a4540";
+  const strokeColor = hovered ? "oklch(62% 0 0)" : "oklch(42% 0 0)";
 
   return (
     <>
       <defs>
         <marker
           id={`arrow-${id}`}
-          markerWidth="7"
-          markerHeight="11"
-          refX="5"
-          refY="5.5"
-          orient="auto"
+          viewBox="-10 -10 20 20"
+          refX="0"
+          refY="0"
+          markerWidth="12.5"
+          markerHeight="12.5"
+          markerUnits="strokeWidth"
+          orient="auto-start-reverse"
         >
-          <path
-            d="M0,3.0 Q0,0.5 1.5,1.8 L4.8,5.0 Q5.5,5.5 4.8,6.0 L1.5,9.2 Q0,10.5 0,8.0 Z"
-            fill={arrowColor}
+          <polyline
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            points="-5,-4 0,0 -5,4 -5,-4"
+            strokeWidth="2"
+            stroke="context-stroke"
+            fill="context-stroke"
           />
         </marker>
       </defs>
@@ -39,9 +45,10 @@ export function EditorEdge({
         path={edgePath}
         markerEnd={`url(#arrow-${id})`}
         style={{
-          stroke: hovered ? "rgba(227,216,197,0.7)" : "rgba(227,216,197,0.3)",
-          strokeWidth: hovered ? 2 : 1.5,
-          transition: "stroke 0.15s, stroke-width 0.15s",
+          stroke: strokeColor,
+          strokeWidth: 2,
+          strokeLinecap: "square",
+          transition: "stroke 0.2s ease",
         }}
       />
       {/* Invisible wide path to make hovering easier */}

@@ -15,7 +15,7 @@ import { useEditor } from "./EditorContext";
 import type { AgentNode } from "./editor.constants";
 import Image from "next/image";
 
-const BOX_SIZE = 64;
+const BOX_SIZE = 96;
 
 export function AgentNodeComponent({
    id,
@@ -54,12 +54,12 @@ export function AgentNodeComponent({
          {/* Box */}
          <div
             onClick={() => openConfig(id)}
-            style={{ width: BOX_SIZE, height: BOX_SIZE }}
+            style={{ width: BOX_SIZE, height: BOX_SIZE, borderWidth: "1.5px" }}
             className={`
-               relative flex items-center justify-center rounded-md border
-               bg-[#2d2d2d] transition-colors cursor-pointer
-               ${toolbarVisible ? "ring-1 ring-sand/20" : ""}
-               ${selected ? "border-orange shadow-[0_0_0_1px_#d95e28]" : "border-[#3a3a3a]"}
+               relative flex items-center justify-center rounded-md
+               bg-[hsl(0,0%,17%)] [background-clip:padding-box] transition-shadow cursor-pointer
+               border border-[oklch(100%_0_89.88_/_0.2)]
+               ${selected ? "shadow-[0_0_0_6px_oklch(100%_0_89.88_/_0.4)]" : ""}
             `}
          >
             <NodeToolbar
@@ -73,26 +73,38 @@ export function AgentNodeComponent({
             <Handle
                type="target"
                position={isVertical ? Position.Top : Position.Left}
-               className="!w-2.5 !h-2.5 !bg-[#2d2d2d] !border !border-sand/20 !rounded-full"
+               className="!w-4 !h-4 !bg-[hsl(0,0%,17%)] !border !border-[oklch(0.5_0_0)] !rounded-full !transition-[transform,background,border-width] !duration-200 hover:!scale-150 hover:!border-[1.5px] hover:!border-[oklch(88.53%_0_89.88)] hover:!bg-[hsl(0,0%,38%)]"
             />
             <Handle
                type="source"
                position={isVertical ? Position.Bottom : Position.Right}
-               className="!w-2.5 !h-2.5 !bg-[#2d2d2d] !border !border-sand/20 !rounded-full !z-20"
+               className="!w-4 !h-4 !bg-[hsl(0,0%,17%)] !border !border-[oklch(0.5_0_0)] !rounded-full !transition-[transform,background,border-width] !duration-200 hover:!scale-150 hover:!border-[1.5px] hover:!border-[oklch(88.53%_0_89.88)] hover:!bg-[hsl(0,0%,38%)] !z-20"
             />
 
             <Image
                src={data.icon}
                alt={data.label}
-               width={28}
-               height={28}
-               className="object-contain"
+               width={48}
+               height={48}
+               className="object-contain rounded-sm"
             />
 
          </div>
 
          {/* Label */}
-         <p className="mt-2 text-[11px] font-medium text-sand text-center leading-snug w-25 -translate-x-[18.1px]">
+         <p
+            className="absolute text-[1rem] font-medium text-white text-center leading-[1.25] pointer-events-none overflow-hidden"
+            style={{
+               top: "100%",
+               marginTop: 8,
+               left: "50%",
+               transform: "translateX(-50%)",
+               minWidth: BOX_SIZE * 2,
+               display: "-webkit-box",
+               WebkitBoxOrient: "vertical",
+               WebkitLineClamp: 2,
+            }}
+         >
             {data.label}
          </p>
 
@@ -116,7 +128,7 @@ export function AgentNodeComponent({
                <div className={isVertical ? "h-6 w-px bg-sand/20" : "w-6 h-px bg-sand/20"} />
                <button
                   onClick={() => openSheet(id)}
-                  className="w-5 h-5 rounded-full bg-[#2d2d2d] border border-[#3a3a3a] text-sand/40 hover:border-orange hover:text-orange transition-colors cursor-pointer inline-flex items-center justify-center shrink-0"
+                  className="w-5 h-5 rounded-full bg-[#2d2d2d] border border-[#3a3a3a] text-white/40 hover:border-orange hover:text-orange transition-colors cursor-pointer inline-flex items-center justify-center shrink-0"
                >
                   <Plus size={10} strokeWidth={2} />
                </button>
