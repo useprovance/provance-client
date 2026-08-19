@@ -9,14 +9,17 @@ import {
    type NodeProps,
 } from "@xyflow/react";
 import { Plus, Zap, FlaskConical } from "lucide-react";
-import { CursorClick } from "@/assets/CursorClick";
+import Image from "next/image";
 import { NodeToolbar } from "./NodeToolbar";
 import { useEditor } from "./EditorContext";
 import type { AgentNode } from "./editor.constants";
 
 const BOX_SIZE = 96;
 
-export function TriggerNodeComponent({ id, selected }: NodeProps<AgentNode>) {
+export function TriggerNodeComponent({ id, selected, data }: NodeProps<AgentNode>) {
+   const triggerType = (data as unknown as { triggerType?: string }).triggerType;
+   const icon = (data as unknown as { icon?: string }).icon ?? "/icons/agents/trigger.svg";
+   const triggerLabel = data.label ?? (triggerType === "schedule" ? "Schedule" : triggerType === "webhook" ? "Webhook" : "Manual");
    const { openSheet, openConfig, flowDirection, triggerRun, isRunning } = useEditor();
    const isVertical = flowDirection === "vertical";
    const { deleteElements } = useReactFlow();
@@ -91,12 +94,7 @@ export function TriggerNodeComponent({ id, selected }: NodeProps<AgentNode>) {
                onMouseLeave={hideToolbar}
             />
 
-            <Handle
-               type="target"
-               position={isVertical ? Position.Top : Position.Left}
-               className="!opacity-0 !w-1 !h-1 !pointer-events-none"
-            />
-
+            {/* Only source handle — triggers can only start flows, not receive them */}
             <Handle
                type="source"
                position={isVertical ? Position.Bottom : Position.Right}
@@ -104,7 +102,7 @@ export function TriggerNodeComponent({ id, selected }: NodeProps<AgentNode>) {
                style={{ zIndex: 10 }}
             />
 
-            <CursorClick size={48} color="#e3d8c5" strokeWidth={1.45} className="rounded-sm" />
+            <Image src={icon} alt={triggerLabel} width={48} height={48} className="object-contain opacity-90" />
          </div>
 
          {/* Label */}
@@ -121,7 +119,7 @@ export function TriggerNodeComponent({ id, selected }: NodeProps<AgentNode>) {
                WebkitLineClamp: 2,
             }}
          >
-            Workflow Trigger
+            {triggerLabel}
          </p>
 
          {/* Plus button */}

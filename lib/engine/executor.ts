@@ -1,5 +1,4 @@
 import { buildGraph, topologicalSort, findStartNodes } from "./graph";
-import { callAgent } from "./agent-registry";
 import { agentService } from "@/services/agent.service";
 import type { EngineCanvas, WorkflowRun, NodeRunResult } from "./types";
 
@@ -180,7 +179,7 @@ export async function executeWorkflow(
       let result: NodeRunResult;
 
       try {
-        const output = await callAgent(agentId, input);
+        const output = await agentService.run(agentId, node.action?.key, input);
         nodeOutputItems.push(output);
 
         result = {

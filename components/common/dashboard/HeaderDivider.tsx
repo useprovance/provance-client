@@ -5,7 +5,7 @@ export function HeaderDivider({
    ...props
 }: React.HTMLProps<HTMLSpanElement>) {
    return (
-      <span className={cn("text-sand/30", className)} {...props}>
+      <span className={cn("text-white/20", className)} {...props}>
          <svg
             viewBox="0 0 24 24"
             width="20"

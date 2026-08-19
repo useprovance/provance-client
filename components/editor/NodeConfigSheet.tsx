@@ -134,11 +134,16 @@ export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
     ? (agentService.getById(agentId) ?? NODES.find((n) => n.id === agentId))
     : undefined;
 
+  const actionKey = node?.data.action?.key;
+  const agentFull = agentId ? agentService.getById(agentId) : undefined;
+  const matchedAction = agentFull?.actions?.find((a) => a.key === actionKey);
+  const activeConfig_ = matchedAction?.config ?? agent?.config ?? [];
+
   const nodeConfig = (node?.data as { config?: Record<string, Record<string, string>> })?.config ?? {};
   const nodeConfigKey = JSON.stringify(nodeConfig);
   const hasParentEdges = edges.some((e) => e.target === configNodeId);
 
-  const [activeTab, setActiveTab] = useState(agent?.config[0]?.key ?? "");
+  const [activeTab, setActiveTab] = useState(activeConfig_[0]?.key ?? "");
   const [config, setConfig] = useState<Record<string, Record<string, string>>>(nodeConfig);
   const [linked, setLinked] = useState<Record<string, string>>(
     hasParentEdges ? (nodeConfig[LINKS_KEY] ?? {}) as Record<string, string> : {}
@@ -148,9 +153,12 @@ export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
     if (!isConfigOpen || !configNodeId) return;
     const fresh = (getNode(configNodeId) as AgentNode | undefined);
     const freshConfig = (fresh?.data as { config?: Record<string, Record<string, string>> })?.config ?? {};
+    const freshActionKey = fresh?.data.action?.key;
+    const freshAction = agentFull?.actions?.find((a) => a.key === freshActionKey);
+    const freshTabConfig = freshAction?.config ?? agent?.config ?? [];
     setConfig(freshConfig);
     setLinked(hasParentEdges ? (freshConfig[LINKS_KEY] ?? {}) as Record<string, string> : {});
-    setActiveTab(agent?.config[0]?.key ?? "");
+    setActiveTab(freshTabConfig[0]?.key ?? "");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConfigOpen, configNodeId, nodeConfigKey]);
 
@@ -184,7 +192,7 @@ export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
 
   if (!node || !agent) return null;
 
-  const activeConfig = agent.config.find((c) => c.key === activeTab);
+  const activeConfig = activeConfig_.find((c) => c.key === activeTab);
 
   return (
     <Sheet open={isConfigOpen} onOpenChange={(o) => { if (!o) closeConfig(); }}>
@@ -197,24 +205,29 @@ export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
 
         <div className="flex items-center gap-2 px-5 py-4 border-b border-[#2a2a2a]">
           <Image src={agent.icon} alt={agent.label} width={40} height={40} className="object-contain shrink-0" />
-          <p className="flex-1 text-[15px] font-semibold text-sand">{agent.label}</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-[15px] font-semibold text-white truncate">{agent.label}</p>
+            {matchedAction && (
+              <p className="text-[11px] text-white/40 truncate">{matchedAction.label}</p>
+            )}
+          </div>
           <button
             onClick={closeConfig}
             className="w-7 h-7 rounded-full bg-white/8 hover:bg-white/15 flex items-center justify-center transition-colors cursor-pointer shrink-0"
           >
-            <X size={13} strokeWidth={2} className="text-sand/60" />
+            <X size={13} strokeWidth={2} className="text-white/60" />
           </button>
         </div>
 
         <div className="flex border-b border-[#2a2a2a]">
-          {agent.config.map((c) => (
+          {activeConfig_.map((c) => (
             <button
               key={c.key}
               onClick={() => setActiveTab(c.key)}
               className={`px-5 py-3 text-[13px] font-medium capitalize transition-colors cursor-pointer border-b-2 -mb-px ${
                 activeTab === c.key
-                  ? "text-sand border-orange"
-                  : "text-sand/35 border-transparent hover:text-sand/60"
+                  ? "text-white border-orange"
+                  : "text-white/35 border-transparent hover:text-white/60"
               }`}
             >
               {c.label}
@@ -261,7 +274,7 @@ export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
         <div className="px-5 py-4 border-t border-[#2a2a2a] flex justify-end gap-2">
           <button
             onClick={closeConfig}
-            className="px-4 py-1.5 text-[13px] text-sand/50 hover:text-sand transition-colors cursor-pointer"
+            className="px-4 py-1.5 text-[13px] text-white/50 hover:text-white transition-colors cursor-pointer"
           >
             Cancel
           </button>

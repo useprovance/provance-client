@@ -5,6 +5,7 @@ export interface EngineNode {
   nodeId: string;
   type: "agent" | "trigger";
   position: { x: number; y: number };
+  action?: { key: string; label: string };
   config: Record<string, Record<string, string>>;
 }
 

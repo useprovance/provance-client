@@ -67,7 +67,7 @@ export function FormSelector({
 
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      <label htmlFor={id} className="text-[11px] font-mono uppercase tracking-widest text-sand/40">
+      <label htmlFor={id} className="text-[11px] font-mono uppercase tracking-widest text-white/40">
         {label}
         {required && <span className="text-orange ml-1">*</span>}
       </label>
@@ -82,8 +82,8 @@ export function FormSelector({
               "flex h-[42px] w-full items-center justify-between rounded-sm border bg-[#0c0c0c] text-[13px] transition-colors outline-none overflow-hidden cursor-pointer",
               hasError
                 ? "border-red-500/60"
-                : "border-[#2a2a2a] hover:border-sand/20 focus:border-sand/30 focus:ring-2 focus:ring-sand/10",
-              !value ? "text-sand/20" : "text-sand",
+                : "border-[#2a2a2a] hover:border-white/20 focus:border-white/30 focus:ring-2 focus:ring-white/10",
+              !value ? "text-white/20" : "text-white",
               disabled && "opacity-50 cursor-not-allowed"
             )}
           >
@@ -94,9 +94,9 @@ export function FormSelector({
               )}
               {selected
                 ? <span className="truncate">{selected.label}</span>
-                : <span className="text-sand/20">{placeholder}</span>}
+                : <span className="text-white/20">{placeholder}</span>}
             </span>
-            <ChevronDown size={14} strokeWidth={1.5} className={cn("text-sand/40 shrink-0 transition-transform mr-3", open && "rotate-180")} />
+            <ChevronDown size={14} strokeWidth={1.5} className={cn("text-white/40 shrink-0 transition-transform mr-3", open && "rotate-180")} />
           </div>
         </PopoverTrigger>
 
@@ -109,12 +109,12 @@ export function FormSelector({
               <div className="border-b border-[#2a2a2a]">
                 <CommandInput
                   placeholder="Search..."
-                  className="h-9 bg-transparent text-[13px] text-sand placeholder:text-sand/30 outline-none border-0"
+                  className="h-9 bg-transparent text-[13px] text-white placeholder:text-white/30 outline-none border-0"
                 />
               </div>
             )}
             <CommandList>
-              <CommandEmpty className="py-4 text-center text-[12px] text-sand/30">No options found.</CommandEmpty>
+              <CommandEmpty className="py-4 text-center text-[12px] text-white/30">No options found.</CommandEmpty>
               <CommandGroup>
                 <div className="max-h-52 overflow-y-auto">
                 {options.map((opt) => {
@@ -124,7 +124,7 @@ export function FormSelector({
                       key={opt.value}
                       value={opt.label}
                       onSelect={() => handleSelect(opt)}
-                      className="flex items-center justify-between px-3 py-2.5 cursor-pointer rounded-none border-b border-[#1a1a1a] last:border-0 text-[13px] text-sand/60 hover:text-sand aria-selected:bg-white/5 aria-selected:text-sand"
+                      className="flex items-center justify-between px-3 py-2.5 cursor-pointer rounded-none border-b border-[#1a1a1a] last:border-0 text-[13px] text-white/60 hover:text-white aria-selected:bg-white/5 aria-selected:text-white"
                     >
                       <div className="flex items-center gap-2.5">
                         {opt.icon && (

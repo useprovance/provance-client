@@ -32,7 +32,8 @@ export const NODES: NodeDef[] = [
 export type AgentNodeData = {
    label: string;
    icon: string;
-   agentId?: string;
+   agentId: string;
+   action: { key: string; label: string };
 };
 
 export type AgentNode = Node<AgentNodeData, "agent">;

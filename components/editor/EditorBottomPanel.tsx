@@ -148,13 +148,12 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
   const [tab, setTab] = useState<PanelTab>("logs");
   const [publishOpen, setPublishOpen] = useState(false);
   const [published, setPublished] = useState(false);
-  const [aiOpen, setAiOpen] = useState(false);
   const [panelHeight, setPanelHeight] = useState(220);
 
   const { getNodes } = useReactFlow();
   const router = useRouter();
   const remove = useWorkflowStore((s) => s.remove);
-  const { logs, logsOpen, setLogsOpen, runs, flowDirection, setFlowDirection, triggerRun, isRunning } = useEditor();
+  const { logs, logsOpen, setLogsOpen, runs, flowDirection, setFlowDirection, triggerRun, isRunning, isAiChatOpen, openAiChat, closeAiChat } = useEditor();
 
   const handleDelete = () => {
     void remove(workflowId).then(() => router.push("/dashboard/workflows"));
@@ -210,7 +209,7 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
         )}
         {/* AI Chat floating button */}
         <button
-          onClick={() => setAiOpen(true)}
+          onClick={() => openAiChat()}
           className="absolute -top-20 right-8 w-14 h-14 rounded-full bg-[#f0e6d3] flex items-center justify-center shadow-2xl hover:bg-[#f7efe2] hover:shadow-[0_0_18px_rgba(217,94,40,0.18)] hover:scale-105 transition-all duration-200 cursor-pointer z-10 border-2 border-[#ddd0bb]"
           title="AI Chat"
         >
@@ -349,7 +348,7 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
         </div>}
       </div>
 
-      <AiChatSheet open={aiOpen} onOpenChange={setAiOpen} workflowId={workflowId} />
+      <AiChatSheet open={isAiChatOpen} onOpenChange={(o) => o ? openAiChat() : closeAiChat()} workflowId={workflowId} />
 
       <PublishModal
         open={publishOpen}

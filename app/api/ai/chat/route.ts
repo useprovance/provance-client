@@ -17,6 +17,7 @@ interface CanvasNode {
    nodeId: string;
    type: string;
    position: { x: number; y: number };
+   action?: { key: string; label: string };
    config?: Record<string, unknown>;
 }
 interface CanvasEdge {
@@ -44,7 +45,8 @@ function buildSystemPrompt(canvas: Canvas, logs: LogEntry[]): string {
            const configStr = Object.entries(params).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`).join(", ");
            const linksStr = Object.entries(links).map(([k, v]) => `${k}→${v}`).join(", ");
            const parts = [configStr, linksStr ? `links: ${linksStr}` : ""].filter(Boolean).join(" | ");
-           return `- [Agent] ${agent?.label ?? n.nodeId} id="${n.id}"${parts ? ` [${parts}]` : ""}`;
+           const actionStr = n.action?.key ? ` action="${n.action.key}"` : "";
+           return `- [Agent] ${agent?.label ?? n.nodeId}${actionStr} id="${n.id}"${parts ? ` [${parts}]` : ""}`;
         })
       : ["Canvas is empty."];
 
@@ -71,15 +73,18 @@ When configuring a node, pass static values normally. If a param should receive 
 
 For message template fields (e.g. Telegram message), embed variables using the format {{nodeId::outputKey}}. Use the node IDs from the canvas and the output keys from the agent catalog. Example: if DexScreener node id is "abc123" and you want its token name, write {{abc123::name}}. Never use plain {{variable}} without the node ID.
 
-Available agents:
+Available agents (always pass actionKey when calling add_node):
 ${agentService.getAll().map((a) => {
-  const fields = a.config.find((c) => c.key === "parameters")?.fields ?? [];
-  const params = fields.map((f) => {
-    const opts = f.type === "select" && f.options?.length ? ` [${f.options.join("|")}]` : "";
-    return `${f.key}${opts}`;
-  }).join(", ");
   const outputs = a.outputs?.map((o: { key: string }) => o.key).join(", ") ?? "";
-  return `- ${a.id}: ${a.label} — ${a.description}${params ? `\n  params: ${params}` : ""}${outputs ? `\n  outputs: ${outputs}` : ""}`;
+  const actions = (a.actions ?? []).map((action) => {
+    const fields = action.config.find((c) => c.key === "parameters")?.fields ?? [];
+    const params = fields.map((f) => {
+      const opts = f.type === "select" && f.options?.length ? ` [${f.options.join("|")}]` : "";
+      return `${f.key}${opts}`;
+    }).join(", ");
+    return `    - ${action.key} (${action.label})${params ? `: ${params}` : ""}`;
+  }).join("\n");
+  return `- ${a.id}: ${a.label} — ${a.description}\n  actions:\n${actions}${outputs ? `\n  outputs: ${outputs}` : ""}`;
 }).join("\n")}
 
 CANVAS:
@@ -117,9 +122,10 @@ export async function POST(req: Request) {
       },
       tools: {
          add_node: {
-            description: "Add an agent node to the workflow canvas.",
+            description: "Add an agent node to the workflow canvas. Always pass the actionKey from the agent's actions list.",
             inputSchema: z.object({
                agentId: z.enum(agentIds),
+               actionKey: z.string().describe("The action key to use — must match one of the agent's defined action keys"),
             }),
          },
          connect_nodes: {

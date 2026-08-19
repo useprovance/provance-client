@@ -11,7 +11,6 @@ import {
    Settings,
    PanelLeftDashed,
 } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
 import {
    DropdownMenu,
    DropdownMenuContent,
@@ -30,18 +29,20 @@ import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 
 const ICON_SIZE = 18;
-const ICON_STROKE = 1;
+const ICON_STROKE = 1.5;
 const BEHAVIOR_KEY = "provance_sidebar_behaviour";
 type Behaviour = "expandable" | "open" | "closed";
 
 const topRoutes = [
    { key: "overview", label: "Overview", icon: LayoutDashboard, href: "/dashboard" },
    { key: "workflows", label: "Workflows", icon: GitBranch, href: "/dashboard/workflows" },
-   { key: "agents", label: "My Agents", icon: Bot, href: "/dashboard/agents" },
-   { key: "marketplace", label: "Marketplace", icon: Store, href: "/dashboard/marketplace" },
    { key: "credentials", label: "Credentials", icon: KeyRound, href: "/dashboard/credentials" },
 ];
+const middleRoutes = [
+   { key: "agents", label: "My Agents", icon: Bot, href: "/dashboard/agents" },
+];
 const bottomRoutes = [
+   { key: "marketplace", label: "Marketplace", icon: Store, href: "/dashboard/marketplace" },
    { key: "settings", label: "Settings", icon: Settings, href: "/dashboard/settings" },
 ];
 
@@ -78,7 +79,7 @@ function NavItem({
       <li>
          <Tooltip>
             <TooltipTrigger asChild>{inner}</TooltipTrigger>
-            <TooltipContent side="right" className="text-xs bg-charcoal text-sand border-sidebar-border">
+            <TooltipContent side="right" className="bg-[#141414] text-white border border-white/10 [--tooltip-arrow-fill:#141414]">
                {route.label}
             </TooltipContent>
          </Tooltip>
@@ -117,12 +118,10 @@ export default function DashboardSidebar() {
          >
             <div className="flex-1 overflow-y-auto py-2 px-1.5 flex flex-col gap-3">
                <ul className="flex flex-col gap-0.5 list-none">
-                  {topRoutes.map((r) => (
+                  {[...topRoutes, ...middleRoutes].map((r) => (
                      <NavItem key={r.key} route={r} isExpanded={isExpanded} />
                   ))}
                </ul>
-
-               <Separator />
 
                <ul className="flex flex-col gap-0.5 list-none mt-auto">
                   {bottomRoutes.map((r) => (
@@ -145,7 +144,7 @@ export default function DashboardSidebar() {
                            </button>
                         </DropdownMenuTrigger>
                      </TooltipTrigger>
-                     <TooltipContent side="right" className="text-xs bg-charcoal text-sand border-sidebar-border">
+                     <TooltipContent side="right" className="bg-[#141414] text-white border border-white/10 [--tooltip-arrow-fill:#141414]">
                         Sidebar control
                      </TooltipContent>
                   </Tooltip>

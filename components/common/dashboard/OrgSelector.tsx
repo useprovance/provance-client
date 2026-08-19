@@ -93,10 +93,10 @@ export function OrgSelector({ orgs, selectedId, onSelect }: OrgSelectorProps) {
       linkHref="/dashboard"
       linkContent={
         <div className="flex items-center gap-2">
-          <Building2 size={15} strokeWidth={1.5} className="text-muted-foreground shrink-0" />
+          <Building2 size={15} strokeWidth={1.5} className="text-white/70 shrink-0" />
           <span
             title={selected?.name}
-            className="text-sand font-medium max-w-32 lg:max-w-48 truncate text-sm"
+            className="text-white font-medium max-w-32 lg:max-w-48 truncate text-sm"
           >
             {selected?.name}
           </span>

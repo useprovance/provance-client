@@ -20,6 +20,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { AgentNodeComponent } from "./AgentNode";
 import { TriggerNodeComponent } from "./TriggerNode";
+import { CanvasChoiceNodeComponent } from "./CanvasChoiceNode";
 import { EditorEdge } from "./EditorEdge";
 import { AddAgentSheet } from "./AddAgentSheet";
 import { NodeConfigSheet } from "./NodeConfigSheet";
@@ -31,22 +32,27 @@ import { NODES } from "./editor.constants";
 
 function toRFNode(n: WorkflowNode): Node {
    const def = agentService.getById(n.nodeId) ?? NODES.find((nd) => nd.id === n.nodeId);
+   const agent = agentService.getById(n.nodeId);
+   const firstAction = agent?.actions?.[0];
+   const action = n.action ?? (firstAction ? { key: firstAction.key, label: firstAction.label } : { key: "default", label: "Default" });
+   const triggerType = n.type === "trigger" ? (n.config?.__trigger?.type ?? "manual") : undefined;
    return {
       id: n.id,
       type: n.type,
       position: n.position,
-      data: { label: def?.label ?? n.nodeId, icon: def?.icon ?? "", agentId: n.nodeId, config: n.config ?? {} },
+      data: { label: def?.label ?? n.nodeId, icon: def?.icon ?? "", agentId: n.nodeId, action, config: n.config ?? {}, ...(triggerType ? { triggerType } : {}) },
    };
 }
 
 function toWorkflowNode(n: Node): WorkflowNode {
-   const data = n.data as { agentId?: string; config?: Record<string, Record<string, string>> };
+   const data = n.data as { agentId?: string; action?: { key: string; label: string }; config?: Record<string, Record<string, string>>; triggerType?: string };
    return {
       id: n.id,
       nodeId: data.agentId ?? n.id,
       type: (n.type ?? "agent") as "agent" | "trigger",
       position: n.position,
-      config: data.config ?? {},
+      action: data.action,
+      config: { ...(data.config ?? {}), ...(data.triggerType ? { __trigger: { type: data.triggerType } } : {}) },
    };
 }
 
@@ -76,45 +82,41 @@ function Canvas({ workflowId }: { workflowId: string }) {
 
    const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
    const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+   const [canvasReady, setCanvasReady] = useState(false);
    const isReady = useRef(false);
 
    const nodeTypes = useMemo(() => ({
       agent: AgentNodeComponent,
       trigger: TriggerNodeComponent,
+      choice: CanvasChoiceNodeComponent,
    }), []);
    const edgeTypes = useMemo(() => ({ provance: EditorEdge }), []);
    const { openSheet, configNodeId, addRun, registerCanvasActions } = useEditor();
 
-   // Load canvas — check Supabase first, fall back to localStorage
+   // Wait for Supabase before showing the canvas — fall back to localStorage if unavailable
    useLayoutEffect(() => {
-      const local = workflowService.loadCanvas(workflowId);
-
-      const applyCanvas = (saved: { nodes: typeof local.nodes; edges: typeof local.edges }) => {
+      const applyCanvas = (saved: { nodes: WorkflowNode[]; edges: WorkflowEdge[] }) => {
          if (saved.nodes.length > 0 || saved.edges.length > 0) {
             setNodes(saved.nodes.map(toRFNode));
             setEdges(saved.edges.map((e) => ({ ...e, type: "provance" })));
          } else {
-            setNodes([{
-               id: "trigger",
-               type: "trigger",
-               position: { x: 100, y: 100 },
-               data: { label: "Workflow Trigger", icon: "/icons/agents/trigger.svg", agentId: "trigger" },
-            }]);
+            setNodes([{ id: "__choice__", type: "choice", position: { x: 0, y: 0 }, data: {} }]);
          }
       };
 
-      // Apply local data immediately for fast paint
-      applyCanvas(local);
-      isReady.current = true;
-
-      // Hydrate from Supabase in background — refreshes if another device saved newer data
       void (async () => {
          const [dbCanvas, dbVp] = await Promise.all([
             workflowService.fetchCanvas(workflowId),
             workflowService.fetchViewport(workflowId),
          ]);
-         if (dbCanvas) applyCanvas(dbCanvas);
+
+         // Use Supabase data if available, otherwise fall back to localStorage
+         const canvas = dbCanvas ?? workflowService.loadCanvas(workflowId);
+         applyCanvas(canvas);
          if (dbVp) setViewport(dbVp);
+
+         isReady.current = true;
+         setCanvasReady(true);
       })();
    }, [workflowId, setViewport]);
 
@@ -127,9 +129,21 @@ function Canvas({ workflowId }: { workflowId: string }) {
       })();
    }, [workflowId, addRun]);
 
+   // Keep choice node in sync: show when no real nodes, hide when real nodes exist
    useEffect(() => {
-      if (!isReady.current || nodes.length === 0) return;
-      workflowService.saveCanvas(workflowId, nodes.map(toWorkflowNode), edges.map(toWorkflowEdge));
+      const real = nodes.filter((n) => n.id !== "__choice__");
+      const hasChoice = nodes.some((n) => n.id === "__choice__");
+      if (real.length === 0 && !hasChoice) {
+         setNodes([{ id: "__choice__", type: "choice", position: { x: 0, y: 0 }, data: {} }]);
+      } else if (real.length > 0 && hasChoice) {
+         setNodes((prev) => prev.filter((n) => n.id !== "__choice__"));
+      }
+   }, [nodes, setNodes]);
+
+   useEffect(() => {
+      if (!isReady.current) return;
+      const saveable = nodes.filter((n) => n.id !== "__choice__");
+      workflowService.saveCanvas(workflowId, saveable.map(toWorkflowNode), edges.map(toWorkflowEdge));
    }, [nodes, edges, workflowId]);
 
    const onMoveEnd = useCallback((_: unknown, viewport: Viewport) => {
@@ -145,7 +159,7 @@ function Canvas({ workflowId }: { workflowId: string }) {
    // Register canvas mutation actions for AI tool calling
    useEffect(() => {
       registerCanvasActions({
-         addNode: (agentId: string) => {
+         addNode: (agentId: string, actionKey?: string) => {
             const agent = agentService.getById(agentId);
             const newId = crypto.randomUUID();
             setNodes((prev) => {
@@ -156,13 +170,19 @@ function Canvas({ workflowId }: { workflowId: string }) {
                const position = rightmost
                   ? { x: rightmost.position.x + 200, y: rightmost.position.y }
                   : { x: 100, y: 250 };
+               const resolvedAction = actionKey
+                  ? agent?.actions?.find((a) => a.key === actionKey)
+                  : agent?.actions?.[0];
+               const action = resolvedAction
+                  ? { key: resolvedAction.key, label: resolvedAction.label }
+                  : { key: "default", label: "Default" };
                const newNode: Node = {
                   id: newId,
                   type: "agent",
                   position,
-                  data: { label: agent?.label ?? agentId, icon: agent?.icon ?? "", agentId },
+                  data: { label: agent?.label ?? agentId, icon: agent?.icon ?? "", agentId, action },
                };
-               return [...prev, newNode];
+               return [...prev.filter((n) => n.id !== "__choice__"), newNode];
             });
             return newId;
          },
@@ -196,6 +216,17 @@ function Canvas({ workflowId }: { workflowId: string }) {
          },
       });
    }, [registerCanvasActions, setNodes, setEdges, workflowId]);
+
+   if (!canvasReady) {
+      return (
+         <div className="flex flex-col w-full h-full bg-[oklch(20.46%_0_89.88)]">
+            <div className="flex-1 flex items-center justify-center">
+               <div className="w-5 h-5 rounded-full border-2 border-sand/20 border-t-sand/60 animate-spin" />
+            </div>
+            <EditorBottomPanel workflowId={workflowId} />
+         </div>
+      );
+   }
 
    return (
       <div className="flex flex-col w-full h-full bg-[oklch(20.46%_0_89.88)]">

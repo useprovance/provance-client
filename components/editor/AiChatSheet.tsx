@@ -65,7 +65,7 @@ export function AiChatSheet({ open, onOpenChange, workflowId }: AiChatSheetProps
       };
 
       if (toolName === "add_node") {
-        const nodeId = canvasActions.addNode(input.agentId as string);
+        const nodeId = canvasActions.addNode(input.agentId as string, input.actionKey as string | undefined);
         addToolOutput({ tool: "add_node", toolCallId, output: nodeId ?? "done" });
       } else if (toolName === "connect_nodes") {
         canvasActions.connectNodes(input.sourceId as string, input.targetId as string);

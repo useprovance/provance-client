@@ -8,7 +8,7 @@ import type { WorkflowRun, NodeRunResult } from "@/lib/engine/types";
 export type FlowDirection = "horizontal" | "vertical";
 
 export interface CanvasActions {
-  addNode: (agentId: string) => string;
+  addNode: (agentId: string, actionKey?: string) => string;
   connectNodes: (sourceId: string, targetId: string) => void;
   configureNode: (nodeId: string, params: Record<string, string>, links?: Record<string, string>) => void;
   removeNode: (nodeId: string) => void;
@@ -35,6 +35,9 @@ interface EditorContextValue {
   canvasActions: CanvasActions | null;
   isRunning: boolean;
   triggerRun: () => Promise<void>;
+  isAiChatOpen: boolean;
+  openAiChat: () => void;
+  closeAiChat: () => void;
 }
 
 const EditorContext = createContext<EditorContextValue | null>(null);
@@ -50,6 +53,10 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
   const [flowDirection, setFlowDirection] = useState<FlowDirection>("horizontal");
   const [canvasActions, setCanvasActions] = useState<CanvasActions | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [isAiChatOpen, setIsAiChatOpen] = useState(false);
+
+  const openAiChat = useCallback(() => setIsAiChatOpen(true), []);
+  const closeAiChat = useCallback(() => setIsAiChatOpen(false), []);
 
   const addRun = useCallback((run: WorkflowRun) => {
     setRuns((prev) => prev.some((r) => r.id === run.id) ? prev : [run, ...prev.slice(0, 49)]);
@@ -128,6 +135,7 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
       flowDirection, setFlowDirection,
       registerCanvasActions, canvasActions,
       isRunning, triggerRun,
+      isAiChatOpen, openAiChat, closeAiChat,
     }}>
       {children}
     </EditorContext.Provider>

@@ -40,19 +40,19 @@ export function FormInput({
   const hasError = error && touched;
 
   const containerCls = cn(
-    "relative flex items-center w-full border bg-[#1a1a1a] rounded-md transition-colors",
+    "relative flex items-center w-full border bg-[#0c0c0c] rounded-sm transition-colors",
     hasError
       ? "border-red-500/60 focus-within:ring-2 focus-within:ring-red-500/20"
-      : "border-[#2a2a2a] focus-within:border-sand/30 focus-within:ring-2 focus-within:ring-sand/10",
+      : "border-[#2a2a2a] focus-within:border-white/30 focus-within:ring-2 focus-within:ring-white/10",
     disabled && "opacity-50 cursor-not-allowed"
   );
 
   const inputCls =
-    "flex-1 bg-transparent text-[13px] text-sand placeholder:text-sand/20 px-3 py-3 outline-none disabled:cursor-not-allowed";
+    "flex-1 bg-transparent text-[13px] text-white placeholder:text-white/20 px-3 py-3 outline-none disabled:cursor-not-allowed";
 
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      <label htmlFor={id} className="text-[11px] font-mono uppercase tracking-widest text-sand/40">
+      <label htmlFor={id} className="text-[11px] font-mono uppercase tracking-widest text-white/40">
         {label}
         {required && <span className="text-orange ml-1">*</span>}
       </label>
