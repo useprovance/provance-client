@@ -4,14 +4,15 @@ import type { EngineCanvas, WorkflowRun, NodeRunResult } from "./types";
 
 async function orchestrateInput(
   sourceOutput: Record<string, unknown>,
-  targetAgentId: string
+  targetAgentId: string,
+  actionKey?: string
 ): Promise<Record<string, unknown>> {
   try {
     console.log(`[orchestrator] calling AI to map input for "${targetAgentId}"...`);
     const res = await fetch("/api/ai/orchestrate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sourceOutput, targetAgentId }),
+      body: JSON.stringify({ sourceOutput, targetAgentId, actionKey }),
     });
     const json = await res.json() as { success: boolean; data: Record<string, unknown> };
     if (json.success) {
@@ -123,7 +124,7 @@ export async function executeWorkflow(
 
     const resolvedItems = await Promise.all(
       parentItems.map(async (item, itemIndex) => {
-        const orchestrated = isStartNode ? item : await orchestrateInput(item, agentId);
+        const orchestrated = isStartNode ? item : await orchestrateInput(item, agentId, node.action?.key);
         // Linked fields: format is "nodeId::outputKey"
         // Pull the value directly from that specific ancestor's stored context output
         const linkedValues = Object.fromEntries(

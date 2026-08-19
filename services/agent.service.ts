@@ -89,7 +89,7 @@ export const AGENTS: Agent[] = [
       identifier: "provance.dexscreener-agent",
       publishedAt: "2 months ago",
       lastReleased: "1 week ago",
-      url: "`${NODES_URL}/dexscreener`",
+      url: `${NODES_URL}/dexscreener`,
       outputs: [
          { key: "token_address", label: "Token address" },
          { key: "symbol", label: "Symbol" },
@@ -198,7 +198,7 @@ export const AGENTS: Agent[] = [
       identifier: "provance.goplus-agent",
       publishedAt: "4 months ago",
       lastReleased: "5 weeks ago",
-      url: "`${NODES_URL}/goplus`",
+      url: `${NODES_URL}/goplus`,
       outputs: [
          { key: "token_address", label: "Token address" },
          { key: "chain", label: "Chain" },
@@ -301,7 +301,7 @@ export const AGENTS: Agent[] = [
       identifier: "provance.honeypot-agent",
       publishedAt: "2 months ago",
       lastReleased: "2 weeks ago",
-      url: "`${NODES_URL}/honeypot`",
+      url: `${NODES_URL}/honeypot`,
       outputs: [
          { key: "token_address", label: "Token address" },
          { key: "is_honeypot", label: "Is honeypot" },
@@ -388,7 +388,7 @@ export const AGENTS: Agent[] = [
       identifier: "provance.openai-agent",
       publishedAt: "2 months ago",
       lastReleased: "1 week ago",
-      url: "`${NODES_URL}/openai`",
+      url: `${NODES_URL}/openai`,
       outputs: [
          { key: "response", label: "Response" },
          { key: "model", label: "Model used" },
@@ -478,7 +478,7 @@ export const AGENTS: Agent[] = [
       identifier: "provance.telegram-agent",
       publishedAt: "7 months ago",
       lastReleased: "2 weeks ago",
-      url: "`${NODES_URL}/telegram`",
+      url: `${NODES_URL}/telegram`,
       outputs: [
          { key: "sent", label: "Message sent" },
          { key: "message_id", label: "Message ID" },
@@ -556,7 +556,7 @@ export const AGENTS: Agent[] = [
       identifier: "provance.gruff-agent",
       publishedAt: "1 month ago",
       lastReleased: "1 month ago",
-      url: "`${NODES_URL}/gruff`",
+      url: `${NODES_URL}/gruff`,
       outputs: [
          { key: "action", label: "Action performed" },
          { key: "success", label: "Success" },
@@ -696,7 +696,7 @@ export const AGENTS: Agent[] = [
       identifier: "provance.stellar-trader-agent",
       publishedAt: "Just now",
       lastReleased: "Just now",
-      url: "`${NODES_URL}/blaze`",
+      url: `${NODES_URL}/blaze`,
       outputs: [
          { key: "action", label: "Action performed" },
          { key: "success", label: "Success" },
@@ -772,7 +772,7 @@ export const AGENTS: Agent[] = [
       identifier: "provance.coingecko-agent",
       publishedAt: "1 month ago",
       lastReleased: "3 days ago",
-      url: "`${NODES_URL}/coingecko`",
+      url: `${NODES_URL}/coingecko`,
       outputs: [
          { key: "id", label: "CoinGecko ID" },
          { key: "name", label: "Name" },
@@ -877,7 +877,7 @@ export const AGENTS: Agent[] = [
       identifier: "provance.geckoterminal-agent",
       publishedAt: "1 month ago",
       lastReleased: "2 days ago",
-      url: "`${NODES_URL}/geckoterminal`",
+      url: `${NODES_URL}/geckoterminal`,
       outputs: [
          { key: "token_address", label: "Token address" },
          { key: "symbol", label: "Symbol" },

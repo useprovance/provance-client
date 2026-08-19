@@ -14,6 +14,7 @@ import { NodeToolbar } from "./NodeToolbar";
 import { useEditor } from "./EditorContext";
 import type { AgentNode } from "./editor.constants";
 import Image from "next/image";
+import { agentService } from "@/services/agent.service";
 
 const BOX_SIZE = 96;
 
@@ -43,6 +44,15 @@ export function AgentNodeComponent({
    const hideToolbar = () => {
       hideTimer.current = setTimeout(() => setToolbarVisible(false), 120);
    };
+
+   const agent = agentService.getById(data.agentId);
+   const matchedAction = agent?.actions?.find((a) => a.key === data.action?.key);
+   const paramFields = matchedAction?.config?.find((c) => c.key === "parameters")?.fields ?? [];
+   const nodeConfig = (data as unknown as { config?: Record<string, Record<string, string>> }).config;
+   const hasParams = paramFields.length > 0;
+   const isUnconfigured =
+      hasParams &&
+      (!nodeConfig?.parameters || Object.keys(nodeConfig.parameters ?? {}).length === 0);
 
    return (
       <div
@@ -90,24 +100,44 @@ export function AgentNodeComponent({
                style={{ width: 48, height: 48 }}
             />
 
+            {isUnconfigured && (
+               <span className="absolute" style={{ bottom: 6, right: 6, lineHeight: 0 }}>
+                  <Image src="/icons/node-validation-error.svg" alt="Unconfigured" width={14} height={14} />
+               </span>
+            )}
          </div>
 
-         {/* Label */}
-         <p
-            className="absolute text-[1rem] font-medium text-white text-center leading-[1.25] pointer-events-none overflow-hidden"
+         {/* Label + subtitle — matches n8n .description block */}
+         <div
+            className="absolute pointer-events-none text-center"
             style={{
                top: "100%",
                marginTop: 8,
                left: "50%",
                transform: "translateX(-50%)",
+               width: "100%",
                minWidth: BOX_SIZE * 2,
-               display: "-webkit-box",
-               WebkitBoxOrient: "vertical",
-               WebkitLineClamp: 2,
             }}
          >
-            {data.label}
-         </p>
+            {/* Label: font-size 1rem, font-weight 500, line-height 1.25, -webkit-line-clamp 2 */}
+            <p
+               className="text-[1rem] font-medium text-white text-center leading-[1.25] overflow-hidden"
+               style={{
+                  display: "-webkit-box",
+                  WebkitBoxOrient: "vertical",
+                  WebkitLineClamp: 2,
+                  overflowWrap: "anywhere",
+               }}
+            >
+               {data.label}
+            </p>
+            {/* Subtitle: font-size 0.8125rem (13px), font-weight 400, color--text--tint-1 ≈ white/45 */}
+            {data.action?.label && (
+               <p className="text-[0.8125rem] font-normal text-white/45 text-center leading-[1.25] whitespace-nowrap overflow-hidden text-ellipsis mt-0.5">
+                  {data.action.label}
+               </p>
+            )}
+         </div>
 
          {/* Plus button — only when no outgoing connection */}
          {!hasOutgoing && (

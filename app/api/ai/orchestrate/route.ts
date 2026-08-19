@@ -6,9 +6,10 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(req: NextRequest) {
   try {
-    const { sourceOutput, targetAgentId } = await req.json() as {
+    const { sourceOutput, targetAgentId, actionKey } = await req.json() as {
       sourceOutput: Record<string, unknown>;
       targetAgentId: string;
+      actionKey?: string;
     };
 
     const agent = agentService.getById(targetAgentId);
@@ -16,7 +17,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: `Agent "${targetAgentId}" not found` }, { status: 404 });
     }
 
-    const paramFields = agent.config.find((c) => c.key === "parameters")?.fields ?? [];
+    const action = (actionKey ? agent.actions?.find((a) => a.key === actionKey) : undefined) ?? agent.actions?.[0];
+    const paramFields = action?.config?.find((c) => c.key === "parameters")?.fields ?? [];
     if (paramFields.length === 0) {
       return NextResponse.json({ success: true, data: sourceOutput });
     }
