@@ -181,7 +181,7 @@ export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
   const handleSave = useCallback(() => {
     if (!configNodeId) return;
     // MessageTemplateField has no link button — if AI previously linked "message", clear it
-    const cleanedLinked = Object.fromEntries(Object.entries(linked).filter(([k]) => k !== "message"));
+    const cleanedLinked = Object.fromEntries(Object.entries(linked).filter(([k]) => k !== "message" && k !== "system_prompt"));
     const fullConfig = { ...config, [LINKS_KEY]: cleanedLinked };
     setNodes((prev) => prev.map((n) => {
       if (n.id !== configNodeId) return n;
@@ -236,9 +236,10 @@ export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-5">
-          {activeConfig?.fields.map((f) => f.key === "message" ? (
+          {activeConfig?.fields.map((f) => (f.key === "message" || f.key === "system_prompt") ? (
             <MessageTemplateField
               key={f.key}
+              label={f.label}
               value={config[activeTab]?.[f.key] ?? ""}
               onChange={(v) => setConfig((prev) => ({
                 ...prev,

@@ -424,6 +424,12 @@ export const AGENTS: Agent[] = [
                         placeholder: "You are a helpful assistant.",
                      },
                      {
+                        key: "message",
+                        label: "User message",
+                        type: "textarea",
+                        placeholder: "Write your message here. Use @ to insert variables from previous nodes.",
+                     },
+                     {
                         key: "temperature",
                         label: "Temperature",
                         type: "number",
@@ -451,6 +457,12 @@ export const AGENTS: Agent[] = [
                   label: "System prompt",
                   type: "textarea",
                   placeholder: "You are a helpful assistant.",
+               },
+               {
+                  key: "message",
+                  label: "User message",
+                  type: "textarea",
+                  placeholder: "Write your message here. Use @ to insert variables from previous nodes.",
                },
                {
                   key: "temperature",

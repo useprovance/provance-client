@@ -11,6 +11,7 @@ interface TemplateVariable {
 }
 
 interface MessageTemplateFieldProps {
+  label?: string;
   value: string;
   onChange: (v: string) => void;
   variables: TemplateVariable[];
@@ -90,7 +91,7 @@ function chipHtml(id: string, displayKey: string, icon?: string): string {
   return `<span data-var="${id}" contenteditable="false" style="${CHIP_STYLE}">${iconTag}{{${displayKey}}}</span>`;
 }
 
-export function MessageTemplateField({ value, onChange, variables }: MessageTemplateFieldProps) {
+export function MessageTemplateField({ label = "Message template", value, onChange, variables }: MessageTemplateFieldProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -220,7 +221,7 @@ export function MessageTemplateField({ value, onChange, variables }: MessageTemp
   return (
     <div ref={containerRef} className="flex flex-col gap-1.5">
       <label className="text-[11px] font-mono uppercase tracking-widest text-sand/40">
-        Message template
+        {label}
       </label>
 
       <div className="relative">

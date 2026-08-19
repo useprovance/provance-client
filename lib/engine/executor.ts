@@ -143,7 +143,8 @@ export async function executeWorkflow(
             })
             .filter(([, v]) => v !== undefined)
         );
-        const merged = { ...item, ...orchestrated, ...linkedValues, ...staticOverrides };
+        // orchestrated comes first so per-token item data always wins
+        const merged = { ...orchestrated, ...item, ...linkedValues, ...staticOverrides };
 
         // Resolve {{nodeId::outputKey}} in string values using the full context map
         return Object.fromEntries(
@@ -151,15 +152,16 @@ export async function executeWorkflow(
             if (typeof v !== "string" || !v.includes("{{")) return [k, v];
             const resolved = v.replace(/\{\{([^}]+)\}\}/g, (_, ref: string) => {
               if (!ref.includes("::")) {
-                // bare {{key}} — look up from the merged input directly
-                const val = merged[ref];
+                // bare {{key}} — use per-token item data first, then merged
+                const val = item[ref] ?? merged[ref];
                 return val !== undefined ? String(val) : "";
               }
               const sep = ref.indexOf("::");
               const nodeId = ref.slice(0, sep);
               const key = ref.slice(sep + 2);
               const nodeCtx = context.get(nodeId);
-              const val = nodeCtx ? (nodeCtx[0]?.[key] ?? "") : "";
+              // use itemIndex so each iteration resolves its own token's value
+              const val = nodeCtx ? ((nodeCtx[itemIndex] ?? nodeCtx[0])?.[key] ?? "") : "";
               return String(val);
             });
             return [k, resolved];
