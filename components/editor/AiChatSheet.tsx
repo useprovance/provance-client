@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { ArrowUp, Loader2, Mic, Plus } from "lucide-react";
+import { Send, Loader2, Plus } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls } from "ai";
@@ -177,15 +177,15 @@ export function AiChatSheet({ open, onOpenChange, workflowId }: AiChatSheetProps
         side="right"
         showCloseButton
         onInteractOutside={(e) => e.preventDefault()}
-        className="!max-w-none bg-[#0f0f0f] border-l border-sand/8 p-0 flex flex-col gap-0"
+        className="!max-w-none bg-[#0f0f0f] border-l border-white/8 p-0 flex flex-col gap-0"
         style={{ width }}
       >
         <div onMouseDown={onDragMouseDown} className="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize z-10" />
 
-        <SheetHeader className="px-5 py-4 border-b border-sand/8 shrink-0">
+        <SheetHeader className="px-5 py-4 border-b border-white/8 shrink-0">
           <div className="flex items-center gap-2.5">
-            <Image src="/icons/chat-sparkle.svg" alt="Provance Agent" width={20} height={20} />
-            <SheetTitle className="text-[13px] font-semibold text-sand">Provance Agent</SheetTitle>
+            <Image src="/icons/chat-sparkle.svg" alt="Provance Agent" width={20} height={20} className="brightness-0 invert" />
+            <SheetTitle className="text-[13px] font-semibold text-white">Provance Agent</SheetTitle>
           </div>
         </SheetHeader>
 
@@ -193,21 +193,21 @@ export function AiChatSheet({ open, onOpenChange, workflowId }: AiChatSheetProps
           {messages.length === 0 ? (
             <div className="flex flex-col flex-1 justify-center gap-8">
               <div className="flex flex-col items-center gap-3">
-                <Image src="/icons/chat-sparkle.svg" alt="Provance Agent" width={36} height={36} />
+                <Image src="/icons/chat-sparkle.svg" alt="Provance Agent" width={36} height={36} className="brightness-0 invert" />
                 <div className="flex flex-col items-center gap-1">
-                  <p className="text-[17px] font-semibold text-sand">Provance Agent</p>
-                  <p className="text-[12px] text-sand/50 text-center leading-relaxed max-w-[220px]">
+                  <p className="text-[17px] font-semibold text-white">Provance Agent</p>
+                  <p className="text-[12px] text-white/50 text-center leading-relaxed max-w-[220px]">
                     Ask me anything. I can see your canvas and recent runs.
                   </p>
                 </div>
               </div>
               <div className="flex flex-col gap-2">
-                <p className="text-[10px] font-mono uppercase tracking-widest text-sand/40 mb-0.5 px-0.5">Try asking</p>
+                <p className="text-[10px] font-mono uppercase tracking-widest text-white/40 mb-0.5 px-0.5">Try asking</p>
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s}
                     onClick={() => send(s)}
-                    className="text-left px-3.5 py-3 text-[12.5px] text-sand/80 hover:text-sand border border-white/6 hover:border-white/14 bg-white/[0.03] hover:bg-white/[0.06] rounded-lg transition-all cursor-pointer leading-snug"
+                    className="text-left px-3.5 py-3 text-[12.5px] text-white/70 hover:text-white border border-white/6 hover:border-white/14 bg-white/[0.03] hover:bg-white/[0.06] rounded-lg transition-all cursor-pointer leading-snug"
                   >
                     {s}
                   </button>
@@ -227,7 +227,7 @@ export function AiChatSheet({ open, onOpenChange, workflowId }: AiChatSheetProps
                 return (
                   <div key={msg.id} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
                     {msg.role === "user" ? (
-                      <div className="max-w-[78%] px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap bg-[#2f2f2f] rounded-lg text-[#f5ede0]">
+                      <div className="max-w-[78%] px-4 py-2.5 text-[15px] leading-relaxed whitespace-pre-wrap bg-[#2f2f2f] rounded-lg text-white">
                         {text}
                       </div>
                     ) : (
@@ -239,7 +239,7 @@ export function AiChatSheet({ open, onOpenChange, workflowId }: AiChatSheetProps
 
               {thinking && (
                 <div className="flex flex-col items-start">
-                  <span className="shimmer text-[13px] text-sand/60">Thinking...</span>
+                  <span className="shimmer text-[13px] text-white/60">Thinking...</span>
                 </div>
               )}
 
@@ -248,8 +248,8 @@ export function AiChatSheet({ open, onOpenChange, workflowId }: AiChatSheetProps
           )}
         </div>
 
-        <div className="shrink-0 p-4">
-          <div className="flex flex-col bg-[#1a1a1a] rounded-lg overflow-hidden">
+        <div className="shrink-0 p-2">
+          <div className="flex flex-col border border-white/15 rounded-lg overflow-hidden">
             <textarea
               ref={textareaRef}
               value={input}
@@ -258,24 +258,21 @@ export function AiChatSheet({ open, onOpenChange, workflowId }: AiChatSheetProps
               placeholder="Ask anything about your workflow..."
               rows={1}
               disabled={thinking}
-              className="w-full bg-transparent text-[15px] text-white placeholder:text-white/30 px-3 pt-2.5 pb-2 outline-none resize-none disabled:opacity-50"
+              className="w-full bg-transparent text-[16px] font-medium text-white placeholder:text-white/30 px-3 pt-3.5 pb-2 outline-none resize-none disabled:opacity-50"
             />
             <div className="flex items-center justify-between px-1.5 pb-1.5 pt-0">
-              <button className="w-9 h-9 flex items-center justify-center text-white/40 hover:text-white/80 transition-colors cursor-pointer rounded-full hover:bg-white/5">
-                <Plus size={20} strokeWidth={2} />
+              <button className="w-9 h-9 flex items-center justify-center text-white/70 hover:text-white transition-colors cursor-pointer rounded-full hover:bg-white/5">
+                <Plus size={22} strokeWidth={2.5} />
               </button>
               <div className="flex items-center gap-1">
-                <button className="w-9 h-9 flex items-center justify-center text-white/40 hover:text-white/80 transition-colors cursor-pointer rounded-full hover:bg-white/5">
-                  <Mic size={19} strokeWidth={2} />
-                </button>
-                <button
+<button
                   onClick={() => send(input)}
                   disabled={!input.trim() || thinking}
-                  className="w-9 h-9 flex items-center justify-center bg-orange hover:bg-orange/90 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer rounded-full"
+                  className="w-9 h-9 flex items-center justify-center bg-white hover:bg-white/90 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer rounded-full"
                 >
                   {thinking
-                    ? <Loader2 size={12} className="animate-spin text-white" />
-                    : <ArrowUp size={16} strokeWidth={2.5} className="text-white" />
+                    ? <Loader2 size={14} className="animate-spin text-[#141414]" />
+                    : <Send size={17} strokeWidth={2} className="text-[#141414]" />
                   }
                 </button>
               </div>

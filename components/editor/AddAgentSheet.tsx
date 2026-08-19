@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useReactFlow } from "@xyflow/react";
-import { Search, ChevronRight, ChevronLeft, X, Zap } from "lucide-react";
+import { Search, ChevronRight, ChevronLeft, X, Zap, Plus } from "lucide-react";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useEditor } from "./EditorContext";
@@ -224,6 +224,7 @@ export function AddAgentSheet({ workflowId }: { workflowId: string }) {
                            <span className="flex-1 text-[13px] text-white/70 group-hover:text-white transition-colors">
                               {action.label}
                            </span>
+                           <Plus size={18} strokeWidth={2} className="text-white/40 group-hover:text-white/80 transition-colors shrink-0" />
                         </div>
                      ))}
                   </div>

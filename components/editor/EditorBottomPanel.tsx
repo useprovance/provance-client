@@ -59,23 +59,23 @@ function NodeResultRow({ result, label }: { result: NodeRunResult; label: string
       >
         {result.status === "success" && <CheckCircle2 size={13} className="text-green-500 shrink-0" />}
         {result.status === "error" && <XCircle size={13} className="text-red-400 shrink-0" />}
-        {result.status === "skipped" && <MinusCircle size={13} className="text-sand/30 shrink-0" />}
+        {result.status === "skipped" && <MinusCircle size={13} className="text-white/65 shrink-0" />}
         <span className={`flex-1 text-[12px] truncate ${
           result.status === "error" ? "text-red-400"
-          : result.status === "skipped" ? "text-sand/35"
-          : "text-sand"
+          : result.status === "skipped" ? "text-white/55"
+          : "text-white"
         }`}>
           {label}
         </span>
         {result.status === "skipped" ? (
-          <span className="text-[11px] text-sand/30 shrink-0 italic">no data</span>
+          <span className="text-[11px] text-white/65 shrink-0 italic">no data</span>
         ) : (
-          <span className="text-[11px] text-sand/60 shrink-0 flex items-center gap-1">
+          <span className="text-[11px] text-white/75 shrink-0 flex items-center gap-1">
             <Clock size={10} />
             {formatDuration(result.durationMs)}
           </span>
         )}
-        <span className="text-[11px] text-sand/50 shrink-0">{formatTime(result.startedAt)}</span>
+        <span className="text-[11px] text-white/65 shrink-0">{formatTime(result.startedAt)}</span>
       </button>
 
       {/* Inline error — visible without expanding */}
@@ -95,15 +95,15 @@ function NodeResultRow({ result, label }: { result: NodeRunResult; label: string
             </div>
           )}
           <div>
-            <p className="text-[10px] text-sand/40 uppercase tracking-wider mb-1">Input</p>
-            <pre className="text-[10px] text-sand/70 font-mono leading-relaxed overflow-x-auto whitespace-pre-wrap break-all">
+            <p className="text-[10px] text-white/75 uppercase tracking-wider mb-1">Input</p>
+            <pre className="text-[10px] text-white/85 font-mono leading-relaxed overflow-x-auto whitespace-pre-wrap break-all">
               {JSON.stringify(result.input, null, 2)}
             </pre>
           </div>
           {!result.error && (
             <div>
-              <p className="text-[10px] text-sand/40 uppercase tracking-wider mb-1">Output</p>
-              <pre className="text-[10px] text-sand/80 font-mono leading-relaxed overflow-x-auto whitespace-pre-wrap break-all">
+              <p className="text-[10px] text-white/75 uppercase tracking-wider mb-1">Output</p>
+              <pre className="text-[10px] text-white/80 font-mono leading-relaxed overflow-x-auto whitespace-pre-wrap break-all">
                 {JSON.stringify(result.output, null, 2)}
               </pre>
             </div>
@@ -128,8 +128,8 @@ function RunHistoryRow({ run, nodeLabels }: { run: WorkflowRun; nodeLabels: Reco
         ) : (
           <XCircle size={13} className="text-red-400 shrink-0" />
         )}
-        <span className="flex-1 text-[12px] text-sand">{formatTime(run.startedAt)}</span>
-        <span className="text-[11px] text-sand/60 shrink-0">
+        <span className="flex-1 text-[12px] text-white">{formatTime(run.startedAt)}</span>
+        <span className="text-[11px] text-white/75 shrink-0">
           {run.nodeResults.length} node{run.nodeResults.length !== 1 ? "s" : ""}
         </span>
       </button>
@@ -210,7 +210,7 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
         {/* AI Chat floating button */}
         <button
           onClick={() => openAiChat()}
-          className="absolute -top-20 right-8 w-14 h-14 rounded-full bg-[#f0e6d3] flex items-center justify-center shadow-2xl hover:bg-[#f7efe2] hover:shadow-[0_0_18px_rgba(217,94,40,0.18)] hover:scale-105 transition-all duration-200 cursor-pointer z-10 border-2 border-[#ddd0bb]"
+          className="absolute -top-20 right-8 w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-2xl hover:bg-white/90 hover:shadow-[0_0_18px_rgba(255,255,255,0.15)] hover:scale-105 transition-all duration-200 cursor-pointer z-10 border border-white/20"
           title="AI Chat"
         >
           <Image src="/icons/chat-sparkle.svg" alt="AI Chat" width={26} height={26} style={{ filter: "brightness(0)" }} />
@@ -220,7 +220,7 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
         <button
           onClick={() => void triggerRun()}
           disabled={isRunning}
-          className="absolute -top-14 left-4 flex items-center gap-2 px-4 h-10 bg-[#1e1e1e] border border-[#333] text-sand text-[12px] font-medium rounded-md shadow-lg hover:bg-[#2a2a2a] hover:border-sand/30 hover:text-sand transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed z-10"
+          className="absolute -top-14 left-4 flex items-center gap-2 px-4 h-10 bg-[#1e1e1e] border border-white/20 text-white text-[12px] font-medium rounded-md shadow-lg hover:bg-[#2a2a2a] hover:border-white/40 transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed z-10"
         >
           <FlaskConical size={13} strokeWidth={2} />
           {isRunning ? "Running..." : "Run workflow"}
@@ -237,8 +237,8 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
               }}
               className={`px-3 h-full text-[12px] font-medium transition-colors cursor-pointer border-b-2 -mb-px ${
                 tab === t.key && !collapsed
-                  ? "text-sand border-orange"
-                  : "text-sand/60 border-transparent hover:text-sand"
+                  ? "text-white border-orange"
+                  : "text-white/75 border-transparent hover:text-white"
               }`}
             >
               {t.label}
@@ -246,21 +246,21 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
           ))}
 
           <div className="flex items-center gap-1 ml-auto">
-            <div className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium ${published ? "text-orange" : "text-sand/70"}`}>
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium ${published ? "text-orange" : "text-white"}`}>
               {published ? <Globe size={12} strokeWidth={1.5} /> : <EyeOff size={12} strokeWidth={1.5} />}
               {published ? "Published" : "Unpublished"}
             </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="p-1.5 text-sand hover:text-white transition-colors cursor-pointer hover:bg-white/5">
+                <button className="p-1.5 text-white hover:text-white transition-colors cursor-pointer hover:bg-white/5">
                   <MoreHorizontal size={14} strokeWidth={1.5} />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" side="top" className="w-44 bg-[#1c1c1c] border border-[#2a2a2a] p-0.5 mb-1">
                 <DropdownMenuItem
                   onClick={() => setFlowDirection(flowDirection === "horizontal" ? "vertical" : "horizontal")}
-                  className="cursor-pointer px-2.5 py-1.5 text-[12px] text-sand/70 focus:text-sand focus:bg-white/5 gap-2 [&_svg]:!size-[12px] [&_svg]:!text-current"
+                  className="cursor-pointer px-2.5 py-1.5 text-[12px] text-white/85 focus:text-white focus:bg-white/5 gap-2 [&_svg]:!size-[12px] [&_svg]:!text-current"
                 >
                   {flowDirection === "horizontal" ? <ArrowDown strokeWidth={1.5} /> : <ArrowRight strokeWidth={1.5} />}
                   {flowDirection === "horizontal" ? "Top to bottom" : "Left to right"}
@@ -274,12 +274,12 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
                   Publish
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-white/6 my-0.5" />
-                <DropdownMenuItem className="cursor-pointer px-2.5 py-1.5 text-[12px] text-sand/70 focus:text-sand focus:bg-white/5 gap-2 [&_svg]:!size-[12px] [&_svg]:!text-current">
+                <DropdownMenuItem className="cursor-pointer px-2.5 py-1.5 text-[12px] text-white/85 focus:text-white focus:bg-white/5 gap-2 [&_svg]:!size-[12px] [&_svg]:!text-current">
                   <Save strokeWidth={1.5} />
                   Save
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-white/6 my-0.5" />
-                <DropdownMenuItem className="cursor-pointer px-2.5 py-1.5 text-[12px] text-sand/70 focus:text-sand focus:bg-white/5 gap-2 [&_svg]:!size-[12px] [&_svg]:!text-current">
+                <DropdownMenuItem className="cursor-pointer px-2.5 py-1.5 text-[12px] text-white/85 focus:text-white focus:bg-white/5 gap-2 [&_svg]:!size-[12px] [&_svg]:!text-current">
                   <Share2 strokeWidth={1.5} />
                   Share
                 </DropdownMenuItem>
@@ -296,9 +296,9 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
 
             <button
               onClick={() => { setPanelHeight(MIN_HEIGHT); setLogsOpen(!logsOpen); }}
-              className="p-1.5 text-sand/60 hover:text-sand transition-colors cursor-pointer"
+              className="p-1.5 text-white hover:text-white/85 transition-colors cursor-pointer"
             >
-              {collapsed ? <ChevronUp size={14} strokeWidth={1.5} /> : <ChevronDown size={14} strokeWidth={1.5} />}
+              {collapsed ? <ChevronUp size={16} strokeWidth={2} /> : <ChevronDown size={16} strokeWidth={2} />}
             </button>
           </div>
         </div>
@@ -309,7 +309,7 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
             <>
               {logs.length === 0 ? (
                 <div className="flex-1 flex items-center justify-center">
-                  <p className="text-[13px] text-sand/30 text-center max-w-xs leading-relaxed">
+                  <p className="text-[13px] text-white/65 text-center max-w-xs leading-relaxed">
                     Click Execute workflow on the trigger node to start.
                   </p>
                 </div>
@@ -317,11 +317,11 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
                 <div className="flex flex-col">
                   {logs.map((log, i) => (
                     <div key={i} className="flex items-start gap-3 px-4 py-1.5 border-b border-[#1e1e1e] last:border-0">
-                      <span className="text-[11px] text-sand/50 shrink-0 mt-px">{log.time}</span>
+                      <span className="text-[11px] text-white/65 shrink-0 mt-px">{log.time}</span>
                       <span className={`text-[12px] leading-relaxed font-mono ${
                         log.level === "error" ? "text-red-400" :
                         log.level === "warn" ? "text-amber-400/80" :
-                        "text-sand"
+                        "text-white"
                       }`}>{log.message}</span>
                     </div>
                   ))}
@@ -334,7 +334,7 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
             <>
               {runs.length === 0 ? (
                 <div className="flex-1 flex items-center justify-center">
-                  <p className="text-[13px] text-sand/30 text-center max-w-xs leading-relaxed">
+                  <p className="text-[13px] text-white/65 text-center max-w-xs leading-relaxed">
                     No runs yet. Hit Execute on the trigger to start.
                   </p>
                 </div>
