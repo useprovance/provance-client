@@ -35,6 +35,7 @@ interface EditorContextValue {
   canvasActions: CanvasActions | null;
   isRunning: boolean;
   triggerRun: () => Promise<void>;
+  stopRun: () => void;
   isAiChatOpen: boolean;
   openAiChat: () => void;
   closeAiChat: () => void;
@@ -53,6 +54,7 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
   const [flowDirection, setFlowDirection] = useState<FlowDirection>("horizontal");
   const [canvasActions, setCanvasActions] = useState<CanvasActions | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const stopRef = useRef<(() => void) | null>(null);
   const [isAiChatOpen, setIsAiChatOpen] = useState(false);
 
   const openAiChat = useCallback(() => setIsAiChatOpen(true), []);
@@ -91,13 +93,23 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
     setCanvasActions(actions);
   }, []);
 
+  const stopRun = useCallback(() => {
+    stopRef.current?.();
+    stopRef.current = null;
+    setIsRunning(false);
+    workflowService.log("Workflow stopped.", "info");
+  }, []);
+
   const triggerRun = useCallback(async () => {
     if (isRunning) return;
     setIsRunning(true);
     const canvas = workflowService.loadCanvas(workflowId);
     workflowService.log("Starting workflow...", "info");
+    let stopped = false;
+    stopRef.current = () => { stopped = true; };
     try {
       const run = await executeWorkflow(workflowId, canvas, (result: NodeRunResult) => {
+        if (stopped) return;
         if (result.status === "success") {
           workflowService.log(`✓ ${result.label} — ${result.durationMs}ms`, "info");
         } else if (result.status === "skipped") {
@@ -106,6 +118,7 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
           workflowService.log(`✗ ${result.label} failed — ${result.error ?? "unknown error"}`, "error");
         }
       });
+      if (!stopped) {
       addRun(run);
       void workflowService.saveRun(workflowId, run);
       workflowService.log(
@@ -114,9 +127,11 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
           : `Workflow stopped: ${run.error ?? "unknown error"}`,
         run.status === "success" ? "info" : "error"
       );
+      }
     } catch (err) {
-      workflowService.log(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`, "error");
+      if (!stopped) workflowService.log(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`, "error");
     } finally {
+      stopRef.current = null;
       setIsRunning(false);
     }
   }, [workflowId, addRun, isRunning]);
@@ -134,7 +149,7 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
       runs, addRun,
       flowDirection, setFlowDirection,
       registerCanvasActions, canvasActions,
-      isRunning, triggerRun,
+      isRunning, triggerRun, stopRun,
       isAiChatOpen, openAiChat, closeAiChat,
     }}>
       {children}

@@ -694,7 +694,7 @@ export const AGENTS: Agent[] = [
       ],
    },
    {
-      id: "stellar-trader",
+      id: "blaze",
       nodeType: "agent",
       label: "Blaze",
       description:

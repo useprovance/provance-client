@@ -44,6 +44,7 @@ Return ONLY a valid JSON object. No explanation, no markdown, just the JSON.`;
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       temperature: 0,
+      timeout: 8000,
     });
 
     const raw = JSON.parse(response.choices[0].message.content ?? "{}") as Record<string, unknown>;

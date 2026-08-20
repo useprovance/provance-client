@@ -73,8 +73,8 @@ When configuring a node, pass static values normally. If a param should receive 
 
 For message template fields (e.g. Telegram message), embed variables using the format {{nodeId::outputKey}}. Use the node IDs from the canvas and the output keys from the agent catalog. Example: if DexScreener node id is "abc123" and you want its token name, write {{abc123::name}}. Never use plain {{variable}} without the node ID.
 
-Available agents (always pass actionKey when calling add_node):
-${agentService.getAll().map((a) => {
+Available agents and triggers (always pass actionKey when calling add_node):
+${[...agentService.getTriggers(), ...agentService.getAll()].map((a) => {
   const outputs = a.outputs?.map((o: { key: string }) => o.key).join(", ") ?? "";
   const actions = (a.actions ?? []).map((action) => {
     const fields = action.config.find((c) => c.key === "parameters")?.fields ?? [];

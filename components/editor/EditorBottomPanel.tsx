@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import Image from "next/image";
-import { EyeOff, Globe, MoreHorizontal, Save, Share2, CheckCircle2, XCircle, Clock, ChevronUp, ChevronDown, ArrowRight, ArrowDown, Trash2, MinusCircle, FlaskConical } from "lucide-react";
+import { EyeOff, Globe, MoreHorizontal, Save, Share2, CheckCircle2, XCircle, Clock, ChevronUp, ChevronDown, ArrowRight, ArrowDown, Trash2, MinusCircle, FlaskConical, Square } from "lucide-react";
 import { useReactFlow } from "@xyflow/react";
 import { useRouter } from "next/navigation";
 import {
@@ -153,7 +153,7 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
   const { getNodes } = useReactFlow();
   const router = useRouter();
   const remove = useWorkflowStore((s) => s.remove);
-  const { logs, logsOpen, setLogsOpen, runs, flowDirection, setFlowDirection, triggerRun, isRunning, isAiChatOpen, openAiChat, closeAiChat } = useEditor();
+  const { logs, logsOpen, setLogsOpen, runs, flowDirection, setFlowDirection, triggerRun, isRunning, stopRun, isAiChatOpen, openAiChat, closeAiChat } = useEditor();
 
   const handleDelete = () => {
     void remove(workflowId).then(() => router.push("/dashboard/workflows"));
@@ -216,15 +216,27 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
           <Image src="/icons/chat-sparkle.svg" alt="AI Chat" width={26} height={26} style={{ filter: "brightness(0)" }} />
         </button>
 
-        {/* Run button — floats above panel on the left */}
-        <button
-          onClick={() => void triggerRun()}
-          disabled={isRunning}
-          className="absolute -top-14 left-4 flex items-center gap-2 px-4 h-10 bg-[#1e1e1e] border border-white/20 text-white text-[12px] font-medium rounded-md shadow-lg hover:bg-[#2a2a2a] hover:border-white/40 transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed z-10"
-        >
-          <FlaskConical size={13} strokeWidth={2} />
-          {isRunning ? "Running..." : "Run workflow"}
-        </button>
+        {/* Run / Stop buttons — float above panel on the left */}
+        <div className="absolute -top-14 left-4 flex items-center gap-2 z-10">
+          <button
+            onClick={() => void triggerRun()}
+            disabled={isRunning}
+            className="flex items-center gap-2 px-4 h-10 bg-[#1e1e1e] border border-white/20 text-white text-[12px] font-medium rounded-md shadow-lg hover:bg-[#2a2a2a] hover:border-white/40 transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <FlaskConical size={13} strokeWidth={2} />
+            {isRunning ? "Running..." : "Run workflow"}
+          </button>
+
+          {isRunning && (
+            <button
+              onClick={stopRun}
+              className="flex items-center gap-2 px-4 h-10 bg-[#1e1e1e] border border-red-500/40 text-red-400 text-[12px] font-medium rounded-md shadow-lg hover:bg-red-500/10 hover:border-red-500/70 transition-all duration-200 cursor-pointer"
+            >
+              <Square size={11} strokeWidth={2} fill="currentColor" />
+              Stop
+            </button>
+          )}
+        </div>
 
         {/* Tab bar */}
         <div className="flex items-center h-9 px-3 shrink-0 gap-1">
