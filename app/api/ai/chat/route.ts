@@ -102,7 +102,7 @@ Be concise and direct.`;
 export async function POST(req: Request) {
    const { messages, canvas, logs } = await req.json();
 
-   const agentIds = agentService.getAll().map((a) => a.id);
+   const agentIds = [...agentService.getTriggers(), ...agentService.getAll()].map((a) => a.id);
 
    const result = streamText({
       model: openai("gpt-4o"),

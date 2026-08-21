@@ -39,13 +39,15 @@ Your job: extract or derive the correct values from the source output to produce
 
 Return ONLY a valid JSON object. No explanation, no markdown, just the JSON.`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      temperature: 0,
-      timeout: 8000,
-    });
+    const response = await openai.chat.completions.create(
+      {
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0,
+      },
+      { timeout: 8000 },
+    );
 
     const raw = JSON.parse(response.choices[0].message.content ?? "{}") as Record<string, unknown>;
     // Strip null/undefined — only pass fields the AI could actually derive
@@ -56,6 +58,7 @@ Return ONLY a valid JSON object. No explanation, no markdown, just the JSON.`;
     return NextResponse.json({ success: true, data: transformed });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("[orchestrate] 500 error:", err);
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

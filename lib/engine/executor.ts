@@ -9,7 +9,8 @@ async function orchestrateInput(
 ): Promise<Record<string, unknown>> {
   try {
     console.log(`[orchestrator] calling AI to map input for "${targetAgentId}"...`);
-    const res = await fetch("/api/ai/orchestrate", {
+    const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const res = await fetch(`${base}/api/ai/orchestrate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sourceOutput, targetAgentId, actionKey }),
@@ -124,7 +125,8 @@ export async function executeWorkflow(
 
     const resolvedItems = await Promise.all(
       parentItems.map(async (item, itemIndex) => {
-        const orchestrated = isStartNode ? item : await orchestrateInput(item, agentId, node.action?.key);
+        const hasUpstreamData = Object.keys(item).length > 0;
+        const orchestrated = (isStartNode || !hasUpstreamData) ? item : await orchestrateInput(item, agentId, node.action?.key);
         // Linked fields: format is "nodeId::outputKey"
         // Pull the value directly from that specific ancestor's stored context output
         const linkedValues = Object.fromEntries(

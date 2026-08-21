@@ -104,6 +104,35 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
     if (isRunning) return;
     setIsRunning(true);
     const canvas = workflowService.loadCanvas(workflowId);
+
+    // If trigger node is a schedule, register cron job instead of running immediately
+    const triggerNode = canvas.nodes.find((n) => n.type === "trigger");
+    const triggerType = triggerNode?.config?.__trigger?.type as string | undefined;
+    if (triggerType === "schedule") {
+      const interval = Number(triggerNode?.config?.parameters?.interval ?? 5);
+      const unit = (triggerNode?.config?.parameters?.unit ?? "minutes") as "minutes" | "hours" | "days";
+      const nodesUrl = process.env.NEXT_PUBLIC_NODES_URL ?? "https://nodes.useprovance.xyz";
+      workflowService.log(`Registering schedule: every ${interval} ${unit}...`, "info");
+      try {
+        const res = await fetch(`${nodesUrl}/core/trigger/schedule`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ workflowId, interval, unit }),
+        });
+        const json = await res.json() as { success: boolean; data: { cron: string }; message: string };
+        if (json.success) {
+          workflowService.log(`Schedule active — runs every ${interval} ${unit} (cron: ${json.data.cron})`, "info");
+        } else {
+          workflowService.log(`Failed to register schedule: ${json.message}`, "error");
+        }
+      } catch (err) {
+        workflowService.log(`Schedule error: ${err instanceof Error ? err.message : String(err)}`, "error");
+      } finally {
+        setIsRunning(false);
+      }
+      return;
+    }
+
     workflowService.log("Starting workflow...", "info");
     let stopped = false;
     stopRef.current = () => { stopped = true; };

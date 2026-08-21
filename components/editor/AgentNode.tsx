@@ -50,9 +50,10 @@ export function AgentNodeComponent({
    const paramFields = matchedAction?.config?.find((c) => c.key === "parameters")?.fields ?? [];
    const nodeConfig = (data as unknown as { config?: Record<string, Record<string, string>> }).config;
    const hasParams = paramFields.length > 0;
-   const isUnconfigured =
-      hasParams &&
-      (!nodeConfig?.parameters || Object.keys(nodeConfig.parameters ?? {}).length === 0);
+   const linkedFields = nodeConfig?.__links ?? {};
+   const staticFields = nodeConfig?.parameters ?? {};
+   const configuredCount = new Set([...Object.keys(staticFields), ...Object.keys(linkedFields)]).size;
+   const isUnconfigured = hasParams && configuredCount === 0;
 
    return (
       <div

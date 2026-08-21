@@ -71,7 +71,7 @@ function Canvas({ workflowId }: { workflowId: string }) {
          setMinimapVisible(true);
       },
       onEnd: () => {
-         minimapTimer.current = setTimeout(() => setMinimapVisible(false), 1200);
+         minimapTimer.current = setTimeout(() => setMinimapVisible(false), 1000);
       },
    });
 
@@ -260,21 +260,31 @@ function Canvas({ workflowId }: { workflowId: string }) {
                />
                <MiniMap
                   position="bottom-left"
-                  nodeColor="rgba(180,180,180,0.7)"
+                  pannable
+                  zoomable
+                  nodeColor="hsl(0,0%,45%)"
                   nodeStrokeColor="transparent"
-                  maskColor="rgba(150,150,150,0.6)"
+                  nodeBorderRadius={16}
+                  maskColor="rgba(255,255,255,0.05)"
                   style={{
-                     background: "#111",
-                     border: "1px solid rgba(100,100,100,0.35)",
-                     borderRadius: 8,
+                     background: "hsl(0,0%,13%)",
+                     border: "1px solid oklch(100% 0 89.88 / 0.12)",
+                     borderRadius: 4,
                      overflow: "hidden",
                      opacity: minimapVisible ? 1 : 0,
                      pointerEvents: minimapVisible ? "auto" : "none",
                      transition: "opacity 0.3s ease",
-                     marginBottom: 92,
+                     marginBottom: 72,
                      marginLeft: 12,
-                     width: 240,
+                     width: 200,
                      height: 120,
+                  }}
+                  onMouseEnter={() => {
+                     if (minimapTimer.current) clearTimeout(minimapTimer.current);
+                     setMinimapVisible(true);
+                  }}
+                  onMouseLeave={() => {
+                     minimapTimer.current = setTimeout(() => setMinimapVisible(false), 1000);
                   }}
                />
             </ReactFlow>
