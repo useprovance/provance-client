@@ -4,7 +4,7 @@ import type { WorkflowRun } from "@/lib/engine/types";
 export interface WorkflowNode {
   id: string;
   nodeId: string;
-  type: "agent" | "trigger";
+  type: "agent" | "trigger" | "flow";
   position: { x: number; y: number };
   action?: { key: string; label: string };
   config: Record<string, Record<string, string>>;
@@ -14,6 +14,7 @@ export interface WorkflowEdge {
   id: string;
   source: string;
   target: string;
+  sourceHandle?: string;
 }
 
 export interface LogEntry {
@@ -61,7 +62,7 @@ export class WorkflowService {
           return {
             id: n.id,
             nodeId: n.data?.agentId ?? n.id,
-            type: (n as { type?: string }).type as "agent" | "trigger" ?? "agent",
+            type: (n as { type?: string }).type as "agent" | "trigger" | "flow" ?? "agent",
             position: n.position,
             config: {},
           };
@@ -71,6 +72,7 @@ export class WorkflowService {
         id: e.id,
         source: e.source,
         target: e.target,
+        ...(e.sourceHandle ? { sourceHandle: e.sourceHandle } : {}),
       }));
       return { nodes, edges };
     } catch {}

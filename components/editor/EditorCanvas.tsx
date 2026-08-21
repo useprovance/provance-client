@@ -20,6 +20,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { AgentNodeComponent } from "./AgentNode";
 import { TriggerNodeComponent } from "./TriggerNode";
+import { FlowNodeComponent } from "./FlowNode";
 import { CanvasChoiceNodeComponent } from "./CanvasChoiceNode";
 import { EditorEdge } from "./EditorEdge";
 import { AddAgentSheet } from "./AddAgentSheet";
@@ -31,6 +32,14 @@ import { agentService } from "@/services/agent.service";
 import { NODES } from "./editor.constants";
 
 function toRFNode(n: WorkflowNode): Node {
+   if (n.type === "flow") {
+      return {
+         id: n.id,
+         type: "flow",
+         position: n.position,
+         data: { label: "IF", icon: "/icons/agents/condition.svg", agentId: "flow", config: n.config ?? {} },
+      };
+   }
    const def = agentService.getById(n.nodeId) ?? NODES.find((nd) => nd.id === n.nodeId);
    const agent = agentService.getById(n.nodeId);
    const firstAction = agent?.actions?.[0];
@@ -49,7 +58,7 @@ function toWorkflowNode(n: Node): WorkflowNode {
    return {
       id: n.id,
       nodeId: data.agentId ?? n.id,
-      type: (n.type ?? "agent") as "agent" | "trigger",
+      type: (n.type ?? "agent") as "agent" | "trigger" | "flow",
       position: n.position,
       action: data.action,
       config: { ...(data.config ?? {}), ...(data.triggerType ? { __trigger: { type: data.triggerType } } : {}) },
@@ -57,7 +66,7 @@ function toWorkflowNode(n: Node): WorkflowNode {
 }
 
 function toWorkflowEdge(e: Edge): WorkflowEdge {
-   return { id: e.id, source: e.source, target: e.target };
+   return { id: e.id, source: e.source, target: e.target, ...(e.sourceHandle ? { sourceHandle: e.sourceHandle } : {}) };
 }
 
 function Canvas({ workflowId }: { workflowId: string }) {
@@ -88,6 +97,7 @@ function Canvas({ workflowId }: { workflowId: string }) {
    const nodeTypes = useMemo(() => ({
       agent: AgentNodeComponent,
       trigger: TriggerNodeComponent,
+      flow: FlowNodeComponent,
       choice: CanvasChoiceNodeComponent,
    }), []);
    const edgeTypes = useMemo(() => ({ provance: EditorEdge }), []);
@@ -152,7 +162,7 @@ function Canvas({ workflowId }: { workflowId: string }) {
 
    const onConnect = useCallback(
       (connection: Connection) =>
-         setEdges((eds) => addEdge(connection, eds)),
+         setEdges((eds) => addEdge({ ...connection, type: "provance" }, eds)),
       [setEdges],
    );
 

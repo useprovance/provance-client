@@ -29,7 +29,7 @@ export interface AgentAction {
 
 export interface Agent {
    id: string;
-   nodeType: "agent" | "trigger";
+   nodeType: "agent" | "trigger" | "flow";
    label: string;
    description: string;
    icon: string;
@@ -929,6 +929,7 @@ export const AGENTS: Agent[] = [
                            "bsc",
                            "arbitrum",
                            "polygon",
+                           "goat",
                         ],
                      },
                      {
@@ -980,6 +981,7 @@ export const AGENTS: Agent[] = [
                            "bsc",
                            "arbitrum",
                            "polygon",
+                           "goat",
                         ],
                      },
                   ],
@@ -1013,6 +1015,7 @@ export const AGENTS: Agent[] = [
                            "bsc",
                            "arbitrum",
                            "polygon",
+                           "goat",
                         ],
                      },
                      {
@@ -1058,6 +1061,7 @@ export const AGENTS: Agent[] = [
                            "bsc",
                            "arbitrum",
                            "polygon",
+                           "goat",
                         ],
                      },
                   ],
@@ -1085,6 +1089,7 @@ export const AGENTS: Agent[] = [
                            "bsc",
                            "arbitrum",
                            "polygon",
+                           "goat",
                         ],
                      },
                      {
@@ -1114,7 +1119,7 @@ export const AGENTS: Agent[] = [
                   key: "chain",
                   label: "Chain",
                   type: "select",
-                  options: ["base", "ethereum", "bsc", "arbitrum", "polygon"],
+                  options: ["base", "ethereum", "bsc", "arbitrum", "polygon", "goat"],
                },
                {
                   key: "min_liquidity_usd",

@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useReactFlow, useEdges } from "@xyflow/react";
 import Image from "next/image";
-import { X, Link2, Unlink } from "lucide-react";
+import { X, Link2, Unlink, Type, Hash, ToggleLeft, ChevronDown } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { FormInput } from "@/components/ui/form-input";
 import { FormSelector } from "@/components/ui/form-selector";
@@ -12,6 +12,7 @@ import { NODES } from "./editor.constants";
 import { MessageTemplateField } from "./MessageTemplateField";
 import { agentService, type AgentField } from "@/services/agent.service";
 import { workflowService } from "@/services/workflow.service";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { AgentNode } from "./editor.constants";
 
 const LINKS_KEY = "__links";
@@ -123,18 +124,194 @@ function Field({
   );
 }
 
+// ─── Condition node config ────────────────────────────────────────────────────
+
+type RightType = "string" | "number" | "boolean";
+
+const RIGHT_TYPES: { value: RightType; label: string; icon: React.ReactNode }[] = [
+  { value: "string",  label: "String",  icon: <Type size={13} strokeWidth={1.8} /> },
+  { value: "number",  label: "Number",  icon: <Hash size={13} strokeWidth={1.8} /> },
+  { value: "boolean", label: "Boolean", icon: <ToggleLeft size={13} strokeWidth={1.8} /> },
+];
+
+function TypePickerPrefix({ value, onChange }: { value: RightType; onChange: (t: RightType) => void }) {
+  const active = RIGHT_TYPES.find((t) => t.value === value)!;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="flex items-center gap-1 px-2.5 h-full shrink-0 border-r border-[#2a2a2a] text-white/40 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+          {active.icon}
+          <ChevronDown size={10} strokeWidth={2} />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        side="bottom"
+        align="start"
+        className="w-36 bg-[#111] border border-[#2a2a2a] rounded-sm shadow-xl p-0.5"
+      >
+        {RIGHT_TYPES.map((t) => (
+          <DropdownMenuItem
+            key={t.value}
+            onClick={() => onChange(t.value)}
+            className={`flex items-center gap-2.5 px-3 py-2 text-[13px] cursor-pointer rounded-sm ${
+              t.value === value ? "text-white bg-white/8" : "text-white/60 focus:bg-white/5 focus:text-white"
+            }`}
+          >
+            <span className="text-white/50">{t.icon}</span>
+            {t.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+const CONDITION_OPERATORS = [
+  { value: "equals", label: "equals" },
+  { value: "not_equals", label: "does not equal" },
+  { value: "contains", label: "contains" },
+  { value: "not_contains", label: "does not contain" },
+  { value: "greater_than", label: "is greater than" },
+  { value: "less_than", label: "is less than" },
+  { value: "is_empty", label: "is empty" },
+  { value: "is_not_empty", label: "is not empty" },
+];
+
+function ConditionConfig({
+  nodeId,
+  workflowId,
+  onClose,
+}: {
+  nodeId: string;
+  workflowId: string;
+  onClose: () => void;
+}) {
+  const { getNode, setNodes } = useReactFlow();
+  const edges = useEdges();
+  const node = getNode(nodeId);
+  const condConfig = ((node?.data as { config?: Record<string, Record<string, string>> })?.config?.condition ?? {}) as Record<string, string>;
+
+  const [leftSource, setLeftSource] = useState(condConfig.leftSource ?? "");
+  const [operator, setOperator] = useState(condConfig.operator ?? "equals");
+  const [rightValue, setRightValue] = useState(condConfig.rightValue ?? "");
+  const [rightType, setRightType] = useState<RightType>((condConfig.rightType as RightType) ?? "string");
+
+  const parentOptions = useMemo(
+    () => getAncestorOutputFields(nodeId, edges, getNode),
+    [nodeId, edges, getNode]
+  );
+
+  const needsRightValue = !["is_empty", "is_not_empty"].includes(operator);
+
+  // Reset value when type changes so stale values don't bleed across types
+  const handleTypeChange = (t: RightType) => {
+    setRightType(t);
+    setRightValue(t === "boolean" ? "true" : "");
+  };
+
+  const handleSave = () => {
+    const newConfig = { condition: { leftSource, operator, rightValue, rightType } };
+    setNodes((prev) => prev.map((n) => {
+      if (n.id !== nodeId) return n;
+      return { ...n, data: { ...n.data, config: newConfig } };
+    }));
+    void workflowService.updateNodeConfig(workflowId, nodeId, newConfig);
+    onClose();
+  };
+
+  return (
+    <>
+      <div className="flex items-center gap-2 px-5 py-4 border-b border-[#2a2a2a]">
+        <Image src="/icons/agents/condition.svg" alt="IF" width={40} height={40} className="object-contain shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-[15px] font-semibold text-white truncate">IF</p>
+          <p className="text-[11px] text-white/40 truncate">Condition</p>
+        </div>
+        <button
+          onClick={onClose}
+          className="w-7 h-7 rounded-full bg-white/8 hover:bg-white/15 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+        >
+          <X size={13} strokeWidth={2} className="text-white/60" />
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-5">
+        <FormSelector
+          label="Value"
+          value={leftSource}
+          onChange={setLeftSource}
+          options={parentOptions}
+          placeholder="Select a field from upstream..."
+          searchable
+        />
+
+        <FormSelector
+          label="Operator"
+          value={operator}
+          onChange={setOperator}
+          options={CONDITION_OPERATORS}
+          placeholder="Select operator..."
+          searchable={false}
+        />
+
+        {needsRightValue && (
+          rightType === "boolean" ? (
+            <FormSelector
+              label="Compare to"
+              value={rightValue || "true"}
+              onChange={setRightValue}
+              options={[{ value: "true", label: "True" }, { value: "false", label: "False" }]}
+              searchable={false}
+              prefix={<TypePickerPrefix value={rightType} onChange={handleTypeChange} />}
+            />
+          ) : (
+            <FormInput
+              label="Compare to"
+              value={rightValue}
+              onChange={setRightValue}
+              placeholder={rightType === "number" ? "0" : "Enter value..."}
+              type={rightType === "number" ? "number" : "text"}
+              prefix={<TypePickerPrefix value={rightType} onChange={handleTypeChange} />}
+            />
+          )
+        )}
+      </div>
+
+      <div className="px-5 py-4 border-t border-[#2a2a2a] flex justify-end gap-2">
+        <button
+          onClick={onClose}
+          className="px-4 py-1.5 text-[13px] text-white/50 hover:text-white transition-colors cursor-pointer"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSave}
+          className="px-4 py-1.5 text-[13px] font-medium bg-orange text-white hover:bg-orange/90 transition-colors cursor-pointer"
+          style={{ clipPath: "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)" }}
+        >
+          Save
+        </button>
+      </div>
+    </>
+  );
+}
+
+// ─── Main config sheet ────────────────────────────────────────────────────────
+
 export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
   const { isConfigOpen, closeConfig, configNodeId } = useEditor();
   const { getNode, setNodes } = useReactFlow();
   const edges = useEdges();
 
-  const node = configNodeId ? (getNode(configNodeId) as AgentNode | undefined) : undefined;
-  const agentId = node?.data.agentId as string | undefined;
-  const agent = agentId
+  const node = configNodeId ? getNode(configNodeId) : undefined;
+  const isFlowNode = node?.type === "flow";
+  const agentNode = isFlowNode ? undefined : (node as AgentNode | undefined);
+  const agentId = (agentNode?.data.agentId ?? (node?.data as Record<string, unknown>)?.agentId) as string | undefined;
+  const agent = agentId && !isFlowNode
     ? (agentService.getById(agentId) ?? NODES.find((n) => n.id === agentId))
     : undefined;
 
-  const actionKey = node?.data.action?.key;
+  const actionKey = agentNode?.data.action?.key;
   const agentFull = agentId ? agentService.getById(agentId) : undefined;
   const matchedAction = agentFull?.actions?.find((a) => a.key === actionKey);
   const activeConfig_ = matchedAction?.config ?? agent?.config ?? [];
@@ -190,7 +367,8 @@ export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
     void workflowService.updateNodeConfig(workflowId, configNodeId, fullConfig);
   }, [workflowId, configNodeId, config, linked, setNodes]);
 
-  if (!node || !agent) return null;
+  if (!node) return null;
+  if (!isFlowNode && !agent) return null;
 
   const activeConfig = activeConfig_.find((c) => c.key === activeTab);
 
@@ -202,6 +380,11 @@ export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
         className="w-[380px] bg-[#141414] border-l border-[#2a2a2a] p-0 flex flex-col [&>button]:hidden"
       >
         <SheetTitle className="sr-only">Node configuration</SheetTitle>
+
+        {isFlowNode && configNodeId && (
+          <ConditionConfig nodeId={configNodeId} workflowId={workflowId} onClose={closeConfig} />
+        )}
+        {!isFlowNode && agent && (<>
 
         <div className="flex items-center gap-2 px-5 py-4 border-b border-[#2a2a2a]">
           <Image src={agent.icon} alt={agent.label} width={40} height={40} className="object-contain shrink-0" />
@@ -287,6 +470,7 @@ export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
             Save
           </button>
         </div>
+        </>)}
       </SheetContent>
     </Sheet>
   );

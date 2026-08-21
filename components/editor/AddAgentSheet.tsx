@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useReactFlow } from "@xyflow/react";
-import { Search, ChevronRight, ChevronLeft, X, Zap, Plus } from "lucide-react";
+import { Search, ChevronRight, ChevronLeft, X, Zap, Plus, GitBranch } from "lucide-react";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useEditor } from "./EditorContext";
@@ -10,10 +10,10 @@ import { EDGE_STYLE } from "./editor.constants";
 import { AGENTS, TRIGGERS, type Agent } from "@/services/agent.service";
 
 export function AddAgentSheet({ workflowId }: { workflowId: string }) {
-   const { isSheetOpen, closeSheet, sourceNodeId } = useEditor();
+   const { isSheetOpen, closeSheet, sourceNodeId, sourceHandleId } = useEditor();
    const { addNodes, addEdges, getNode } = useReactFlow();
    const [search, setSearch] = useState("");
-   const [selected, setSelected] = useState<Agent | "trigger" | null>(null);
+   const [selected, setSelected] = useState<Agent | "trigger" | "flow" | null>(null);
 
    const filteredAgents = useMemo(() => {
       const q = search.toLowerCase();
@@ -34,6 +34,7 @@ export function AddAgentSheet({ workflowId }: { workflowId: string }) {
    }, [search]);
 
    const showTriggerCard = !search || "trigger".includes(search.toLowerCase());
+   const showFlowCard = !search || "flow if condition branch".includes(search.toLowerCase());
 
    useEffect(() => {
       if (isSheetOpen) { setSearch(""); setSelected(null); }
@@ -52,7 +53,23 @@ export function AddAgentSheet({ workflowId }: { workflowId: string }) {
          data: { label: agent.label, icon: agent.icon, agentId: agent.id, action: { key: actionKey, label: actionLabel } },
       }]);
       if (sourceNodeId) {
-         addEdges([{ id: `e${sourceNodeId}-${newId}`, source: sourceNodeId, target: newId, type: "provance", style: EDGE_STYLE }]);
+         addEdges([{ id: `e${sourceNodeId}-${newId}`, source: sourceNodeId, target: newId, type: "provance", style: EDGE_STYLE, ...(sourceHandleId ? { sourceHandle: sourceHandleId } : {}) }]);
+      }
+      handleClose();
+   };
+
+   const handleAddCondition = () => {
+      const newId = `flow-${Date.now()}`;
+      const source = sourceNodeId ? getNode(sourceNodeId) : null;
+      const position = source
+         ? { x: source.position.x + 280, y: source.position.y }
+         : { x: 0, y: 0 };
+      addNodes([{
+         id: newId, type: "flow" as const, position,
+         data: { label: "IF", icon: "/icons/agents/condition.svg", agentId: "flow", config: {} },
+      }]);
+      if (sourceNodeId) {
+         addEdges([{ id: `e${sourceNodeId}-${newId}`, source: sourceNodeId, target: newId, type: "provance", style: EDGE_STYLE, ...(sourceHandleId ? { sourceHandle: sourceHandleId } : {}) }]);
       }
       handleClose();
    };
@@ -92,7 +109,25 @@ export function AddAgentSheet({ workflowId }: { workflowId: string }) {
 
             <div className="flex flex-col flex-1 min-h-0 overflow-hidden rounded-lg">
 
-            {selected === "trigger" ? (
+            {selected === "flow" ? (
+               /* ── Flow list view ── */
+               <>
+                  <div className="flex-1 overflow-y-auto">
+                     <div
+                        onClick={handleAddCondition}
+                        className="group flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer"
+                     >
+                        <div className="w-8 h-8 shrink-0 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity">
+                           <Image src="/icons/agents/condition.svg" alt="IF" width={22} height={22} className="object-contain" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                           <p className="text-[13px] font-medium text-white/75 group-hover:text-white transition-colors">IF</p>
+                           <p className="text-[11px] text-white/30 leading-snug mt-0.5">Route items to different branches based on a condition</p>
+                        </div>
+                     </div>
+                  </div>
+               </>
+            ) : selected === "trigger" ? (
                /* ── Trigger list view ── */
                <>
                   <div className="px-1.5 pt-1.5 pb-3 shrink-0">
@@ -166,9 +201,27 @@ export function AddAgentSheet({ workflowId }: { workflowId: string }) {
                            <div className="w-8 h-8 shrink-0 flex items-center justify-center text-white/50 group-hover:text-white transition-colors">
                               <Zap size={18} strokeWidth={1.5} fill="currentColor" />
                            </div>
-                           <span className="flex-1 text-[13px] font-medium text-white/70 group-hover:text-white transition-colors truncate">
-                              Triggers
-                           </span>
+                           <div className="flex-1 min-w-0">
+                              <p className="text-[13px] font-medium text-white/70 group-hover:text-white transition-colors truncate">Triggers</p>
+                              <p className="text-[11px] text-white/30 leading-snug">Start your workflow on a schedule or event</p>
+                           </div>
+                           <ChevronRight size={17} strokeWidth={1.5} className="text-white/30 group-hover:text-white/60 shrink-0 transition-colors" />
+                        </div>
+                     )}
+
+                     {/* Flow category */}
+                     {showFlowCard && (
+                        <div
+                           onClick={() => { setSelected("flow"); setSearch(""); }}
+                           className="group flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 transition-colors cursor-pointer"
+                        >
+                           <div className="w-8 h-8 shrink-0 flex items-center justify-center text-white/50 group-hover:text-white transition-colors">
+                              <GitBranch size={18} strokeWidth={1.5} />
+                           </div>
+                           <div className="flex-1 min-w-0">
+                              <p className="text-[13px] font-medium text-white/70 group-hover:text-white transition-colors truncate">Flow</p>
+                              <p className="text-[11px] text-white/30 leading-snug">Branch and control how items move through your workflow</p>
+                           </div>
                            <ChevronRight size={17} strokeWidth={1.5} className="text-white/30 group-hover:text-white/60 shrink-0 transition-colors" />
                         </div>
                      )}

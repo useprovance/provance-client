@@ -3,7 +3,7 @@ export type NodeStatus = "pending" | "running" | "success" | "error" | "skipped"
 export interface EngineNode {
   id: string;
   nodeId: string;
-  type: "agent" | "trigger";
+  type: "agent" | "trigger" | "flow";
   position: { x: number; y: number };
   action?: { key: string; label: string };
   config: Record<string, Record<string, string>>;
@@ -13,6 +13,7 @@ export interface EngineEdge {
   id: string;
   source: string;
   target: string;
+  sourceHandle?: string;
 }
 
 export interface EngineCanvas {

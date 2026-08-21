@@ -1,4 +1,4 @@
-import { buildGraph, topologicalSort, findStartNodes } from "./graph";
+import { buildGraph, topologicalSort, findStartNodes, getEdgesByTarget } from "./graph";
 import { agentService } from "@/services/agent.service";
 import type { EngineCanvas, WorkflowRun, NodeRunResult } from "./types";
 
@@ -48,23 +48,66 @@ function extractItems(output: Record<string, unknown>): Record<string, unknown>[
 // Build the list of input items for a node by merging its parents' context.
 // If any parent produced N items, we run the current node N times (one per item).
 // Parents with only 1 item get merged into every iteration as static context.
+// For condition node parents, use the branch context key (true/false).
 function buildInputItems(
-  parentIds: string[],
-  context: Map<string, Record<string, unknown>[]>
+  parentEdges: { source: string; sourceHandle?: string }[],
+  context: Map<string, Record<string, unknown>[]>,
+  flowNodes: Set<string>
 ): Record<string, unknown>[] {
-  if (parentIds.length === 0) return [{}];
+  if (parentEdges.length === 0) return [{}];
 
-  const allItems = parentIds.map((id) => context.get(id) ?? [{}]);
+  // If ANY condition parent's branch produced no items, the whole node is skipped.
+  // This prevents false-branch nodes running when false=0 (even if other parents have data).
+  for (const { source, sourceHandle } of parentEdges) {
+    if (!flowNodes.has(source)) continue;
+    const branch = sourceHandle === "false" ? `${source}/false` : `${source}/true`;
+    if ((context.get(branch) ?? []).length === 0) return [];
+  }
+
+  const allItems = parentEdges.map(({ source, sourceHandle }) => {
+    if (flowNodes.has(source)) {
+      const branch = sourceHandle === "false" ? `${source}/false` : `${source}/true`;
+      return context.get(branch) ?? [];
+    }
+    return context.get(source) ?? [{}];
+  });
+
+  // If all parents produced empty, this node gets no items
+  if (allItems.every((items) => items.length === 0)) return [];
+
   const maxLen = Math.max(...allItems.map((a) => a.length));
 
   // Zip all parents: iteration i gets item[i] from each parent (or item[0] if that parent has only 1)
   return Array.from({ length: maxLen }, (_, i) => {
     const merged: Record<string, unknown> = {};
     for (const items of allItems) {
-      Object.assign(merged, items[i] ?? items[0]);
+      if (items.length > 0) Object.assign(merged, items[i] ?? items[0]);
     }
     return merged;
   });
+}
+
+// Evaluate a condition: left [operator] right
+function evaluateCondition(
+  left: unknown,
+  operator: string,
+  right: unknown
+): boolean {
+  const leftStr = String(left ?? "");
+  const rightStr = String(right ?? "");
+  const leftNum = Number(left);
+  const rightNum = Number(right);
+  switch (operator) {
+    case "equals": return left === right || leftStr === rightStr;
+    case "not_equals": return left !== right && leftStr !== rightStr;
+    case "contains": return leftStr.toLowerCase().includes(rightStr.toLowerCase());
+    case "not_contains": return !leftStr.toLowerCase().includes(rightStr.toLowerCase());
+    case "greater_than": return !isNaN(leftNum) && !isNaN(rightNum) && leftNum > rightNum;
+    case "less_than": return !isNaN(leftNum) && !isNaN(rightNum) && leftNum < rightNum;
+    case "is_empty": return leftStr === "" || left === null || left === undefined;
+    case "is_not_empty": return leftStr !== "" && left !== null && left !== undefined;
+    default: return false;
+  }
 }
 
 export async function executeWorkflow(
@@ -76,12 +119,16 @@ export async function executeWorkflow(
   const startedAt = new Date().toISOString();
   const nodeResults: NodeRunResult[] = [];
 
-  // Context stores an array of output items per node
+  // Context stores an array of output items per node.
+  // For condition nodes, also stores branch-specific contexts:
+  //   context.get(id + "/true") — items that passed the condition
+  //   context.get(id + "/false") — items that failed the condition
   const context = new Map<string, Record<string, unknown>[]>();
 
   const graph = buildGraph(canvas);
   const ordered = topologicalSort(graph);
   const startNodes = new Set(findStartNodes(graph).map((n) => n.id));
+  const flowNodes = new Set(canvas.nodes.filter((n) => n.type === "flow").map((n) => n.id));
 
   let runStatus: WorkflowRun["status"] = "running";
   let runError: string | undefined;
@@ -93,18 +140,68 @@ export async function executeWorkflow(
       continue;
     }
 
+    const graphNode = graph.get(node.id)!;
+    const isStartNode = startNodes.has(node.id);
+    const parentItems = isStartNode ? [{}] : buildInputItems(graphNode.parents, context, flowNodes);
+
+    // Condition node — evaluate branching logic
+    if (node.type === "flow") {
+      const condConfig = (node.config?.condition ?? {}) as Record<string, string>;
+      const leftSource = condConfig.leftSource ?? "";
+      const operator = condConfig.operator ?? "equals";
+      const rightType = condConfig.rightType ?? "string";
+      // Coerce the stored string to the chosen type for accurate comparison
+      const rightValue: unknown =
+        rightType === "boolean" ? condConfig.rightValue === "true" :
+        rightType === "number"  ? Number(condConfig.rightValue ?? "") :
+        (condConfig.rightValue ?? "");
+
+      const trueItems: Record<string, unknown>[] = [];
+      const falseItems: Record<string, unknown>[] = [];
+
+      for (const item of parentItems) {
+        // leftSource is "nodeId::key" — resolve via item
+        let leftValue: unknown = undefined;
+        if (leftSource.includes("::")) {
+          const sep = leftSource.indexOf("::");
+          const key = leftSource.slice(sep + 2);
+          leftValue = item[key];
+        } else if (leftSource) {
+          leftValue = item[leftSource];
+        }
+
+        if (evaluateCondition(leftValue, operator, rightValue)) {
+          trueItems.push(item);
+        } else {
+          falseItems.push(item);
+        }
+      }
+
+      context.set(node.id + "/true", trueItems);
+      context.set(node.id + "/false", falseItems);
+      context.set(node.id, parentItems); // keep full context for display
+
+      const result: NodeRunResult = {
+        nodeId: node.id,
+        label: "IF",
+        status: "success",
+        input: parentItems[0] ?? {},
+        output: { true: trueItems.length, false: falseItems.length },
+        startedAt: new Date().toISOString(),
+        finishedAt: new Date().toISOString(),
+        durationMs: 0,
+      };
+      nodeResults.push(result);
+      onNodeUpdate?.(result);
+      continue;
+    }
+
     const agentId = node.nodeId;
     const agentLabel = agentService.getById(agentId)?.label ?? agentId;
-    const graphNode = graph.get(node.id)!;
 
     const staticConfig = (node.config?.parameters ?? {}) as Record<string, string>;
     const links = (node.config?.["__links"] ?? {}) as Record<string, string>;
-
-    // Static config always wins — if a field is set manually it overrides any link
     const staticOverrides = staticConfig;
-
-    const isStartNode = startNodes.has(node.id);
-    const parentItems = isStartNode ? [{}] : buildInputItems(graphNode.parents, context);
 
     if (parentItems.length === 0) {
       const skipped: NodeRunResult = {
@@ -127,8 +224,6 @@ export async function executeWorkflow(
       parentItems.map(async (item, itemIndex) => {
         const hasUpstreamData = Object.keys(item).length > 0;
         const orchestrated = (isStartNode || !hasUpstreamData) ? item : await orchestrateInput(item, agentId, node.action?.key);
-        // Linked fields: format is "nodeId::outputKey"
-        // Pull the value directly from that specific ancestor's stored context output
         const linkedValues = Object.fromEntries(
           Object.entries(links)
             .map(([field, prefixedKey]) => {
@@ -136,7 +231,6 @@ export async function executeWorkflow(
               const sep = prefixedKey.indexOf("::");
               const nodeId = prefixedKey.slice(0, sep);
               const key = prefixedKey.slice(sep + 2);
-              // Look up from exact ancestor context first, fall back to merged item
               const ancestorItems = context.get(nodeId);
               const val = ancestorItems
                 ? (ancestorItems[itemIndex] ?? ancestorItems[0])?.[key]
@@ -145,16 +239,13 @@ export async function executeWorkflow(
             })
             .filter(([, v]) => v !== undefined)
         );
-        // orchestrated comes first so per-token item data always wins
         const merged = { ...orchestrated, ...item, ...linkedValues, ...staticOverrides };
 
-        // Resolve {{nodeId::outputKey}} in string values using the full context map
         return Object.fromEntries(
           Object.entries(merged).map(([k, v]) => {
             if (typeof v !== "string" || !v.includes("{{")) return [k, v];
             const resolved = v.replace(/\{\{([^}]+)\}\}/g, (_, ref: string) => {
               if (!ref.includes("::")) {
-                // bare {{key}} — use per-token item data first, then merged
                 const val = item[ref] ?? merged[ref];
                 return val !== undefined ? String(val) : "";
               }
@@ -162,7 +253,6 @@ export async function executeWorkflow(
               const nodeId = ref.slice(0, sep);
               const key = ref.slice(sep + 2);
               const nodeCtx = context.get(nodeId);
-              // use itemIndex so each iteration resolves its own token's value
               const val = nodeCtx ? ((nodeCtx[itemIndex] ?? nodeCtx[0])?.[key] ?? "") : "";
               return String(val);
             });
@@ -227,8 +317,6 @@ export async function executeWorkflow(
 
     if (nodeErrored) break;
 
-    // Store output merged with inherited parent data so all ancestor fields
-    // accumulate and stay available to every downstream node
     const extractedItems = nodeOutputItems.flatMap((output, idx) => {
       const inherited = parentItems[idx] ?? parentItems[0] ?? {};
       return extractItems({ ...inherited, ...output });

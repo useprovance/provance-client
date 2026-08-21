@@ -17,8 +17,9 @@ export interface CanvasActions {
 interface EditorContextValue {
   workflowId: string;
   sourceNodeId: string | null;
+  sourceHandleId: string | null;
   isSheetOpen: boolean;
-  openSheet: (sourceNodeId: string | null) => void;
+  openSheet: (sourceNodeId: string | null, handleId?: string | null) => void;
   closeSheet: () => void;
   configNodeId: string | null;
   isConfigOpen: boolean;
@@ -45,6 +46,7 @@ const EditorContext = createContext<EditorContextValue | null>(null);
 
 export function EditorProvider({ workflowId, children }: { workflowId: string; children: ReactNode }) {
   const [sourceNodeId, setSourceNodeId] = useState<string | null>(null);
+  const [sourceHandleId, setSourceHandleId] = useState<string | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [configNodeId, setConfigNodeId] = useState<string | null>(null);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
@@ -64,14 +66,16 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
     setRuns((prev) => prev.some((r) => r.id === run.id) ? prev : [run, ...prev.slice(0, 49)]);
   }, []);
 
-  const openSheet = useCallback((id: string | null) => {
+  const openSheet = useCallback((id: string | null, handleId?: string | null) => {
     setSourceNodeId(id);
+    setSourceHandleId(handleId ?? null);
     setIsSheetOpen(true);
   }, []);
 
   const closeSheet = useCallback(() => {
     setIsSheetOpen(false);
     setSourceNodeId(null);
+    setSourceHandleId(null);
   }, []);
 
   const openConfig = useCallback((id: string) => {
@@ -172,7 +176,7 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
   return (
     <EditorContext.Provider value={{
       workflowId,
-      sourceNodeId, isSheetOpen, openSheet, closeSheet,
+      sourceNodeId, sourceHandleId, isSheetOpen, openSheet, closeSheet,
       configNodeId, isConfigOpen, openConfig, closeConfig,
       logs, logsOpen, setLogsOpen,
       runs, addRun,
