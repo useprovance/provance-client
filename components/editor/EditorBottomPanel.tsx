@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import Image from "next/image";
 import { EyeOff, Globe, MoreHorizontal, Save, Share2, CheckCircle2, XCircle, Clock, ChevronUp, ChevronDown, ArrowRight, ArrowDown, Trash2, MinusCircle, FlaskConical, Square } from "lucide-react";
 import { useReactFlow } from "@xyflow/react";
 import { useRouter } from "next/navigation";
@@ -13,7 +12,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PublishModal } from "./PublishModal";
-import { AiChatSheet } from "./AiChatSheet";
 import { useEditor } from "./EditorContext";
 import { useWorkflowStore } from "@/stores/useWorkflowStore";
 import type { WorkflowRun, NodeRunResult } from "@/lib/engine/types";
@@ -153,7 +151,7 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
   const { getNodes } = useReactFlow();
   const router = useRouter();
   const remove = useWorkflowStore((s) => s.remove);
-  const { logs, logsOpen, setLogsOpen, runs, flowDirection, setFlowDirection, triggerRun, isRunning, stopRun, isAiChatOpen, openAiChat, closeAiChat } = useEditor();
+  const { logs, logsOpen, setLogsOpen, runs, flowDirection, setFlowDirection, triggerRun, isRunning, stopRun } = useEditor();
 
   const handleDelete = () => {
     void remove(workflowId).then(() => router.push("/dashboard/workflows"));
@@ -207,15 +205,6 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
             className="absolute top-0 left-0 right-0 h-1 cursor-ns-resize z-10"
           />
         )}
-        {/* AI Chat floating button */}
-        <button
-          onClick={() => openAiChat()}
-          className="absolute -top-20 right-8 w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-2xl hover:bg-white/90 hover:shadow-[0_0_18px_rgba(255,255,255,0.15)] hover:scale-105 transition-all duration-200 cursor-pointer z-10 border border-white/20"
-          title="AI Chat"
-        >
-          <Image src="/icons/chat-sparkle.svg" alt="AI Chat" width={26} height={26} style={{ filter: "brightness(0)" }} />
-        </button>
-
         {/* Run / Stop buttons — float above panel on the left */}
         <div className="absolute -top-14 left-4 flex items-center gap-2 z-10">
           <button
@@ -359,8 +348,6 @@ export function EditorBottomPanel({ workflowId }: { workflowId: string }) {
           )}
         </div>}
       </div>
-
-      <AiChatSheet open={isAiChatOpen} onOpenChange={(o) => o ? openAiChat() : closeAiChat()} workflowId={workflowId} />
 
       <PublishModal
         open={publishOpen}

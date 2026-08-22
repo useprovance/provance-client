@@ -26,6 +26,8 @@ import { EditorEdge } from "./EditorEdge";
 import { AddAgentSheet } from "./AddAgentSheet";
 import { NodeConfigSheet } from "./NodeConfigSheet";
 import { EditorBottomPanel } from "./EditorBottomPanel";
+import { AiChatPanel } from "./AiChatPanel";
+import { PanelLeftOpen } from "lucide-react";
 import { EditorProvider, useEditor } from "./EditorContext";
 import { workflowService, type WorkflowNode, type WorkflowEdge } from "@/services/workflow.service";
 import { agentService } from "@/services/agent.service";
@@ -71,6 +73,7 @@ function toWorkflowEdge(e: Edge): WorkflowEdge {
 
 function Canvas({ workflowId }: { workflowId: string }) {
    const { setViewport } = useReactFlow();
+   const [aiPanelOpen, setAiPanelOpen] = useState(true);
    const [minimapVisible, setMinimapVisible] = useState(false);
    const minimapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -229,17 +232,42 @@ function Canvas({ workflowId }: { workflowId: string }) {
 
    if (!canvasReady) {
       return (
-         <div className="flex flex-col w-full h-full bg-[oklch(20.46%_0_89.88)]">
-            <div className="flex-1 flex items-center justify-center">
-               <div className="w-5 h-5 rounded-full border-2 border-sand/20 border-t-sand/60 animate-spin" />
+         <div className="flex w-full h-full">
+            {aiPanelOpen && <AiChatPanel workflowId={workflowId} onCollapse={() => setAiPanelOpen(false)} />}
+            <div className="relative flex flex-col flex-1 min-w-0 bg-[oklch(20.46%_0_89.88)]">
+               {!aiPanelOpen && (
+                  <button
+                     onClick={() => setAiPanelOpen(true)}
+                     className="absolute top-1/4 left-0 -translate-y-1/2 z-10 flex flex-col items-center gap-2 py-4 px-2 bg-[#1e1e1e] border border-white/20 rounded-r-lg text-white/80 hover:text-white hover:bg-[#2a2a2a] hover:border-white/35 shadow-lg transition-all cursor-pointer"
+                     title="Open AI Chat"
+                  >
+                     <PanelLeftOpen size={17} strokeWidth={1.8} />
+                     <span className="text-[9px] font-semibold tracking-widest uppercase" style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>AI Chat</span>
+                  </button>
+               )}
+               <div className="flex-1 flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full border-2 border-sand/20 border-t-sand/60 animate-spin" />
+               </div>
+               <EditorBottomPanel workflowId={workflowId} />
             </div>
-            <EditorBottomPanel workflowId={workflowId} />
          </div>
       );
    }
 
    return (
-      <div className="flex flex-col w-full h-full bg-[oklch(20.46%_0_89.88)]">
+      <div className="flex w-full h-full">
+         {aiPanelOpen && <AiChatPanel workflowId={workflowId} onCollapse={() => setAiPanelOpen(false)} />}
+         <div className="relative flex flex-col flex-1 min-w-0 bg-[oklch(20.46%_0_89.88)]">
+         {!aiPanelOpen && (
+            <button
+               onClick={() => setAiPanelOpen(true)}
+               className="absolute top-1/2 left-0 -translate-y-1/2 z-10 flex flex-col items-center gap-1.5 py-3 px-1.5 bg-[#1a1a1a] border border-white/10 rounded-r-lg text-white/60 hover:text-white hover:bg-[#222] transition-all cursor-pointer"
+               title="Open AI Chat"
+            >
+               <PanelLeftOpen size={15} strokeWidth={1.5} />
+               <span className="text-[9px] font-medium tracking-wide uppercase" style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>AI Chat</span>
+            </button>
+         )}
          <div className="relative flex-1 min-h-0">
             <ReactFlow
                nodes={nodes}
@@ -302,6 +330,7 @@ function Canvas({ workflowId }: { workflowId: string }) {
             <NodeConfigSheet key={configNodeId ?? ""} workflowId={workflowId} />
          </div>
          <EditorBottomPanel workflowId={workflowId} />
+         </div>
       </div>
    );
 }
