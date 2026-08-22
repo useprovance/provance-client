@@ -113,7 +113,8 @@ function evaluateCondition(
 export async function executeWorkflow(
   workflowId: string,
   canvas: EngineCanvas,
-  onNodeUpdate?: (result: NodeRunResult) => void
+  onNodeUpdate?: (result: NodeRunResult) => void,
+  onNodeStart?: (nodeId: string) => void
 ): Promise<WorkflowRun> {
   const runId = crypto.randomUUID();
   const startedAt = new Date().toISOString();
@@ -264,6 +265,7 @@ export async function executeWorkflow(
     const nodeOutputItems: Record<string, unknown>[] = [];
     let nodeErrored = false;
 
+    onNodeStart?.(node.id);
     for (let i = 0; i < resolvedItems.length; i++) {
       if (i > 0) await new Promise((r) => setTimeout(r, 1000));
       const input = resolvedItems[i];

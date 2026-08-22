@@ -8,7 +8,7 @@ import {
    useReactFlow,
    type NodeProps,
 } from "@xyflow/react";
-import { Plus, Zap, FlaskConical } from "lucide-react";
+import { Plus, Zap, FlaskConical, Check, X, Minus } from "lucide-react";
 import Image from "next/image";
 import { NodeToolbar } from "./NodeToolbar";
 import { useEditor } from "./EditorContext";
@@ -20,7 +20,9 @@ export function TriggerNodeComponent({ id, selected, data }: NodeProps<AgentNode
    const triggerType = (data as unknown as { triggerType?: string }).triggerType;
    const icon = (data as unknown as { icon?: string }).icon ?? "/icons/agents/trigger.svg";
    const triggerLabel = data.label ?? (triggerType === "schedule" ? "Schedule" : triggerType === "webhook" ? "Webhook" : "Manual");
-   const { openSheet, openConfig, flowDirection, triggerRun, isRunning } = useEditor();
+   const { openSheet, openConfig, flowDirection, triggerRun, isRunning, runningNodeId, nodeStatuses } = useEditor();
+   const isNodeRunning = runningNodeId === id;
+   const nodeStatus = nodeStatuses[id];
    const isVertical = flowDirection === "vertical";
    const { deleteElements } = useReactFlow();
    const edges = useEdges();
@@ -84,8 +86,12 @@ export function TriggerNodeComponent({ id, selected, data }: NodeProps<AgentNode
           bg-[hsl(0,0%,17%)] [background-clip:padding-box] transition-shadow cursor-pointer
           border border-[oklch(100%_0_89.88_/_0.2)]
           ${selected ? "shadow-[0_0_0_6px_oklch(100%_0_89.88_/_0.4)]" : ""}
+          ${isNodeRunning ? "!border-transparent" : ""}
+          ${nodeStatus === "success" ? "!border-[oklch(63.2%_0.186_147.37)] !border-[2px]" : ""}
+          ${nodeStatus === "error" ? "!border-[#ef4444] !border-[2px]" : ""}
         `}
          >
+            {isNodeRunning && <div className="node-running-border" style={{ borderRadius: "36px 8px 8px 36px" }} />}
             <NodeToolbar
                visible={toolbarVisible || (selected ?? false)}
                onDelete={() => deleteElements({ nodes: [{ id }] })}
@@ -93,6 +99,22 @@ export function TriggerNodeComponent({ id, selected, data }: NodeProps<AgentNode
                onMouseEnter={showToolbar}
                onMouseLeave={hideToolbar}
             />
+
+            {!isNodeRunning && nodeStatus === "success" && (
+               <span className="absolute" style={{ bottom: 6, right: 7, lineHeight: 0 }}>
+                  <Check size={14} strokeWidth={2.5} color="oklch(63.2% 0.186 147.37)" />
+               </span>
+            )}
+            {!isNodeRunning && nodeStatus === "error" && (
+               <span className="absolute" style={{ bottom: 6, right: 7, lineHeight: 0 }}>
+                  <X size={14} strokeWidth={2.5} color="#ef4444" />
+               </span>
+            )}
+            {!isNodeRunning && nodeStatus === "skipped" && (
+               <span className="absolute" style={{ bottom: 6, right: 7, lineHeight: 0 }}>
+                  <Minus size={14} strokeWidth={2.5} color="oklch(50% 0 0)" />
+               </span>
+            )}
 
             {/* Only source handle — triggers can only start flows, not receive them */}
             <Handle

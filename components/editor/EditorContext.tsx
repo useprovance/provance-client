@@ -35,6 +35,8 @@ interface EditorContextValue {
   registerCanvasActions: (actions: CanvasActions) => void;
   canvasActions: CanvasActions | null;
   isRunning: boolean;
+  runningNodeId: string | null;
+  nodeStatuses: Record<string, "success" | "error" | "skipped">;
   triggerRun: () => Promise<void>;
   stopRun: () => void;
   isAiChatOpen: boolean;
@@ -56,6 +58,8 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
   const [flowDirection, setFlowDirection] = useState<FlowDirection>("horizontal");
   const [canvasActions, setCanvasActions] = useState<CanvasActions | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [runningNodeId, setRunningNodeId] = useState<string | null>(null);
+  const [nodeStatuses, setNodeStatuses] = useState<Record<string, "success" | "error" | "skipped">>({});
   const stopRef = useRef<(() => void) | null>(null);
   const [isAiChatOpen, setIsAiChatOpen] = useState(false);
 
@@ -101,6 +105,7 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
     stopRef.current?.();
     stopRef.current = null;
     setIsRunning(false);
+    setRunningNodeId(null);
     workflowService.log("Workflow stopped.", "info");
   }, []);
 
@@ -137,12 +142,15 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
       return;
     }
 
+    setNodeStatuses({});
     workflowService.log("Starting workflow...", "info");
     let stopped = false;
     stopRef.current = () => { stopped = true; };
     try {
       const run = await executeWorkflow(workflowId, canvas, (result: NodeRunResult) => {
         if (stopped) return;
+        setRunningNodeId(null);
+        setNodeStatuses((prev) => ({ ...prev, [result.nodeId]: result.status === "success" ? "success" : result.status === "skipped" ? "skipped" : "error" }));
         if (result.status === "success") {
           workflowService.log(`✓ ${result.label} — ${result.durationMs}ms`, "info");
         } else if (result.status === "skipped") {
@@ -150,6 +158,8 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
         } else {
           workflowService.log(`✗ ${result.label} failed — ${result.error ?? "unknown error"}`, "error");
         }
+      }, (nodeId: string) => {
+        if (!stopped) setRunningNodeId(nodeId);
       });
       if (!stopped) {
       addRun(run);
@@ -182,7 +192,7 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
       runs, addRun,
       flowDirection, setFlowDirection,
       registerCanvasActions, canvasActions,
-      isRunning, triggerRun, stopRun,
+      isRunning, runningNodeId, nodeStatuses, triggerRun, stopRun,
       isAiChatOpen, openAiChat, closeAiChat,
     }}>
       {children}

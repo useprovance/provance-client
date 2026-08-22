@@ -9,7 +9,7 @@ import {
   type NodeProps,
   type Node,
 } from "@xyflow/react";
-import { Plus } from "lucide-react";
+import { Plus, Check, X, Minus } from "lucide-react";
 import Image from "next/image";
 import { NodeToolbar } from "./NodeToolbar";
 import { useEditor } from "./EditorContext";
@@ -46,7 +46,9 @@ const OPERATOR_LABELS: Record<string, string> = {
 
 export function FlowNodeComponent({ id, data, selected }: NodeProps<FlowNodeType>) {
   const { deleteElements } = useReactFlow();
-  const { openConfig, openSheet } = useEditor();
+  const { openConfig, openSheet, runningNodeId, nodeStatuses } = useEditor();
+  const isNodeRunning = runningNodeId === id;
+  const nodeStatus = nodeStatuses[id];
   const edges = useEdges();
   const [toolbarVisible, setToolbarVisible] = useState(false);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -85,8 +87,27 @@ export function FlowNodeComponent({ id, data, selected }: NodeProps<FlowNodeType
           bg-[hsl(0,0%,17%)] [background-clip:padding-box] transition-shadow
           border border-[oklch(100%_0_89.88_/_0.2)]
           ${selected ? "shadow-[0_0_0_6px_oklch(100%_0_89.88_/_0.4)]" : ""}
+          ${isNodeRunning ? "!border-transparent" : ""}
+          ${nodeStatus === "success" ? "!border-[oklch(63.2%_0.186_147.37)] !border-[2px]" : ""}
+          ${nodeStatus === "error" ? "!border-[#ef4444] !border-[2px]" : ""}
         `}
       >
+        {isNodeRunning && <div className="node-running-border" />}
+        {!isNodeRunning && nodeStatus === "success" && (
+          <span className="absolute" style={{ bottom: 6, right: 7, lineHeight: 0 }}>
+            <Check size={14} strokeWidth={2.5} color="oklch(63.2% 0.186 147.37)" />
+          </span>
+        )}
+        {!isNodeRunning && nodeStatus === "error" && (
+          <span className="absolute" style={{ bottom: 6, right: 7, lineHeight: 0 }}>
+            <X size={14} strokeWidth={2.5} color="#ef4444" />
+          </span>
+        )}
+        {!isNodeRunning && nodeStatus === "skipped" && (
+          <span className="absolute" style={{ bottom: 6, right: 7, lineHeight: 0 }}>
+            <Minus size={14} strokeWidth={2.5} color="oklch(50% 0 0)" />
+          </span>
+        )}
         <NodeToolbar
           visible={toolbarVisible || (selected ?? false)}
           onDelete={() => deleteElements({ nodes: [{ id }] })}

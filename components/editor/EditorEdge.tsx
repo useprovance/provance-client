@@ -40,7 +40,9 @@ export function EditorEdge({
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [edgePath, labelX, labelY] = getSmoothStepPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
   const { deleteElements } = useReactFlow();
-  const { openSheet } = useEditor();
+  const { openSheet, nodeStatuses } = useEditor();
+  const isSuccess = nodeStatuses[source] === "success";
+  const edgeColor = isSuccess ? "oklch(63.2% 0.186 147.37)" : hovered ? "oklch(62% 0 0)" : "oklch(42% 0 0)";
 
   const showToolbar = () => {
     if (hideTimer.current) clearTimeout(hideTimer.current);
@@ -76,7 +78,7 @@ export function EditorEdge({
         path={edgePath}
         markerEnd={`url(#arrow-${id})`}
         style={{
-          stroke: hovered ? "oklch(62% 0 0)" : "oklch(42% 0 0)",
+          stroke: edgeColor,
           strokeWidth: 2,
           strokeLinecap: "square",
           transition: "stroke 0.2s ease",

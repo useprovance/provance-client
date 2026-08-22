@@ -9,7 +9,7 @@ import {
    useUpdateNodeInternals,
    type NodeProps,
 } from "@xyflow/react";
-import { Plus } from "lucide-react";
+import { Plus, Check, X, Minus } from "lucide-react";
 import { NodeToolbar } from "./NodeToolbar";
 import { useEditor } from "./EditorContext";
 import type { AgentNode } from "./editor.constants";
@@ -24,8 +24,10 @@ export function AgentNodeComponent({
    selected,
 }: NodeProps<AgentNode>) {
    const { deleteElements } = useReactFlow();
-   const { openSheet, openConfig, flowDirection } = useEditor();
+   const { openSheet, openConfig, flowDirection, runningNodeId, nodeStatuses } = useEditor();
    const isVertical = flowDirection === "vertical";
+   const isNodeRunning = runningNodeId === id;
+   const nodeStatus = nodeStatuses[id];
    const updateNodeInternals = useUpdateNodeInternals();
    const edges = useEdges();
    const hasOutgoing = edges.some((e) => e.source === id);
@@ -71,8 +73,12 @@ export function AgentNodeComponent({
                bg-[hsl(0,0%,17%)] [background-clip:padding-box] transition-shadow cursor-pointer
                border border-[oklch(100%_0_89.88_/_0.2)]
                ${selected ? "shadow-[0_0_0_6px_oklch(100%_0_89.88_/_0.4)]" : ""}
+               ${isNodeRunning ? "!border-transparent" : ""}
+               ${nodeStatus === "success" ? "!border-[oklch(63.2%_0.186_147.37)] !border-[2px]" : ""}
+               ${nodeStatus === "error" ? "!border-[#ef4444] !border-[2px]" : ""}
             `}
          >
+            {isNodeRunning && <div className="node-running-border" />}
             <NodeToolbar
                visible={toolbarVisible || (selected ?? false)}
                onDelete={() => deleteElements({ nodes: [{ id }] })}
@@ -101,7 +107,22 @@ export function AgentNodeComponent({
                style={{ width: 48, height: 48 }}
             />
 
-            {isUnconfigured && (
+            {!isNodeRunning && nodeStatus === "success" && (
+               <span className="absolute" style={{ bottom: 6, right: 7, lineHeight: 0 }}>
+                  <Check size={14} strokeWidth={2.5} color="oklch(63.2% 0.186 147.37)" />
+               </span>
+            )}
+            {!isNodeRunning && nodeStatus === "error" && (
+               <span className="absolute" style={{ bottom: 6, right: 7, lineHeight: 0 }}>
+                  <X size={14} strokeWidth={2.5} color="#ef4444" />
+               </span>
+            )}
+            {!isNodeRunning && nodeStatus === "skipped" && (
+               <span className="absolute" style={{ bottom: 6, right: 7, lineHeight: 0 }}>
+                  <Minus size={14} strokeWidth={2.5} color="oklch(50% 0 0)" />
+               </span>
+            )}
+            {isUnconfigured && nodeStatus === undefined && (
                <span className="absolute" style={{ bottom: 6, right: 6, lineHeight: 0 }}>
                   <Image src="/icons/node-validation-error.svg" alt="Unconfigured" width={14} height={14} />
                </span>

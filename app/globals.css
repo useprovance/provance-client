@@ -226,6 +226,34 @@
    width: 169px;
 }
 
+@property --node-gradient-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes node-border-rotate {
+  from { --node-gradient-angle: 0deg; }
+  to   { --node-gradient-angle: 360deg; }
+}
+
+.node-running-border {
+  position: absolute;
+  inset: -2px;
+  border-radius: 9px;
+  z-index: -1;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--node-gradient-angle),
+    #d95e28,
+    #d95e28 30%,
+    #d95e2815 60%,
+    #d95e2815 85%,
+    #d95e28
+  );
+  animation: node-border-rotate 0.6s linear infinite;
+}
+
 .hero-dots {
    background-color: rgba(204, 189, 159, 0.1);
    mask: url("/icons/dots.svg") left top / 6px 6px alpha;
