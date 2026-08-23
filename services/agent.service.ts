@@ -20,14 +20,22 @@ export interface NodeConfig {
    fields: AgentField[];
 }
 
+export interface AgentPayment {
+   token: string;        // token symbol e.g. "USDCe"
+   address: string;      // token contract address
+   chainId: number;      // network chain ID
+}
+
 export interface AgentAction {
    key: string;
    label: string;
    description: string;
+   price?: number;        // USD price per call — undefined means free
    config: NodeConfig[];
 }
 
 export interface Agent {
+   payment?: AgentPayment;
    id: string;
    nodeType: "agent" | "trigger" | "flow";
    label: string;
@@ -569,6 +577,11 @@ export const AGENTS: Agent[] = [
       publishedAt: "1 month ago",
       lastReleased: "1 month ago",
       url: `${NODES_URL}/gruff`,
+      payment: {
+         token: "USDCe",
+         address: "0x3022b87ac063DE95b1570F46f5e470F8B53112D8",
+         chainId: 2345,
+      },
       outputs: [
          { key: "action", label: "Action performed" },
          { key: "success", label: "Success" },
@@ -594,6 +607,7 @@ export const AGENTS: Agent[] = [
             label: "Execute Trade",
             description:
                "Check balances, get a quote, and execute a swap on GOAT Network via OKU.",
+            price: 0.05,
             config: [
                {
                   key: "parameters",
@@ -636,6 +650,7 @@ export const AGENTS: Agent[] = [
             label: "Sell Position",
             description:
                "Sell a token position on OKU. Omit amount to sell full balance.",
+            price: 0.05,
             config: [
                {
                   key: "parameters",

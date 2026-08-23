@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useReactFlow, useEdges } from "@xyflow/react";
 import Image from "next/image";
-import { X, Link2, Unlink, Type, Hash, ToggleLeft, ChevronDown } from "lucide-react";
+import { X, Link2, Unlink, Type, Hash, ToggleLeft, ChevronDown, DollarSign } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { FormInput } from "@/components/ui/form-input";
 import { FormSelector } from "@/components/ui/form-selector";
@@ -419,6 +419,15 @@ export function NodeConfigSheet({ workflowId }: { workflowId: string }) {
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-5">
+          {matchedAction?.price !== undefined && (
+            <div className="flex items-center justify-between py-3 px-4 rounded-md" style={{ background: "oklch(18% 0 0)", border: "1px solid oklch(28% 0 0)" }}>
+              <div className="flex items-center gap-2 text-white/50 text-[13px]">
+                <DollarSign size={13} strokeWidth={2} />
+                <span>Price per call</span>
+              </div>
+              <span className="text-[13px] font-medium text-white/80">${matchedAction.price}</span>
+            </div>
+          )}
           {activeConfig?.fields.map((f) => (f.key === "message" || f.key === "system_prompt") ? (
             <MessageTemplateField
               key={f.key}

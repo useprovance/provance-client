@@ -34,9 +34,9 @@ const BEHAVIOR_KEY = "provance_sidebar_behaviour";
 type Behaviour = "expandable" | "open" | "closed";
 
 const topRoutes = [
-   { key: "overview", label: "Overview", icon: LayoutDashboard, href: "/dashboard" },
+   { key: "overview", label: "Overview", icon: LayoutDashboard, href: "/dashboard", hidden: true },
    { key: "workflows", label: "Workflows", icon: GitBranch, href: "/dashboard/workflows" },
-   { key: "credentials", label: "Credentials", icon: KeyRound, href: "/dashboard/credentials" },
+   { key: "credentials", label: "Credentials", icon: KeyRound, href: "/dashboard/credentials", hidden: true },
 ];
 const middleRoutes = [
    { key: "agents", label: "My Agents", icon: Bot, href: "/dashboard/agents" },
@@ -50,7 +50,7 @@ function NavItem({
    route,
    isExpanded,
 }: {
-   route: { key: string; label: string; icon: React.ElementType; href: string };
+   route: { key: string; label: string; icon: React.ElementType; href: string; hidden?: boolean };
    isExpanded: boolean;
 }) {
    const pathname = usePathname();
@@ -62,6 +62,7 @@ function NavItem({
          href={route.href}
          className={cn(
             "flex items-center gap-3 w-full py-2 rounded-md text-sm transition-colors",
+            route.hidden && "hidden",
             isExpanded ? "px-3" : "justify-center px-0",
             isActive
                ? "bg-sidebar-accent text-sidebar-foreground"

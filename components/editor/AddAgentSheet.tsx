@@ -256,12 +256,13 @@ export function AddAgentSheet({ workflowId }: { workflowId: string }) {
                         <Image src={selected.icon} alt={selected.label} width={512} height={512} className="object-contain" style={{ width: 40, height: 40 }} />
                      </div>
                      <p className="text-[17px] font-semibold text-white">{selected.label}</p>
-                     <p className="text-[12px] text-white/40 mt-1.5 leading-relaxed max-w-[280px]">{selected.description}</p>
+                     <p className="text-[12px] text-white/65 mt-1.5 leading-relaxed max-w-[280px]">{selected.description}</p>
                   </div>
 
                   <div className="h-px bg-white/6 mx-4 shrink-0" />
 
-                  <div className="flex-1 overflow-y-auto py-2">
+                  <div className="flex-1 overflow-y-auto py-2 flex flex-col gap-1">
+                     {/* Actions */}
                      <p className="px-4 pt-2 pb-2 text-[10px] font-semibold uppercase tracking-widest text-white/30">
                         Actions
                      </p>
@@ -274,12 +275,76 @@ export function AddAgentSheet({ workflowId }: { workflowId: string }) {
                            <div className="w-7 h-7 shrink-0 flex items-center justify-center opacity-55 group-hover:opacity-100 transition-opacity">
                               <Image src={selected.icon} alt={action.label} width={512} height={512} className="object-contain" style={{ width: 20, height: 20 }} />
                            </div>
-                           <span className="flex-1 text-[13px] text-white/70 group-hover:text-white transition-colors">
+                           <span className="flex-1 text-[13px] text-white/85 group-hover:text-white transition-colors">
                               {action.label}
                            </span>
+                           {action.price !== undefined && (
+                              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/8 text-white/45 shrink-0">
+                                 ${action.price}
+                              </span>
+                           )}
                            <Plus size={18} strokeWidth={2} className="text-white/40 group-hover:text-white/80 transition-colors shrink-0" />
                         </div>
                      ))}
+
+                     {/* Features */}
+                     {selected.features && selected.features.length > 0 && (
+                        <>
+                           <div className="h-px bg-white/6 mx-4 my-2" />
+                           <p className="px-4 pb-2 text-[10px] font-semibold uppercase tracking-widest text-white/30">
+                              Features
+                           </p>
+                           <div className="px-4 flex flex-col gap-1.5 pb-2">
+                              {selected.features.map((f) => (
+                                 <div key={f} className="flex items-start gap-2">
+                                    <span className="mt-[5px] w-1 h-1 rounded-full bg-white/50 shrink-0" />
+                                    <span className="text-[12px] text-white/80 leading-snug">{f}</span>
+                                 </div>
+                              ))}
+                           </div>
+                        </>
+                     )}
+
+                     {/* Outputs */}
+                     {selected.outputs && selected.outputs.length > 0 && (
+                        <>
+                           <div className="h-px bg-white/6 mx-4 my-2" />
+                           <p className="px-4 pb-2 text-[10px] font-semibold uppercase tracking-widest text-white/30">
+                              Outputs
+                           </p>
+                           <div className="px-4 flex flex-wrap gap-1.5 pb-2">
+                              {selected.outputs.map((o) => (
+                                 <span key={o.key} className="text-[11px] font-mono px-2 py-0.5 rounded bg-white/8 text-white/70">
+                                    {o.key}
+                                 </span>
+                              ))}
+                           </div>
+                        </>
+                     )}
+
+                     {/* Payment */}
+                     {selected.payment && (
+                        <>
+                           <div className="h-px bg-white/6 mx-4 my-2" />
+                           <p className="px-4 pb-2 text-[10px] font-semibold uppercase tracking-widest text-white/30">
+                              Payment
+                           </p>
+                           <div className="px-4 pb-4 flex flex-col gap-1">
+                              <div className="flex items-center justify-between">
+                                 <span className="text-[12px] text-white/60">Token</span>
+                                 <span className="text-[12px] font-medium text-white">{selected.payment.token}</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                 <span className="text-[12px] text-white/60">Chain ID</span>
+                                 <span className="text-[12px] font-medium text-white">{selected.payment.chainId}</span>
+                              </div>
+                              <div className="flex items-center justify-between gap-4">
+                                 <span className="text-[12px] text-white/60 shrink-0">Contract</span>
+                                 <span className="text-[11px] font-mono text-white/60 truncate">{selected.payment.address}</span>
+                              </div>
+                           </div>
+                        </>
+                     )}
                   </div>
                </>
             )}
