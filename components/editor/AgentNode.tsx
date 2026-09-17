@@ -9,7 +9,7 @@ import {
    useUpdateNodeInternals,
    type NodeProps,
 } from "@xyflow/react";
-import { Plus, Check, X, Minus, DollarSign } from "lucide-react";
+import { Plus, Check, X, Minus } from "lucide-react";
 import { NodeToolbar } from "./NodeToolbar";
 import { useEditor } from "./EditorContext";
 import type { AgentNode } from "./editor.constants";
@@ -64,23 +64,6 @@ export function AgentNodeComponent({
          onMouseEnter={showToolbar}
          onMouseLeave={hideToolbar}
       >
-         {/* Paid action badge — rendered first so toolbar stacks above */}
-         {matchedAction?.price !== undefined && (
-            <div
-               className="absolute pointer-events-none flex items-center justify-center w-5 h-5 rounded-full"
-               style={{
-                  top: -28,
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  background: "oklch(22% 0 0)",
-                  border: "1px solid oklch(45% 0 0)",
-                  color: "oklch(72% 0 0)",
-               }}
-            >
-               <DollarSign size={10} strokeWidth={2.5} />
-            </div>
-         )}
-
          {/* Box */}
          <div
             onClick={() => openConfig(id)}

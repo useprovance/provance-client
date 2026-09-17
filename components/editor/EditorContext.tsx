@@ -3,7 +3,9 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { workflowService, type LogEntry } from "@/services/workflow.service";
 import { executeWorkflow } from "@/lib/engine/executor";
-import type { WorkflowRun, NodeRunResult } from "@/lib/engine/types";
+import { calculateWorkflowPayment, type WorkflowPaymentPlan } from "@/lib/engine/payment";
+import { WorkflowPaymentModal } from "@/components/editor/WorkflowPaymentModal";
+import type { EngineCanvas, WorkflowRun, NodeRunResult } from "@/lib/engine/types";
 
 export type FlowDirection = "horizontal" | "vertical";
 
@@ -62,6 +64,8 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
   const [nodeStatuses, setNodeStatuses] = useState<Record<string, "success" | "error" | "skipped">>({});
   const stopRef = useRef<(() => void) | null>(null);
   const [isAiChatOpen, setIsAiChatOpen] = useState(false);
+  const [paymentPlan, setPaymentPlan] = useState<WorkflowPaymentPlan | null>(null);
+  const pendingCanvasRef = useRef<EngineCanvas | null>(null);
 
   const openAiChat = useCallback(() => setIsAiChatOpen(true), []);
   const closeAiChat = useCallback(() => setIsAiChatOpen(false), []);
@@ -109,6 +113,50 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
     workflowService.log("Workflow stopped.", "info");
   }, []);
 
+  const doRun = useCallback(async (canvas: EngineCanvas, permitByChain: Record<number, import("@/lib/engine/types").PermitSignature>) => {
+    setNodeStatuses({});
+    workflowService.log("Starting workflow...", "info");
+    let stopped = false;
+    stopRef.current = () => { stopped = true; };
+
+    const paymentContext = Object.keys(permitByChain).length > 0
+      ? { runId: crypto.randomUUID(), permitByChain, callCountByChain: {} }
+      : undefined;
+
+    try {
+      const run = await executeWorkflow(workflowId, canvas, (result: NodeRunResult) => {
+        if (stopped) return;
+        setRunningNodeId(null);
+        setNodeStatuses((prev) => ({ ...prev, [result.nodeId]: result.status === "success" ? "success" : result.status === "skipped" ? "skipped" : "error" }));
+        if (result.status === "success") {
+          workflowService.log(`✓ ${result.label} — ${result.durationMs}ms`, "info");
+        } else if (result.status === "skipped") {
+          workflowService.log(`– ${result.label} skipped — no data from upstream`, "info");
+        } else {
+          workflowService.log(`✗ ${result.label} failed — ${result.error ?? "unknown error"}`, "error");
+        }
+      }, (nodeId: string) => {
+        if (!stopped) setRunningNodeId(nodeId);
+      }, paymentContext);
+
+      if (!stopped) {
+        addRun(run);
+        void workflowService.saveRun(workflowId, run);
+        workflowService.log(
+          run.status === "success"
+            ? "Workflow completed. Open the Runs tab to see full output."
+            : `Workflow stopped: ${run.error ?? "unknown error"}`,
+          run.status === "success" ? "info" : "error"
+        );
+      }
+    } catch (err) {
+      if (!stopped) workflowService.log(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`, "error");
+    } finally {
+      stopRef.current = null;
+      setIsRunning(false);
+    }
+  }, [workflowId, addRun]);
+
   const triggerRun = useCallback(async () => {
     if (isRunning) return;
     setIsRunning(true);
@@ -142,46 +190,35 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
       return;
     }
 
-    setNodeStatuses({});
-    workflowService.log("Starting workflow...", "info");
-    let stopped = false;
-    stopRef.current = () => { stopped = true; };
-    try {
-      const run = await executeWorkflow(workflowId, canvas, (result: NodeRunResult) => {
-        if (stopped) return;
-        setRunningNodeId(null);
-        setNodeStatuses((prev) => ({ ...prev, [result.nodeId]: result.status === "success" ? "success" : result.status === "skipped" ? "skipped" : "error" }));
-        if (result.status === "success") {
-          workflowService.log(`✓ ${result.label} — ${result.durationMs}ms`, "info");
-        } else if (result.status === "skipped") {
-          workflowService.log(`– ${result.label} skipped — no data from upstream`, "info");
-        } else {
-          workflowService.log(`✗ ${result.label} failed — ${result.error ?? "unknown error"}`, "error");
-        }
-      }, (nodeId: string) => {
-        if (!stopped) setRunningNodeId(nodeId);
-      });
-      if (!stopped) {
-      addRun(run);
-      void workflowService.saveRun(workflowId, run);
-      workflowService.log(
-        run.status === "success"
-          ? "Workflow completed. Open the Runs tab to see full output."
-          : `Workflow stopped: ${run.error ?? "unknown error"}`,
-        run.status === "success" ? "info" : "error"
-      );
-      }
-    } catch (err) {
-      if (!stopped) workflowService.log(`Unexpected error: ${err instanceof Error ? err.message : String(err)}`, "error");
-    } finally {
-      stopRef.current = null;
-      setIsRunning(false);
+    // Check if any paid nodes exist — show payment modal first
+    const plan = calculateWorkflowPayment(canvas);
+    if (plan.requiresPayment) {
+      pendingCanvasRef.current = canvas;
+      setPaymentPlan(plan);
+      return; // modal will call doRun when approved
     }
-  }, [workflowId, addRun, isRunning]);
+
+    await doRun(canvas, {} as Record<number, import("@/lib/engine/types").PermitSignature>);
+  }, [workflowId, isRunning, doRun]);
 
   useEffect(() => {
     workflowService.registerLogger(addLog);
   }, [addLog]);
+
+  const handlePaymentApproved = useCallback(async (permits: Record<number, import("@/lib/engine/types").PermitSignature>) => {
+    const canvas = pendingCanvasRef.current;
+    pendingCanvasRef.current = null;
+    setPaymentPlan(null);
+    if (canvas) await doRun(canvas, permits);
+  }, [doRun]);
+
+  const handlePaymentCancel = useCallback(() => {
+    pendingCanvasRef.current = null;
+    setPaymentPlan(null);
+    setIsRunning(false);
+  }, []);
+
+  const emptyPlan = { requiresPayment: false, totalUsd: 0, chains: [] };
 
   return (
     <EditorContext.Provider value={{
@@ -196,6 +233,12 @@ export function EditorProvider({ workflowId, children }: { workflowId: string; c
       isAiChatOpen, openAiChat, closeAiChat,
     }}>
       {children}
+      <WorkflowPaymentModal
+        open={!!paymentPlan}
+        plan={paymentPlan ?? emptyPlan}
+        onApproved={(txHashes) => void handlePaymentApproved(txHashes)}
+        onCancel={handlePaymentCancel}
+      />
     </EditorContext.Provider>
   );
 }

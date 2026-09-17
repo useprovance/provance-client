@@ -21,9 +21,10 @@ export interface NodeConfig {
 }
 
 export interface AgentPayment {
-   token: string;        // token symbol e.g. "USDCe"
-   address: string;      // token contract address
-   chainId: number;      // network chain ID
+   token: string;           // token symbol e.g. "USDCe"
+   address: string;         // token contract address
+   chainId: number;         // network chain ID
+   walletAddress?: string;  // agent's receiving wallet (where payment is sent)
 }
 
 export interface AgentAction {
@@ -581,6 +582,7 @@ export const AGENTS: Agent[] = [
          token: "USDCe",
          address: "0x3022b87ac063DE95b1570F46f5e470F8B53112D8",
          chainId: 2345,
+         walletAddress: "0x6B844ac411B68D6C6fB9A9B1efdd816777317928",
       },
       outputs: [
          { key: "action", label: "Action performed" },
@@ -607,7 +609,7 @@ export const AGENTS: Agent[] = [
             label: "Execute Trade",
             description:
                "Check balances, get a quote, and execute a swap on GOAT Network via OKU.",
-            price: 0.05,
+            price: 0.001,
             config: [
                {
                   key: "parameters",
@@ -650,7 +652,7 @@ export const AGENTS: Agent[] = [
             label: "Sell Position",
             description:
                "Sell a token position on OKU. Omit amount to sell full balance.",
-            price: 0.05,
+            price: 0.001,
             config: [
                {
                   key: "parameters",
@@ -945,6 +947,7 @@ export const AGENTS: Agent[] = [
                            "arbitrum",
                            "polygon",
                            "goat",
+                           "stellar",
                         ],
                      },
                      {
@@ -997,6 +1000,7 @@ export const AGENTS: Agent[] = [
                            "arbitrum",
                            "polygon",
                            "goat",
+                           "stellar",
                         ],
                      },
                   ],
@@ -1031,6 +1035,7 @@ export const AGENTS: Agent[] = [
                            "arbitrum",
                            "polygon",
                            "goat",
+                           "stellar",
                         ],
                      },
                      {
@@ -1077,6 +1082,7 @@ export const AGENTS: Agent[] = [
                            "arbitrum",
                            "polygon",
                            "goat",
+                           "stellar",
                         ],
                      },
                   ],
@@ -1105,6 +1111,7 @@ export const AGENTS: Agent[] = [
                            "arbitrum",
                            "polygon",
                            "goat",
+                           "stellar",
                         ],
                      },
                      {
@@ -1134,7 +1141,7 @@ export const AGENTS: Agent[] = [
                   key: "chain",
                   label: "Chain",
                   type: "select",
-                  options: ["base", "ethereum", "bsc", "arbitrum", "polygon", "goat"],
+                  options: ["base", "ethereum", "bsc", "arbitrum", "polygon", "goat", "stellar"],
                },
                {
                   key: "min_liquidity_usd",
@@ -1297,20 +1304,33 @@ class AgentService {
       agentId: string,
       actionKey: string | undefined,
       input: Record<string, unknown>,
+      payment?: { permit: import("@/lib/engine/types").PermitSignature; runId: string; callIndex: number },
    ): Promise<Record<string, unknown>> {
       const agent = this.getById(agentId);
       if (!agent) throw new Error(`No agent registered with id: "${agentId}"`);
 
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (payment) {
+         headers["x-payment"] = btoa(JSON.stringify(payment.permit));
+         headers["x-payment-run-id"] = payment.runId;
+         headers["x-payment-index"] = String(payment.callIndex);
+      }
+
       const res = await fetch(`${agent.url}/run`, {
          method: "POST",
-         headers: { "Content-Type": "application/json" },
+         headers,
          body: JSON.stringify({ action: actionKey, ...input }),
       });
 
-      const data = await res.json();
+      if (res.status === 402) {
+         const body = await res.json() as { error?: string };
+         throw new Error(`Payment required for "${agentId}" — ${body.error ?? "no payment provided"}`);
+      }
+
+      const data = await res.json() as { success: boolean; data?: Record<string, unknown>; error?: string; message?: string };
       if (!data.success)
-         throw new Error(data.error ?? `Agent "${agentId}" returned an error`);
-      return data.data as Record<string, unknown>;
+         throw new Error(data.error ?? data.message ?? `Agent "${agentId}" returned an error`);
+      return (data.data ?? {}) as Record<string, unknown>;
    }
 }
 

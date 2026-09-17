@@ -9,6 +9,9 @@ export async function middleware(request: NextRequest) {
   const isProtected = PROTECTED.some((p) => pathname.startsWith(p));
   if (!isProtected) return NextResponse.next();
 
+  // DEV BYPASS — remove before production
+  if (process.env.NODE_ENV === "development") return NextResponse.next();
+
   const token = request.cookies.get("provance_session")?.value;
   if (!token) return NextResponse.redirect(new URL("/", request.url));
 

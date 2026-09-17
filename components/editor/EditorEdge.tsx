@@ -1,10 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Plus, Trash2, type LucideIcon } from "lucide-react";
+import { Plus, Trash2, DollarSign, type LucideIcon } from "lucide-react";
 import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, useReactFlow, type EdgeProps } from "@xyflow/react";
 import { useEditor } from "./EditorContext";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { agentService } from "@/services/agent.service";
 
 const HIDE_DELAY = 600;
 
@@ -32,17 +33,26 @@ function EdgeButton({ icon: Icon, tooltip, onClick }: { icon: LucideIcon; toolti
 }
 
 export function EditorEdge({
-  id, source,
+  id, source, target,
   sourceX, sourceY, targetX, targetY,
   sourcePosition, targetPosition,
 }: EdgeProps) {
   const [hovered, setHovered] = useState(false);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [edgePath, labelX, labelY] = getSmoothStepPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
-  const { deleteElements } = useReactFlow();
+  const { deleteElements, getNode } = useReactFlow();
   const { openSheet, nodeStatuses } = useEditor();
   const isSuccess = nodeStatuses[source] === "success";
   const edgeColor = isSuccess ? "oklch(63.2% 0.186 147.37)" : hovered ? "oklch(62% 0 0)" : "oklch(42% 0 0)";
+
+  const targetNode = getNode(target);
+  const targetData = targetNode?.data as { agentId?: string; action?: { key?: string } } | undefined;
+  const actionPrice = (() => {
+    if (!targetData?.agentId) return undefined;
+    const agent = agentService.getById(targetData.agentId);
+    if (!agent || !targetData.action?.key) return undefined;
+    return agent.actions?.find((a) => a.key === targetData.action?.key)?.price;
+  })();
 
   const showToolbar = () => {
     if (hideTimer.current) clearTimeout(hideTimer.current);
@@ -95,6 +105,30 @@ export function EditorEdge({
       />
 
       <EdgeLabelRenderer>
+        {actionPrice !== undefined && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div
+                  className="nodrag nopan absolute"
+                  style={{ transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`, pointerEvents: "all" }}
+                >
+                  <div
+                    className="w-5 h-5 rounded-full flex items-center justify-center"
+                    style={{
+                      background: "oklch(28% 0 0)",
+                      border: "1.5px solid oklch(62% 0 0)",
+                      color: "oklch(88% 0 0)",
+                    }}
+                  >
+                    <DollarSign size={10} strokeWidth={2.5} />
+                  </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">${actionPrice} per call</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
         <div
           className="nodrag nopan absolute flex items-center"
           style={{

@@ -1,5 +1,24 @@
 export type NodeStatus = "pending" | "running" | "success" | "error" | "skipped";
 
+export interface PermitSignature {
+  owner: string;
+  spender: string;
+  value: string;      // bigint as decimal string
+  deadline: number;
+  nonce: number;
+  v: number;
+  r: string;
+  s: string;
+}
+
+export interface PaymentContext {
+  runId: string;
+  /** chainId → signed EIP-2612 permit */
+  permitByChain: Record<number, PermitSignature>;
+  /** chainId → how many paid calls have been settled so far (mutable) */
+  callCountByChain: Record<number, number>;
+}
+
 export interface EngineNode {
   id: string;
   nodeId: string;

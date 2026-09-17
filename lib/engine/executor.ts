@@ -1,6 +1,6 @@
 import { buildGraph, topologicalSort, findStartNodes, getEdgesByTarget } from "./graph";
 import { agentService } from "@/services/agent.service";
-import type { EngineCanvas, WorkflowRun, NodeRunResult } from "./types";
+import type { EngineCanvas, WorkflowRun, NodeRunResult, PaymentContext } from "./types";
 
 async function orchestrateInput(
   sourceOutput: Record<string, unknown>,
@@ -114,7 +114,8 @@ export async function executeWorkflow(
   workflowId: string,
   canvas: EngineCanvas,
   onNodeUpdate?: (result: NodeRunResult) => void,
-  onNodeStart?: (nodeId: string) => void
+  onNodeStart?: (nodeId: string) => void,
+  paymentContext?: PaymentContext,
 ): Promise<WorkflowRun> {
   const runId = crypto.randomUUID();
   const startedAt = new Date().toISOString();
@@ -276,7 +277,23 @@ export async function executeWorkflow(
       let result: NodeRunResult;
 
       try {
-        const output = await agentService.run(agentId, node.action?.key, input);
+        // Build payment argument if this agent requires it for this action
+        let payment: { permit: import("./types").PermitSignature; runId: string; callIndex: number } | undefined;
+        if (paymentContext) {
+          const agent = agentService.getById(agentId);
+          const chainId = agent?.payment?.chainId;
+          const actionPrice = agent?.actions?.find((a) => a.key === node.action?.key)?.price;
+          if (chainId !== undefined && actionPrice !== undefined) {
+            const permit = paymentContext.permitByChain[chainId];
+            if (permit) {
+              const callIndex = paymentContext.callCountByChain[chainId] ?? 0;
+              paymentContext.callCountByChain[chainId] = callIndex + 1;
+              payment = { permit, runId: paymentContext.runId, callIndex };
+            }
+          }
+        }
+
+        const output = await agentService.run(agentId, node.action?.key, input, payment);
         nodeOutputItems.push(output);
 
         result = {
