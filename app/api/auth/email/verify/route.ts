@@ -50,6 +50,12 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Could not create profile" }, { status: 500 });
          }
          profile = created;
+
+         try {
+            await supabase.from("orgs").insert({ name: "Personal", owner_id: profile.id });
+         } catch (orgErr) {
+            console.error("[email/verify] org create error", orgErr);
+         }
       }
 
       const token = await createSessionToken({
@@ -58,14 +64,14 @@ export async function POST(req: NextRequest) {
          email: profile.email,
          avatar_url: profile.avatar_url,
          provider: profile.provider,
-         onboarded: !isNewUser,
+         onboarded: true,
       });
 
       await setSessionCookie(token);
 
       return NextResponse.json({
          ok: true,
-         redirect: isNewUser ? "/auth/onboarding" : "/dashboard",
+         redirect: "/dashboard",
       });
    } catch (err) {
       console.error("[email/verify] error", err);

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
 
@@ -75,6 +76,17 @@ export default function RootLayout({
       >
          <body className="min-h-full flex flex-col bg-black relative overflow-x-hidden">
             {children}
+            <Toaster
+               position="bottom-right"
+               toastOptions={{
+                  style: {
+                     background: "#1a1a1a",
+                     color: "#ffffff",
+                     border: "1px solid rgba(255,255,255,0.08)",
+                     fontSize: "13px",
+                  },
+               }}
+            />
          </body>
       </html>
    );
