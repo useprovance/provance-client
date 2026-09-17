@@ -27,11 +27,17 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
    const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
    useEffect(() => {
-      if (user && open) {
-         onOpenChange(false);
-         router.push("/dashboard");
-      }
-   }, [user, open, onOpenChange, router]);
+      if (!open) return;
+      fetch("/api/auth/me")
+         .then((r) => (r.ok ? r.json() : null))
+         .then((data: { user?: unknown } | null) => {
+            if (data?.user) {
+               onOpenChange(false);
+               router.push("/dashboard");
+            }
+         })
+         .catch(() => null);
+   }, [open, onOpenChange, router]);
 
    // Reset state when modal closes
    useEffect(() => {
