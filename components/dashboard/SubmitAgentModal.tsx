@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { createBrowserClient } from "@supabase/ssr";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, Check, ChevronRight, ImageIcon, Link2, Plus, Trash2, X } from "lucide-react";
 import { FormInput } from "@/components/ui/form-input";
@@ -49,13 +50,17 @@ const EMPTY: FormData = {
 export function SubmitAgentModal({
   open,
   onOpenChange,
+  onCreated,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
+  onCreated?: () => void;
 }) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormData>(EMPTY);
   const [configFields, setConfigFields] = useState<ConfigField[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const set = (k: keyof FormData, v: string) =>
     setForm((prev) => ({ ...prev, [k]: v }));
@@ -87,9 +92,34 @@ export function SubmitAgentModal({
     setTimeout(() => { setStep(0); setForm(EMPTY); setConfigFields([]); }, 300);
   }
 
-  function handleSubmit() {
-    console.log("Submit agent:", form);
-    handleClose();
+  async function handleSubmit() {
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const res = await fetch("/api/agents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          description: form.description,
+          icon: form.icon || null,
+          repository: form.repository || null,
+          url: form.url,
+          protocol: form.protocol,
+          authentication: form.authentication,
+          actions: [],
+          outputs: [],
+        }),
+      });
+      const data = await res.json() as { error?: string };
+      if (!res.ok) { setSubmitError(data.error ?? "Failed to submit agent"); return; }
+      onCreated?.();
+      handleClose();
+    } catch {
+      setSubmitError("Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -200,9 +230,23 @@ export function SubmitAgentModal({
                             type="file"
                             accept="image/*"
                             className="hidden"
-                            onChange={(e) => {
+                            onChange={async (e) => {
                               const file = e.target.files?.[0];
-                              if (file) set("icon", URL.createObjectURL(file));
+                              if (!file) return;
+                              const supabase = createBrowserClient(
+                                process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                                process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+                              );
+                              const ext = file.name.split(".").pop();
+                              const path = `${Date.now()}.${ext}`;
+                              const { error } = await supabase.storage
+                                .from("agent-icons")
+                                .upload(path, file, { upsert: true });
+                              if (error) return;
+                              const { data } = supabase.storage
+                                .from("agent-icons")
+                                .getPublicUrl(path);
+                              set("icon", data.publicUrl);
                             }}
                           />
                           <span className="text-[13px] text-sand/30">{form.icon ? "Change icon" : "Upload icon (PNG, SVG)"}</span>
@@ -421,14 +465,17 @@ export function SubmitAgentModal({
                   Next <ChevronRight size={13} strokeWidth={2.5} />
                 </button>
               ) : (
-                <button
-                  disabled={!canNext}
-                  onClick={handleSubmit}
-                  className="flex items-center gap-1.5 bg-orange text-white text-[12px] font-bold px-5 py-2 disabled:opacity-30 hover:bg-orange/90 transition-colors cursor-pointer"
-                  style={{ clipPath: "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)" }}
-                >
-                  Submit Agent
-                </button>
+                <div className="flex items-center gap-3">
+                  {submitError && <p className="text-[11px] text-red-400">{submitError}</p>}
+                  <button
+                    disabled={!canNext || submitting}
+                    onClick={() => void handleSubmit()}
+                    className="flex items-center gap-1.5 bg-orange text-white text-[12px] font-bold px-5 py-2 disabled:opacity-30 hover:bg-orange/90 transition-colors cursor-pointer"
+                    style={{ clipPath: "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)" }}
+                  >
+                    {submitting ? "Submitting..." : "Submit Agent"}
+                  </button>
+                </div>
               )}
             </div>
           </div>

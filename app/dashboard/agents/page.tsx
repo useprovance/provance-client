@@ -1,28 +1,44 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, Bot, Activity, Zap, TrendingUp } from "lucide-react";
 import { AgentCard, type Agent } from "@/components/dashboard/AgentCard";
 import { SubmitAgentModal } from "@/components/dashboard/SubmitAgentModal";
 import Footer from "@/components/landing-page/Footer";
-import { agentService } from "@/services/agent.service";
 
-const AGENTS: Agent[] = agentService.getAll().map((a) => ({
-   id: a.id,
-   name: a.label,
-   icon: a.icon,
-   status: "idle" as const,
-   lastRun: "Never",
-   runsToday: 0,
-   earned: "0.00 USDC",
-   workflow: a.category,
-   author: a.author,
-}));
+type DbAgent = {
+   id: string;
+   name: string;
+   icon: string | null;
+   category: string | null;
+   created_at: string;
+};
 
 export default function AgentsPage() {
    const [submitOpen, setSubmitOpen] = useState(false);
-   const active = AGENTS.filter((a) => a.status === "active").length;
-   const totalRuns = AGENTS.reduce((s, a) => s + a.runsToday, 0);
+   const [agents, setAgents] = useState<Agent[]>([]);
+
+   const fetchAgents = useCallback(async () => {
+      const res = await fetch("/api/agents");
+      if (!res.ok) return;
+      const data = await res.json() as { agents: DbAgent[] };
+      setAgents(data.agents.map((a) => ({
+         id: a.id,
+         name: a.name,
+         icon: a.icon ?? "/icons/agents/default.svg",
+         status: "idle" as const,
+         lastRun: "Never",
+         runsToday: 0,
+         earned: "0.00 USDC",
+         workflow: a.category ?? "Custom",
+         author: "You",
+      })));
+   }, []);
+
+   useEffect(() => { void fetchAgents(); }, [fetchAgents]);
+
+   const active = agents.filter((a) => a.status === "active").length;
+   const totalRuns = agents.reduce((s, a) => s + a.runsToday, 0);
 
    return (
       <>
@@ -61,21 +77,11 @@ export default function AgentsPage() {
             </div>
 
             {/* Stats */}
-            <div className="relative p-1.5 border border-sand/10">
-               <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                     backgroundImage:
-                        "repeating-linear-gradient(-45deg, var(--sand) 0, var(--sand) 1px, transparent 0, transparent 50%)",
-                     backgroundSize: "6px 6px",
-                     opacity: 0.25,
-                  }}
-               />
-               <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-1.5">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5">
                   {[
                      {
                         label: "Total Agents",
-                        display: String(AGENTS.length).padStart(2, "0"),
+                        display: String(agents.length).padStart(2, "0"),
                         icon: Bot,
                      },
                      {
@@ -90,7 +96,7 @@ export default function AgentsPage() {
                      },
                      {
                         label: "Earned Today",
-                        display: "4.89 USDC",
+                        display: "0.00 USDC",
                         icon: TrendingUp,
                      },
                   ].map(({ label, display, icon: Icon }) => (
@@ -109,20 +115,26 @@ export default function AgentsPage() {
                         </p>
                      </div>
                   ))}
-               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-               {AGENTS.map((agent) => (
-                  <AgentCard key={agent.id} agent={agent} />
-               ))}
-            </div>
+            {agents.length === 0 ? (
+               <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <Bot size={40} strokeWidth={1} className="text-sand/20 mb-4" />
+                  <p className="text-sand/40 text-[13px]">No agents yet. Click New Agent to create one.</p>
+               </div>
+            ) : (
+               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {agents.map((agent) => (
+                     <AgentCard key={agent.id} agent={agent} />
+                  ))}
+               </div>
+            )}
          </div>
 
          <Footer />
       </div>
 
-      <SubmitAgentModal open={submitOpen} onOpenChange={setSubmitOpen} />
+      <SubmitAgentModal open={submitOpen} onOpenChange={setSubmitOpen} onCreated={fetchAgents} />
       </>
    );
 }

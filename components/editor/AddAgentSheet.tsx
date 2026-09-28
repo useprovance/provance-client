@@ -9,22 +9,69 @@ import { useEditor } from "./EditorContext";
 import { EDGE_STYLE } from "./editor.constants";
 import { AGENTS, TRIGGERS, type Agent } from "@/services/agent.service";
 
+type DbAgent = {
+   id: string;
+   name: string;
+   description: string;
+   icon: string | null;
+   url: string;
+   category: string | null;
+   version: string | null;
+   identifier: string | null;
+   actions: Agent["actions"] | null;
+   outputs: Agent["outputs"] | null;
+   features: string[] | null;
+};
+
+function dbAgentToAgent(a: DbAgent): Agent {
+   return {
+      id: a.id,
+      nodeType: "agent",
+      label: a.name,
+      description: a.description,
+      icon: a.icon ?? "/icons/agents/default.svg",
+      author: "You",
+      version: a.version ?? "1.0.0",
+      category: a.category ?? "Custom",
+      identifier: a.identifier ?? a.id,
+      downloads: "-",
+      rating: 5,
+      features: a.features ?? [],
+      publishedAt: "-",
+      lastReleased: "-",
+      url: a.url,
+      config: [],
+      actions: a.actions ?? [],
+      outputs: a.outputs ?? [],
+   };
+}
+
 export function AddAgentSheet({ workflowId }: { workflowId: string }) {
    const { isSheetOpen, closeSheet, sourceNodeId, sourceHandleId } = useEditor();
    const { addNodes, addEdges, getNode } = useReactFlow();
    const [search, setSearch] = useState("");
    const [selected, setSelected] = useState<Agent | "trigger" | "flow" | null>(null);
+   const [myAgents, setMyAgents] = useState<Agent[]>([]);
+
+   useEffect(() => {
+      void fetch("/api/agents")
+         .then((r) => r.ok ? r.json() : { agents: [] })
+         .then((data: { agents?: DbAgent[] }) => {
+            setMyAgents((data.agents ?? []).map(dbAgentToAgent));
+         });
+   }, []);
+
+   const allAgents = useMemo(() => [...myAgents, ...AGENTS.filter((a) => a.nodeType === "agent")], [myAgents]);
 
    const filteredAgents = useMemo(() => {
       const q = search.toLowerCase();
-      return AGENTS.filter(
+      return allAgents.filter(
          (a) =>
-            a.nodeType === "agent" &&
-            (a.label.toLowerCase().includes(q) ||
+            a.label.toLowerCase().includes(q) ||
             a.description.toLowerCase().includes(q) ||
-            a.author.toLowerCase().includes(q)),
+            a.author.toLowerCase().includes(q),
       );
-   }, [search]);
+   }, [search, allAgents]);
 
    const filteredTriggers = useMemo(() => {
       const q = search.toLowerCase();
@@ -227,23 +274,38 @@ export function AddAgentSheet({ workflowId }: { workflowId: string }) {
                      )}
 
 
-                     {filteredAgents.length > 0 ? (
-                        filteredAgents.map((a) => (
-                           <div
-                              key={a.id}
-                              onClick={() => setSelected(a)}
-                              className="group flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 transition-colors cursor-pointer"
-                           >
-                              <div className="w-8 h-8 shrink-0 flex items-center justify-center opacity-70 group-hover:opacity-100 transition-opacity">
-                                 <Image src={a.icon} alt={a.label} width={512} height={512} className="object-contain" style={{ width: 22, height: 22 }} />
-                              </div>
-                              <span className="flex-1 text-[13px] font-medium text-white/70 group-hover:text-white transition-colors truncate">
-                                 {a.label}
-                              </span>
-                              <ChevronRight size={17} strokeWidth={1.5} className="text-white/30 group-hover:text-white/60 shrink-0 transition-colors" />
-                           </div>
-                        ))
-                     ) : !showTriggerCard ? (
+                     {filteredAgents.length > 0 ? (() => {
+                        const myFiltered = filteredAgents.filter((a) => myAgents.some((m) => m.id === a.id));
+                        const builtinFiltered = filteredAgents.filter((a) => !myAgents.some((m) => m.id === a.id));
+                        return (
+                           <>
+                              {myFiltered.length > 0 && (
+                                 <>
+                                    <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-widest text-white/30">My Agents</p>
+                                    {myFiltered.map((a) => (
+                                       <div key={a.id} onClick={() => setSelected(a)} className="group flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 transition-colors cursor-pointer">
+                                          <div className="w-8 h-8 shrink-0 flex items-center justify-center opacity-70 group-hover:opacity-100 transition-opacity">
+                                             <Image unoptimized src={a.icon} alt={a.label} width={512} height={512} className="object-contain" style={{ width: 22, height: 22 }} />
+                                          </div>
+                                          <span className="flex-1 text-[13px] font-medium text-white/70 group-hover:text-white transition-colors truncate">{a.label}</span>
+                                          <ChevronRight size={17} strokeWidth={1.5} className="text-white/30 group-hover:text-white/60 shrink-0 transition-colors" />
+                                       </div>
+                                    ))}
+                                    {builtinFiltered.length > 0 && <p className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-white/30">Built-in</p>}
+                                 </>
+                              )}
+                              {builtinFiltered.map((a) => (
+                                 <div key={a.id} onClick={() => setSelected(a)} className="group flex items-center gap-3 px-3 py-2.5 hover:bg-white/5 transition-colors cursor-pointer">
+                                    <div className="w-8 h-8 shrink-0 flex items-center justify-center opacity-70 group-hover:opacity-100 transition-opacity">
+                                       <Image src={a.icon} alt={a.label} width={512} height={512} className="object-contain" style={{ width: 22, height: 22 }} />
+                                    </div>
+                                    <span className="flex-1 text-[13px] font-medium text-white/70 group-hover:text-white transition-colors truncate">{a.label}</span>
+                                    <ChevronRight size={17} strokeWidth={1.5} className="text-white/30 group-hover:text-white/60 shrink-0 transition-colors" />
+                                 </div>
+                              ))}
+                           </>
+                        );
+                     })() : !showTriggerCard ? (
                         <p className="text-xs text-white/30 text-center py-10">No nodes found</p>
                      ) : null}
                   </div>

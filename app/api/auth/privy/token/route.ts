@@ -9,9 +9,11 @@ function base64UrlEncode(input: Buffer | string): string {
 }
 
 function loadPrivateKey(): string {
+   const keyContent = process.env.PRIVY_JWT_PRIVATE_KEY;
+   if (keyContent) return keyContent.replace(/\\n/g, "\n");
    const keyPath = process.env.PRIVY_JWT_PRIVATE_KEY_PATH;
    if (keyPath) return fs.readFileSync(keyPath, "utf8");
-   throw new Error("PRIVY_JWT_PRIVATE_KEY_PATH is not set");
+   throw new Error("Neither PRIVY_JWT_PRIVATE_KEY nor PRIVY_JWT_PRIVATE_KEY_PATH is set");
 }
 
 function createPrivyToken(profile: { id: string; email: string | null; name: string }): string {

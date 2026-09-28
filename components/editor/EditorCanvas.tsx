@@ -106,7 +106,6 @@ function Canvas({ workflowId }: { workflowId: string }) {
    const edgeTypes = useMemo(() => ({ provance: EditorEdge }), []);
    const { openSheet, configNodeId, addRun, registerCanvasActions } = useEditor();
 
-   // Wait for Supabase before showing the canvas — fall back to localStorage if unavailable
    useLayoutEffect(() => {
       const applyCanvas = (saved: { nodes: WorkflowNode[]; edges: WorkflowEdge[] }) => {
          if (saved.nodes.length > 0 || saved.edges.length > 0) {
@@ -123,9 +122,7 @@ function Canvas({ workflowId }: { workflowId: string }) {
             workflowService.fetchViewport(workflowId),
          ]);
 
-         // Use Supabase data if available, otherwise fall back to localStorage
-         const canvas = dbCanvas ?? workflowService.loadCanvas(workflowId);
-         applyCanvas(canvas);
+         applyCanvas(dbCanvas ?? { nodes: [], edges: [] });
          if (dbVp) setViewport(dbVp);
 
          isReady.current = true;

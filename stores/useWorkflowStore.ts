@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { createBrowserClient } from "@supabase/ssr";
+import { workflowService } from "@/services/workflow.service";
 
 export interface Workflow {
   id: string;
@@ -100,16 +101,15 @@ export const useWorkflowStore = create<WorkflowStore>()((set, get) => ({
   },
 
   remove: async (id) => {
+    workflowService.cancelPendingSave(id);
+    localStorage.removeItem(`provance_chat_${id}`);
+    localStorage.removeItem(`provance_runs_${id}`);
     const client = db();
     await Promise.all([
       client.from("workflows").delete().eq("id", id),
       client.from("run_history").delete().eq("workflow_id", id),
       client.from("chat_messages").delete().eq("workflow_id", id),
     ]);
-    localStorage.removeItem(`provance_canvas_${id}`);
-    localStorage.removeItem(`provance_viewport_${id}`);
-    localStorage.removeItem(`provance_chat_${id}`);
-    localStorage.removeItem(`provance_runs_${id}`);
     set((s) => ({ workflows: s.workflows.filter((w) => w.id !== id) }));
   },
 

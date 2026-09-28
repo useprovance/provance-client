@@ -58,12 +58,14 @@ export default function AccountMePage() {
    const [walletError, setWalletError] = useState<string | null>(null);
 
    const { connectWallet } = useConnectWallet({
-      onSuccess: async (wallet) => {
+      onSuccess: async ({ wallet }) => {
          setWalletError(null);
+         const address = "address" in wallet ? wallet.address : null;
+         if (!address) return;
          const res = await fetch("/api/account/wallets", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ address: wallet.address, chain: "stellar" }),
+            body: JSON.stringify({ address, chain: "stellar" }),
          });
          const data = await res.json() as { error?: string };
          if (!res.ok) {
@@ -72,7 +74,7 @@ export default function AccountMePage() {
             void fetchWallets();
          }
       },
-      onError: (error) => {
+      onError: (error: unknown) => {
          const msg = error instanceof Error ? error.message : String(error);
          if (!msg.toLowerCase().includes("cancel") && !msg.toLowerCase().includes("reject")) {
             setWalletError(msg);

@@ -138,7 +138,8 @@ export class WorkflowService {
     if (isUUID(workflowId)) {
       void this.db
         .from("workflows")
-        .upsert({ id: workflowId, viewport, updated_at: new Date().toISOString() })
+        .update({ viewport, updated_at: new Date().toISOString() })
+        .eq("id", workflowId)
         .then(() => {});
     }
   }
@@ -248,13 +249,23 @@ export class WorkflowService {
 
   // ─── Private helpers ───────────────────────────────────────────────────────
 
+  cancelPendingSave(workflowId: string) {
+    if (this.saveTimers[workflowId]) {
+      clearTimeout(this.saveTimers[workflowId]);
+      delete this.saveTimers[workflowId];
+    }
+    localStorage.removeItem(CANVAS_KEY(workflowId));
+    localStorage.removeItem(VIEWPORT_KEY(workflowId));
+  }
+
   private debouncedSaveToDb(workflowId: string, canvas: { nodes: WorkflowNode[]; edges: WorkflowEdge[] }) {
     if (!isUUID(workflowId)) return;
     if (this.saveTimers[workflowId]) clearTimeout(this.saveTimers[workflowId]);
     this.saveTimers[workflowId] = setTimeout(() => {
       void this.db
         .from("workflows")
-        .upsert({ id: workflowId, canvas, updated_at: new Date().toISOString() })
+        .update({ canvas, updated_at: new Date().toISOString() })
+        .eq("id", workflowId)
         .then(() => {});
     }, 500);
   }
