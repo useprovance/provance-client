@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { getSession } from "@/lib/auth";
 
 export async function GET() {
@@ -20,6 +21,8 @@ export async function GET() {
 export async function POST(req: NextRequest) {
    const session = await getSession();
    if (!session) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
+
+   const supabaseAdmin = createAdminClient();
 
    const body = await req.json() as {
       name: string;
@@ -42,8 +45,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Name, description and URL are required" }, { status: 400 });
    }
 
-   const supabase = await createClient();
-   const { data, error } = await supabase
+   const { data, error } = await supabaseAdmin
       .from("agents")
       .insert({
          profile_id: session.id,

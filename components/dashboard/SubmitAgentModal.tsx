@@ -1,50 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
-import { createBrowserClient } from "@supabase/ssr";
+import { createWalletClient, custom } from "viem";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Check, ChevronRight, ImageIcon, Link2, Plus, Trash2, X } from "lucide-react";
-import { FormInput } from "@/components/ui/form-input";
-import { FormSelector } from "@/components/ui/form-selector";
+import { ArrowLeft, CheckCircle2, Loader2, Search, X } from "lucide-react";
 
-type PricingModel = "free" | "per_request" | "per_token" | "fixed" | "subscription";
-type FieldType = "text" | "number" | "textarea" | "select";
+type AgentPreview = {
+  agent_id: string;
+  name: string | null;
+  description: string | null;
+  image_url: string | null;
+  chain_id: number;
+  supported_protocols: string[];
+  owner_address: string;
+  tags: string[];
+};
 
-interface ConfigField {
-  id: string;
-  label: string;
-  type: FieldType;
-  placeholder: string;
-  required: boolean;
-}
-
-interface FormData {
-  name: string;
-  description: string;
-  icon: string;
-  repository: string;
-  url: string;
-  protocol: string;
-  authentication: string;
-  pricingModel: PricingModel;
-  amount: string;
-  currency: string;
-  network: string;
-  recipient: string;
-}
-
-const STEPS = [
-  { label: "Identity", desc: "Name and description" },
-  { label: "Endpoint", desc: "URL, protocol, auth" },
-  { label: "Pricing & Payment", desc: "Rates and wallet" },
-  { label: "Configuration", desc: "Fields users will configure" },
-];
-
-const EMPTY: FormData = {
-  name: "", description: "", icon: "", repository: "", url: "", protocol: "https",
-  authentication: "api_key", pricingModel: "per_request",
-  amount: "", currency: "USDC", network: "base", recipient: "",
+const CHAIN_NAMES: Record<number, string> = {
+  1: "Ethereum",
+  8453: "Base",
+  42220: "Celo",
+  137: "Polygon",
+  10: "Optimism",
+  42161: "Arbitrum",
+  56: "BSC",
+  100: "Gnosis",
 };
 
 export function SubmitAgentModal({
@@ -56,69 +36,75 @@ export function SubmitAgentModal({
   onOpenChange: (o: boolean) => void;
   onCreated?: () => void;
 }) {
-  const [step, setStep] = useState(0);
-  const [form, setForm] = useState<FormData>(EMPTY);
-  const [configFields, setConfigFields] = useState<ConfigField[]>([]);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
-  const set = (k: keyof FormData, v: string) =>
-    setForm((prev) => ({ ...prev, [k]: v }));
-
-  const canNext =
-    step === 0 ? form.name.trim() !== "" && form.description.trim() !== ""
-    : step === 1 ? form.url.trim() !== ""
-    : step === 2 ? form.recipient.trim() !== ""
-    : true;
-
-  const addConfigField = () => {
-    setConfigFields((prev) => [...prev, {
-      id: `${Date.now()}`,
-      label: "",
-      type: "text",
-      placeholder: "",
-      required: false,
-    }]);
-  };
-
-  const updateConfigField = (id: string, patch: Partial<ConfigField>) =>
-    setConfigFields((prev) => prev.map((f) => f.id === id ? { ...f, ...patch } : f));
-
-  const removeConfigField = (id: string) =>
-    setConfigFields((prev) => prev.filter((f) => f.id !== id));
+  const [agentId, setAgentId] = useState("");
+  const [fetching, setFetching] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<AgentPreview | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [signing, setSigning] = useState(false);
+  const [signError, setSignError] = useState<string | null>(null);
+  const [claimed, setClaimed] = useState(false);
 
   function handleClose() {
     onOpenChange(false);
-    setTimeout(() => { setStep(0); setForm(EMPTY); setConfigFields([]); }, 300);
+    setTimeout(() => {
+      setAgentId("");
+      setFetching(false);
+      setFetchError(null);
+      setPreview(null);
+      setMessage(null);
+      setSigning(false);
+      setSignError(null);
+      setClaimed(false);
+    }, 300);
   }
 
-  async function handleSubmit() {
-    setSubmitting(true);
-    setSubmitError(null);
+  async function handleLookup() {
+    const id = agentId.trim();
+    if (!id) return;
+    setFetching(true);
+    setFetchError(null);
+    setPreview(null);
+    setSignError(null);
     try {
-      const res = await fetch("/api/agents", {
+      const res = await fetch(`/api/agents/claim?agent_id=${encodeURIComponent(id)}`);
+      const data = await res.json() as { error?: string; agent?: AgentPreview; message?: string };
+      if (!res.ok) { setFetchError(data.error ?? "Agent not found"); return; }
+      setPreview(data.agent!);
+      setMessage(data.message!);
+    } catch {
+      setFetchError("Could not reach 8004scan. Try again.");
+    } finally {
+      setFetching(false);
+    }
+  }
+
+  async function handleClaim() {
+    if (!preview || !message) return;
+    setSigning(true);
+    setSignError(null);
+    try {
+      if (typeof window === "undefined" || !window.ethereum) {
+        throw new Error("No wallet found. Install MetaMask or another EVM wallet.");
+      }
+      await window.ethereum.request({ method: "wallet_requestPermissions", params: [{ eth_accounts: {} }] });
+      const client = createWalletClient({ transport: custom(window.ethereum) });
+      const [account] = await client.requestAddresses();
+      const signature = await client.signMessage({ account, message });
+
+      const res = await fetch("/api/agents/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          description: form.description,
-          icon: form.icon || null,
-          repository: form.repository || null,
-          url: form.url,
-          protocol: form.protocol,
-          authentication: form.authentication,
-          actions: [],
-          outputs: [],
-        }),
+        body: JSON.stringify({ agent_id: preview.agent_id, signature }),
       });
       const data = await res.json() as { error?: string };
-      if (!res.ok) { setSubmitError(data.error ?? "Failed to submit agent"); return; }
+      if (!res.ok) { setSignError(data.error ?? "Claim failed"); return; }
+      setClaimed(true);
       onCreated?.();
-      handleClose();
-    } catch {
-      setSubmitError("Something went wrong");
+    } catch (err) {
+      setSignError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
-      setSubmitting(false);
+      setSigning(false);
     }
   }
 
@@ -128,7 +114,7 @@ export function SubmitAgentModal({
         aria-describedby={undefined}
         className="w-screen h-screen !max-w-none !max-h-none m-0 rounded-none bg-[#0f0f0f] border-0 p-0 gap-0 flex flex-col [&>button]:hidden"
       >
-        <DialogTitle className="sr-only">Submit Agent</DialogTitle>
+        <DialogTitle className="sr-only">Claim Agent</DialogTitle>
 
         {/* Header */}
         <div className="flex items-center justify-between px-8 py-4 border-b border-[#1e1e1e] shrink-0">
@@ -161,325 +147,150 @@ export function SubmitAgentModal({
           />
           <div className="relative z-10 flex items-center h-full px-10 gap-3">
             <div className="w-2 h-2 rounded-full bg-sand shrink-0" />
-            <p className="text-sand text-xs font-mono uppercase tracking-widest">Provance Marketplace — List Your Agent</p>
+            <p className="text-sand text-xs font-mono uppercase tracking-widest">
+              Provance Marketplace — Claim Your Agent
+            </p>
           </div>
         </div>
 
         {/* Body */}
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex-1 overflow-y-auto px-12 py-12">
+          <div className="max-w-lg flex flex-col gap-8">
 
-          {/* Left — steps */}
-          <div className="w-[30%] border-r border-[#1e1e1e] px-10 py-12 flex flex-col shrink-0">
-            <p className="text-[11px] font-mono uppercase tracking-widest text-sand/40 mb-10">Steps</p>
-            <div className="flex flex-col">
-              {STEPS.map((s, i) => {
-                const done = i < step;
-                const active = i === step;
-                return (
-                  <div key={i} className="flex gap-4">
-                    <div className="flex flex-col items-center shrink-0">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0 transition-colors ${
-                        done ? "bg-orange text-white"
-                        : active ? "border-2 border-orange text-orange bg-orange/10"
-                        : "border border-[#333] text-sand/30"
-                      }`}>
-                        {done ? <Check size={13} strokeWidth={3} /> : i + 1}
-                      </div>
-                      {i < STEPS.length - 1 && (
-                        <div className={`w-px flex-1 ${done ? "bg-orange/40" : "bg-[#252525]"}`} />
-                      )}
-                    </div>
-                    <div className="pt-1 pb-12">
-                      <p className={`text-[14px] font-semibold leading-tight ${active ? "text-sand" : done ? "text-sand/60" : "text-sand/30"}`}>
-                        {s.label}
-                      </p>
-                      <p className={`text-[12px] mt-1 ${active ? "text-sand/50" : "text-sand/20"}`}>
-                        {s.desc}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Right — form */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto px-12 py-12">
-              <div className="max-w-lg flex flex-col gap-6">
-                <div>
-                  <p className="text-[22px] font-semibold text-sand font-geist mb-1">{STEPS[step].label}</p>
-                  <p className="text-[13px] text-sand/40">{STEPS[step].desc}</p>
-                </div>
-
-                {step === 0 && (
-                  <>
-                    {/* Icon upload */}
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[11px] font-mono uppercase tracking-widest text-sand/40">Agent Icon</span>
-                      <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-md bg-[#0c0c0c] border border-[#2a2a2a] flex items-center justify-center shrink-0 overflow-hidden">
-                          {form.icon ? (
-                            <Image src={form.icon} alt="icon preview" width={40} height={40} className="object-contain" />
-                          ) : (
-                            <ImageIcon size={20} strokeWidth={1.5} className="text-sand/20" />
-                          )}
-                        </div>
-                        <label className="flex-1 flex items-center gap-2 h-[42px] bg-[#0c0c0c] border border-[#2a2a2a] rounded-sm px-3 cursor-pointer hover:border-sand/20 transition-colors">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              if (!file) return;
-                              const supabase = createBrowserClient(
-                                process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                                process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-                              );
-                              const ext = file.name.split(".").pop();
-                              const path = `${Date.now()}.${ext}`;
-                              const { error } = await supabase.storage
-                                .from("agent-icons")
-                                .upload(path, file, { upsert: true });
-                              if (error) return;
-                              const { data } = supabase.storage
-                                .from("agent-icons")
-                                .getPublicUrl(path);
-                              set("icon", data.publicUrl);
-                            }}
-                          />
-                          <span className="text-[13px] text-sand/30">{form.icon ? "Change icon" : "Upload icon (PNG, SVG)"}</span>
-                        </label>
-                      </div>
-                      <p className="text-[11px] text-sand/30">Recommended: 512 × 512px SVG or PNG with a filled background.</p>
-                    </div>
-                    <FormInput
-                      label="Agent Name"
-                      value={form.name}
-                      onChange={(v) => set("name", v)}
-                      placeholder="e.g. DeFi Risk Monitor"
-                      required
-                    />
-                    <FormInput
-                      label="Description"
-                      value={form.description}
-                      onChange={(v) => set("description", v)}
-                      placeholder="What does this agent do and how does it work?"
-                      type="textarea"
-                      rows={5}
-                      required
-                    />
-                    <FormInput
-                      label="GitHub Repository"
-                      value={form.repository}
-                      onChange={(v) => set("repository", v)}
-                      placeholder="https://github.com/you/your-agent"
-                      prefix={<Link2 size={14} strokeWidth={1.5} className="text-sand/30 ml-3 shrink-0" />}
-                    />
-                  </>
-                )}
-
-                {step === 1 && (
-                  <>
-                    <FormInput
-                      label="Endpoint URL"
-                      value={form.url}
-                      onChange={(v) => set("url", v)}
-                      placeholder="https://your-agent.example.com/run"
-                      required
-                    />
-                    <FormSelector
-                      label="Protocol"
-                      value={form.protocol}
-                      onChange={(v) => set("protocol", v)}
-                      options={[
-                        { value: "https", label: "HTTPS" },
-                        { value: "http", label: "HTTP" },
-                        { value: "grpc", label: "gRPC" },
-                        { value: "websocket", label: "WebSocket" },
-                        { value: "mcp", label: "MCP" },
-                      ]}
-                    />
-                    <FormSelector
-                      label="Authentication"
-                      value={form.authentication}
-                      onChange={(v) => set("authentication", v)}
-                      options={[
-                        { value: "none", label: "None" },
-                        { value: "api_key", label: "API Key" },
-                        { value: "jwt", label: "JWT" },
-                        { value: "oauth2", label: "OAuth2" },
-                        { value: "wallet_signature", label: "Wallet Signature" },
-                      ]}
-                    />
-                  </>
-                )}
-
-                {step === 2 && (
-                  <>
-                    <FormSelector
-                      label="Pricing Model"
-                      value={form.pricingModel}
-                      onChange={(v) => set("pricingModel", v)}
-                      options={[
-                        { value: "free", label: "Free" },
-                        { value: "per_request", label: "Per Request" },
-                        { value: "per_token", label: "Per Token" },
-                        { value: "fixed", label: "Fixed" },
-                        { value: "subscription", label: "Subscription" },
-                      ]}
-                    />
-                    {form.pricingModel !== "free" && (
-                      <div className="flex gap-4">
-                        <FormInput
-                          label="Amount"
-                          value={form.amount}
-                          onChange={(v) => set("amount", v)}
-                          placeholder="0.01"
-                          type="number"
-                          className="flex-1"
-                        />
-                        <FormSelector
-                          label="Currency"
-                          value={form.currency}
-                          onChange={(v) => set("currency", v)}
-                          options={[
-                            { value: "USDC", label: "USDC" },
-                            { value: "XLM", label: "XLM" },
-                            { value: "ETH", label: "ETH" },
-                          ]}
-                          className="w-36"
-                        />
-                      </div>
-                    )}
-                    <FormSelector
-                      label="Payment Network"
-                      value={form.network}
-                      onChange={(v) => set("network", v)}
-                      options={[
-                        { value: "stellar", label: "Stellar" },
-                        { value: "base", label: "Base" },
-                        { value: "ethereum", label: "Ethereum" },
-                        { value: "celo", label: "Celo" },
-                        { value: "solana", label: "Solana" },
-                        { value: "polygon", label: "Polygon" },
-                      ]}
-                    />
-                    <FormInput
-                      label="Recipient Wallet"
-                      value={form.recipient}
-                      onChange={(v) => set("recipient", v)}
-                      placeholder="0x… or G…"
-                      required
-                    />
-                  </>
-                )}
-
-                {step === 3 && (
-                  <div className="flex flex-col gap-4">
-                    <p className="text-[13px] text-sand/40 leading-relaxed">
-                      Define the fields users will fill in when they configure this agent in their workflow. These appear in the agent config panel.
-                    </p>
-
-                    {configFields.map((field, i) => (
-                      <div key={field.id} className="flex flex-col gap-3 p-4 border border-[#2a2a2a] rounded-sm bg-[#0c0c0c]">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[11px] font-mono uppercase tracking-widest text-sand/30">Field {i + 1}</span>
-                          <button
-                            onClick={() => removeConfigField(field.id)}
-                            className="w-6 h-6 rounded-full bg-white/5 hover:bg-red-500/15 flex items-center justify-center transition-colors cursor-pointer"
-                          >
-                            <Trash2 size={11} strokeWidth={2} className="text-sand/40 hover:text-red-400" />
-                          </button>
-                        </div>
-                        <div className="flex gap-3">
-                          <FormInput
-                            label="Label"
-                            value={field.label}
-                            onChange={(v) => updateConfigField(field.id, { label: v })}
-                            placeholder="e.g. API Key"
-                            className="flex-1"
-                          />
-                          <FormSelector
-                            label="Type"
-                            value={field.type}
-                            onChange={(v) => updateConfigField(field.id, { type: v as FieldType })}
-                            options={[
-                              { value: "text", label: "Text" },
-                              { value: "number", label: "Number" },
-                              { value: "textarea", label: "Textarea" },
-                              { value: "select", label: "Select" },
-                            ]}
-                            className="w-36"
-                          />
-                        </div>
-                        <FormInput
-                          label="Placeholder"
-                          value={field.placeholder}
-                          onChange={(v) => updateConfigField(field.id, { placeholder: v })}
-                          placeholder="e.g. Enter your API key"
-                        />
-                        <label className="flex items-center gap-2 cursor-pointer w-fit">
-                          <input
-                            type="checkbox"
-                            checked={field.required}
-                            onChange={(e) => updateConfigField(field.id, { required: e.target.checked })}
-                            className="w-3.5 h-3.5 accent-orange cursor-pointer"
-                          />
-                          <span className="text-[12px] text-sand/50">Required</span>
-                        </label>
-                      </div>
-                    ))}
-
-                    <button
-                      onClick={addConfigField}
-                      className="flex items-center gap-2 text-[13px] text-sand/40 hover:text-sand border border-dashed border-[#2a2a2a] hover:border-sand/20 px-4 py-3 transition-colors cursor-pointer rounded-sm"
-                    >
-                      <Plus size={14} strokeWidth={2} />
-                      Add config field
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="px-12 py-5 border-t border-[#1e1e1e] shrink-0 flex items-center justify-between">
-              {step > 0 ? (
+            {claimed ? (
+              <div className="flex flex-col items-center gap-4 py-16">
+                <CheckCircle2 size={48} strokeWidth={1.5} className="text-orange" />
+                <p className="text-sand text-[18px] font-semibold">Agent claimed</p>
+                <p className="text-sand/40 text-[13px] text-center">Your agent is now in your dashboard.</p>
                 <button
-                  onClick={() => setStep((s) => s - 1)}
-                  className="text-[13px] text-sand/40 hover:text-sand transition-colors cursor-pointer"
-                >
-                  Back
-                </button>
-              ) : <div />}
-
-              {step < STEPS.length - 1 ? (
-                <button
-                  disabled={!canNext}
-                  onClick={() => setStep((s) => s + 1)}
-                  className="flex items-center gap-1.5 bg-sand text-ink-dark text-[12px] font-bold px-5 py-2 disabled:opacity-30 transition-opacity cursor-pointer"
+                  onClick={handleClose}
+                  className="mt-4 bg-orange text-white text-[12px] font-bold px-6 py-2 hover:bg-orange/90 transition-colors cursor-pointer"
                   style={{ clipPath: "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)" }}
                 >
-                  Next <ChevronRight size={13} strokeWidth={2.5} />
+                  Done
                 </button>
-              ) : (
-                <div className="flex items-center gap-3">
-                  {submitError && <p className="text-[11px] text-red-400">{submitError}</p>}
-                  <button
-                    disabled={!canNext || submitting}
-                    onClick={() => void handleSubmit()}
-                    className="flex items-center gap-1.5 bg-orange text-white text-[12px] font-bold px-5 py-2 disabled:opacity-30 hover:bg-orange/90 transition-colors cursor-pointer"
-                    style={{ clipPath: "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)" }}
-                  >
-                    {submitting ? "Submitting..." : "Submit Agent"}
-                  </button>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <p className="text-[22px] font-semibold text-sand font-geist mb-1">Claim Agent</p>
+                  <p className="text-[13px] text-sand/40">
+                    Paste your agent URL from 8004scan. We will verify ownership with a wallet signature.
+                  </p>
                 </div>
-              )}
-            </div>
+
+                {/* Input */}
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[11px] font-mono uppercase tracking-widest text-sand/40">Agent ID</span>
+                  <div className="flex gap-2">
+                    <input
+                      value={agentId}
+                      onChange={(e) => {
+                        setAgentId(e.target.value);
+                        setFetchError(null);
+                        if (preview) { setPreview(null); setMessage(null); }
+                      }}
+                      onKeyDown={(e) => { if (e.key === "Enter") void handleLookup(); }}
+                      placeholder="https://8004scan.io/agents/celo/9173"
+                      className="flex-1 h-[42px] bg-[#0c0c0c] border border-[#2a2a2a] text-sand text-[13px] px-3 outline-none focus:border-sand/30 placeholder:text-sand/20 transition-colors"
+                    />
+                    <button
+                      onClick={() => void handleLookup()}
+                      disabled={!agentId.trim() || fetching}
+                      className="flex items-center gap-2 bg-sand text-ink-dark text-[12px] font-bold px-4 h-[42px] disabled:opacity-30 hover:bg-sand/90 transition-colors cursor-pointer shrink-0"
+                      style={{ clipPath: "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)" }}
+                    >
+                      {fetching
+                        ? <Loader2 size={13} strokeWidth={2} className="animate-spin" />
+                        : <Search size={13} strokeWidth={2} />
+                      }
+                      {fetching ? "Looking up…" : "Look up"}
+                    </button>
+                  </div>
+                  {fetchError && <p className="text-[11px] text-red-400">{fetchError}</p>}
+                  <p className="text-[11px] text-sand/30">
+                    Go to your agent on 8004scan.io and paste the URL. You can also use the short form: celo/9173
+                  </p>
+                </div>
+
+                {/* Preview */}
+                {preview && (
+                  <div className="flex flex-col gap-4 p-5 border border-[#2a2a2a] bg-[#0c0c0c]">
+                    <div className="flex items-start gap-4">
+                      {preview.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={preview.image_url}
+                          alt=""
+                          className="w-12 h-12 rounded-md object-cover shrink-0 border border-[#2a2a2a]"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-md bg-[#1a1a1a] border border-[#2a2a2a] shrink-0 flex items-center justify-center">
+                          <span className="text-sand/20 text-[18px]">◈</span>
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sand text-[15px] font-semibold leading-tight">
+                            {preview.name ?? "Unnamed Agent"}
+                          </p>
+                          <span className="text-[10px] font-mono uppercase tracking-widest text-orange bg-orange/10 px-2 py-0.5">
+                            {CHAIN_NAMES[preview.chain_id] ?? `Chain ${preview.chain_id}`}
+                          </span>
+                        </div>
+                        {preview.description && (
+                          <p className="text-sand/50 text-[12px] mt-1 leading-relaxed line-clamp-2">
+                            {preview.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {preview.supported_protocols.length > 0 && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {preview.supported_protocols.map((p) => (
+                          <span
+                            key={p}
+                            className="text-[10px] font-mono uppercase tracking-widest text-sand/50 bg-white/5 border border-[#2a2a2a] px-2 py-0.5"
+                          >
+                            {p}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="border-t border-[#1e1e1e] pt-4 flex flex-col gap-1">
+                      <p className="text-[11px] font-mono uppercase tracking-widest text-sand/30">Owner address</p>
+                      <p className="text-[12px] text-sand/60 font-mono break-all">{preview.owner_address}</p>
+                    </div>
+
+                    <div className="bg-orange/5 border border-orange/20 px-4 py-3">
+                      <p className="text-[12px] text-sand/60 leading-relaxed">
+                        Sign with the wallet at the address above to confirm you own this agent. No gas is needed.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
+
+        {/* Footer */}
+        {preview && !claimed && (
+          <div className="px-12 py-5 border-t border-[#1e1e1e] shrink-0 flex items-center justify-end gap-3">
+            {signError && <p className="text-[11px] text-red-400 mr-auto">{signError}</p>}
+            <button
+              disabled={signing}
+              onClick={() => void handleClaim()}
+              className="flex items-center gap-2 bg-orange text-white text-[12px] font-bold px-5 py-2 disabled:opacity-30 hover:bg-orange/90 transition-colors cursor-pointer"
+              style={{ clipPath: "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)" }}
+            >
+              {signing && <Loader2 size={13} strokeWidth={2} className="animate-spin" />}
+              {signing ? "Signing…" : "Sign & Claim"}
+            </button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

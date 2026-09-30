@@ -7,7 +7,7 @@ import Link from "next/link";
 import AuthModal from "@/components/shared/AuthModal";
 
 const navLinks = [
-   { label: "About", href: "/about" },
+   { label: "Docs", href: "/docs/introduction" },
    { label: "Overview", href: "#overview" },
    { label: "Features", href: "#features" },
    { label: "FAQ", href: "#faq" },
@@ -32,7 +32,7 @@ export default function Header() {
                   <a
                      key={link.label}
                      href={link.href}
-                     className="text-sm font-medium text-sand-mid hover:text-sand transition-colors"
+                     className="text-sm font-medium text-white/60 hover:text-white transition-colors"
                   >
                      {link.label}
                   </a>
@@ -64,7 +64,7 @@ export default function Header() {
                         key={link.label}
                         href={link.href}
                         onClick={() => setOpen(false)}
-                        className="px-6 py-4 text-sm font-medium text-sand-mid hover:text-sand border-b border-sand-faint/40 transition-colors"
+                        className="px-6 py-4 text-sm font-medium text-white/60 hover:text-white border-b border-sand-faint/40 transition-colors"
                      >
                         {link.label}
                      </a>
