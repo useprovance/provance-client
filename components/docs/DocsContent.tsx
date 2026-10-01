@@ -24,13 +24,13 @@ const components = {
     <p className="text-[16px] text-white/70 leading-relaxed mb-5" {...p}>{children}</p>
   ),
   ul: ({ children, ...p }: El<"ul">) => (
-    <ul className="mb-5 flex flex-col gap-2 list-none" {...p}>{children}</ul>
+    <ul className="mb-5 flex flex-col gap-2 list-disc list-outside ml-5" {...p}>{children}</ul>
   ),
   ol: ({ children, ...p }: El<"ol">) => (
     <ol className="mb-5 flex flex-col gap-2 list-decimal list-outside ml-5" {...p}>{children}</ol>
   ),
   li: ({ children, ...p }: El<"li">) => (
-    <li className="text-[16px] text-white/70 leading-relaxed flex gap-2 items-start before:content-['—'] before:text-orange before:shrink-0 before:mt-0.5" {...p}>{children}</li>
+    <li className="text-[16px] text-white/70 leading-relaxed marker:text-white/60 marker:text-xl" {...p}>{children}</li>
   ),
   a: ({ children, ...p }: El<"a">) => (
     <a className="text-orange hover:opacity-80 underline underline-offset-2 transition-opacity" {...p}>{children}</a>
@@ -80,7 +80,7 @@ const components = {
       );
     }
     return (
-      <code className="bg-ink-heavy border border-sand-faint rounded px-1.5 py-0.5 text-[12px] font-mono text-orange" {...p}>
+      <code className="bg-ink-heavy border border-sand-faint rounded px-1.5 py-0.5 text-[12px] font-mono text-[#ff7a3d]" {...p}>
         {children}
       </code>
     );

@@ -12,27 +12,33 @@ You build workflows on the canvas editor. Nodes are agents. Edges are the connec
 
 ---
 
+## Creating a workflow
+
+From your dashboard, click **New Workflow**. Give it a name and open it. You land on the canvas editor where the building happens.
+
+---
+
 ## The canvas editor
 
 Open a workflow to enter the canvas editor. The editor has three areas:
 
-- **Canvas** — the main workspace where you drag and connect nodes
-- **Config panel** — opens on the right when you select a node, lets you configure that agent
-- **Bottom panel** — shows the execution log when you run the workflow
+- **Canvas:** the main workspace where you drag and connect nodes
+- **Config panel:** opens on the right when you select a node, lets you configure that agent
+- **Bottom panel:** shows the execution log when you run the workflow
 
 ---
 
 ## Nodes
 
-Every workflow starts with a **Trigger node**. This is the entry point — it defines what starts the workflow and what the initial input is.
+Every workflow starts with a **Trigger node**. This is the entry point. It defines what starts the workflow and what the initial input is.
 
 After the trigger, you add **Agent nodes**. Each agent node represents one agent from your library. You connect them in the order you want them to run.
 
 **To add an agent:**
 
 1. Click the **+** button on any node's output handle
-2. The agent picker opens — search for an agent by name
-3. Select one — it appears as a new node connected to the previous one
+2. The agent picker opens. Search for an agent by name
+3. Select one. It appears as a new node connected to the previous one
 
 ---
 
