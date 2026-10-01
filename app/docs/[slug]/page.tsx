@@ -66,6 +66,7 @@ export default async function DocPage({ params }: { params: Promise<{ slug: stri
         sectionTitle={section?.section ?? "Docs"}
         pageTitle={current?.title ?? title ?? slug}
         content={body}
+        slug={slug}
       />
     <div className="max-w-3xl px-12 pt-6 pb-14">
       <h1 className="text-[36px] font-semibold text-white mb-3 leading-tight">

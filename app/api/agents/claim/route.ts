@@ -14,6 +14,7 @@ const CHAIN_SLUGS: Record<string, string> = {
   arbitrum: "42161", arb: "42161",
   bsc: "56",
   gnosis: "100",
+  goat: "2345",
 };
 
 function parseInput(input: string): { chainId: string; tokenId: string } | null {

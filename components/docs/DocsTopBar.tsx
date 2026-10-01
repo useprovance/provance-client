@@ -20,15 +20,20 @@ type Props = {
   sectionTitle: string;
   pageTitle: string;
   content: string;
+  slug: string;
 };
 
-export function DocsTopBar({ sectionTitle, pageTitle, content }: Props) {
+export function DocsTopBar({ sectionTitle, pageTitle, content, slug }: Props) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
     await navigator.clipboard.writeText(content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  function handleViewMarkdown() {
+    window.open(`/docs/${slug}.md`, "_blank");
   }
 
   return (
@@ -66,7 +71,7 @@ export function DocsTopBar({ sectionTitle, pageTitle, content }: Props) {
             className="bg-[#1a1a1a] ring-0 border border-white/10 rounded-md shadow-xl min-w-[240px] p-1"
           >
             <DropdownMenuItem
-              onClick={() => void handleCopy()}
+              onClick={handleViewMarkdown}
               className="flex flex-col items-start gap-1 px-3 py-2.5 rounded-md cursor-pointer hover:bg-white/5 transition-colors"
             >
               <div className="flex items-center gap-3">

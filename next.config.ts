@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/docs/:slug.md",
+        destination: "/docs/:slug/raw",
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {
