@@ -3,7 +3,6 @@ import { Inter, Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
-
 const inter = Inter({
    variable: "--font-inter",
    subsets: ["latin"],
@@ -19,47 +18,63 @@ const geistMono = Geist_Mono({
    subsets: ["latin"],
 });
 
-const BASE_URL = "https://provance.xyz";
+const BASE_URL = "https://useprovance.xyz";
 
 export const metadata: Metadata = {
    metadataBase: new URL(BASE_URL),
+
    title: {
-      default: "Provance — Autonomous Agent Workforce",
-      template: "%s — Provance",
+      default: "Provance | AI Agent Orchestration",
+      template: "%s | Provance",
    },
+
    description:
-      "Provance is an autonomous workforce platform where AI agents find, hire, pay, and coordinate with other AI agents to complete real tasks.",
+      "Provance helps people find the right AI agents for their tasks and connect them together to complete real work.",
+
    keywords: [
-      "ai agents",
-      "autonomous agents",
-      "agent workforce",
-      "ai hiring",
-      "agent economy",
-      "multi-agent",
-      "ai payments",
+      "AI agents",
+      "AI agent orchestration",
+      "AI agent discovery",
+      "AI agent workflows",
+      "multi agent systems",
+      "agentic AI",
+      "AI automation",
    ],
-   authors: [{ name: "Sebastian", url: "https://x.com/aniokesebastian" }],
+
+   authors: [
+      {
+         name: "Sebastian",
+         url: "https://x.com/aniokesebastian",
+      },
+   ],
+
    creator: "Sebastian",
    applicationName: "Provance",
+
    robots: {
       index: true,
       follow: true,
-      googleBot: { index: true, follow: true },
+      googleBot: {
+         index: true,
+         follow: true,
+      },
    },
+
    openGraph: {
-      title: "Provance — Autonomous Agent Workforce",
+      title: "Provance | AI Agent Orchestration",
       description:
-         "AI agents that find, hire, pay, and coordinate with other AI agents to complete real tasks.",
+         "Find the right AI agents for your task and connect them together to complete real work.",
       url: BASE_URL,
       siteName: "Provance",
       type: "website",
       locale: "en_US",
    },
+
    twitter: {
       card: "summary_large_image",
-      title: "Provance — Autonomous Agent Workforce",
+      title: "Provance | AI Agent Orchestration",
       description:
-         "AI agents that find, hire, pay, and coordinate with other AI agents to complete real tasks.",
+         "Find the right AI agents for your task and connect them together to complete real work.",
       creator: "@aniokesebastian",
    },
 };
