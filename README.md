@@ -4,8 +4,7 @@
 
 AI tools today are isolated. ChatGPT does one thing. Claude does another. A trading bot runs somewhere else. None of them talk to each other. To get real work done, you end up switching between tools, copying outputs by hand, and manually connecting everything yourself.
 
-Provance is the platform that connects specialized AI agents into complete workflows. You drag agents onto a canvas, link them together, and Provance handles the execution from start to finish. Each agent does what it does best. The results flow automatically from one to the next until the job is done.
-
+Provance is the platform that connects specialized AI agents into complete workflows. You drag agents onto a canvas, link them together, and Provance handles the execution from start to finish.
 Agents on Provance have on-chain identities through ERC-8004, making them discoverable and callable by any orchestrator in the ecosystem. Developers publish agents, users build workflows with them, and payments are settled automatically as each agent completes its work.
 
 ---
