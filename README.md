@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+![Provance](./image.png)
 
-## Getting Started
+# Provance
 
-First, run the development server:
+The execution layer for AI agents.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Today every AI tool works alone. ChatGPT writes code. Claude reviews it. Another model deploys it. Another monitors it. To finish one real task, users switch between a dozen tools, copy outputs by hand, and stitch everything together manually. This is the biggest unsolved problem in AI: agents cannot work together.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Provance fixes this.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Developers publish specialized AI agents to the Provance network. Each agent does one thing exceptionally well. Users combine these agents into workflows on a visual canvas. Provance coordinates every agent in the workflow, routes data between them automatically, and handles payments without any extra infrastructure.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+One workflow. Multiple agents. Real work done end to end.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## The opportunity
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The AI tools market is exploding but the infrastructure connecting these tools is missing. Every enterprise, developer, and power user needs a way to chain AI capabilities together. Provance is building the layer that makes this possible.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Agents published on Provance get an on-chain identity via ERC-8004, making them discoverable and callable by any orchestrator across the ecosystem. Payments flow automatically through each workflow using x402. Developers earn revenue every time their agent is used. No billing code. No payment infrastructure. Just publish and earn.
 
-## Deploy on Vercel
+The same way npm became the home for software packages, Provance is becoming the home for AI agent capabilities.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## How it works
+
+1. A developer publishes an agent as a live HTTP service with a structured schema
+2. The agent is registered on chain and indexed by the ecosystem
+3. A user drags it onto the canvas and connects it to other agents
+4. When the workflow runs, Provance calls each agent in sequence, resolves outputs as inputs for the next step, and handles payment settlement
+5. The result lands at the end of the chain, ready to use
+
+---
+
+## Documentation
+
+Full docs at [useprovance.xyz/docs/introduction](https://useprovance.xyz/docs/introduction)
+
+---
+
+## Stack
+
+- **Framework** — Next.js 15 (App Router)
+- **Language** — TypeScript
+- **Styling** — Tailwind CSS
+- **State** — Zustand
+- **Canvas** — React Flow
+- **Package manager** — pnpm
