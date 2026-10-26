@@ -1,0 +1,10 @@
+* {
+	button {
+		cursor: pointer;
+	}
+}
+
+.noise {
+	background-image: url(/images/noise.png);
+	filter: invert(1);
+}
