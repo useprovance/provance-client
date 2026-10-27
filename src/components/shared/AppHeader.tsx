@@ -9,8 +9,7 @@ import {
    DropdownMenuSeparator,
    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { HeaderDivider } from "@/components/app/HeaderDivider";
-import { OrgSelector, type Org } from "@/components/app/OrgSelector";
+import { HeaderDivider } from "@/components/shared/HeaderDivider";
 import ProvanceLogo from "@/components/shared/ProvanceLogo";
 import { authService } from "@/services/auth.service";
 
@@ -25,9 +24,6 @@ export default function AppHeader() {
       staleTime: 1000 * 60 * 5,
    });
 
-   const defaultOrg: Org = { id: "default", name: profile?.name ?? "My Workspace" };
-   const [selectedOrgId, setSelectedOrgId] = useState("default");
-
    async function handleLogout() {
       await authService.logout();
       queryClient.clear();
@@ -41,12 +37,6 @@ export default function AppHeader() {
          </Link>
 
          <HeaderDivider />
-
-         <OrgSelector
-            orgs={[defaultOrg]}
-            selectedId={selectedOrgId}
-            onSelect={(o) => setSelectedOrgId(o.id)}
-         />
 
          <div className="flex-1" />
 

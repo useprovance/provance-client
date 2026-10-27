@@ -7,7 +7,7 @@ import {
    CommandItem,
    CommandList,
 } from "@/components/ui/command";
-import { HeaderDropdownTrigger, HeaderDropdownWithPopover } from "@/components/app/HeaderDropdown";
+import { HeaderDropdownTrigger, HeaderDropdownWithPopover } from "@/components/shared/HeaderDropdown";
 
 export interface Org {
    id: string;
