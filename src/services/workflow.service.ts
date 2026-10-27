@@ -1,6 +1,6 @@
 import { BaseApiService } from './api.service';
 
-export interface WorkflowNode {
+export interface WorkflowNode extends Record<string, unknown> {
    id: string;
    nodeId: string;
    type: "agent" | "trigger";

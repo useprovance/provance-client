@@ -59,7 +59,11 @@ export default function AppSidebar() {
                      </div>
                   )}
                   {items.map(({ label, icon, to }) => (
-                     <NavItem key={to} label={label} icon={icon} to={to} active={pathname === to} />
+                     <NavItem key={to} label={label} icon={icon} to={to} active={
+                        to === "/app"
+                           ? pathname === "/app" || pathname.startsWith("/app/workflows")
+                           : pathname.startsWith(to)
+                     } />
                   ))}
                </div>
             ))}

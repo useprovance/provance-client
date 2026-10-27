@@ -26,7 +26,7 @@ export default function AppHomePage() {
    );
 
    return (
-      <div className="p-8">
+      <div className="p-8 h-full overflow-y-auto">
          <div className="flex items-center gap-2.5">
             <div className="flex size-9 items-center justify-center rounded-full bg-orange/15 shrink-0">
                <LayoutDashboard className="size-4 text-orange" />

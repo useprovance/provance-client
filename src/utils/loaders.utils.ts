@@ -12,3 +12,17 @@ export const workflowsLoader = async () => {
       return null;
    }
 };
+
+export const workflowByIdLoader = async ({ params }: { params: { id?: string } }) => {
+   const id = params.id;
+   if (!id) return null;
+   try {
+      return await queryClient.query({
+         queryKey: ["workflows", id],
+         queryFn: () => workflowService.getById(id),
+         staleTime: 30_000,
+      });
+   } catch {
+      return null;
+   }
+};

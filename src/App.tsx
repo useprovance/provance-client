@@ -6,10 +6,11 @@ import AppLayout from './layouts/AppLayout';
 import AppHomePage from './pages/app/AppHomePage';
 import AgentsPage from './pages/app/AgentsPage';
 import WalletPage from './pages/app/WalletPage';
+import WorkflowEditorPage from './pages/app/WorkflowEditorPage';
 import DocsLayout from './layouts/DocsLayout';
 import DocSlugPage from './pages/docs/DocSlugPage';
 import { Toaster } from 'react-hot-toast';
-import { workflowsLoader } from './utils/loaders.utils';
+import { workflowsLoader, workflowByIdLoader } from './utils/loaders.utils';
 
 const router = createBrowserRouter([
 	{
@@ -30,6 +31,7 @@ const router = createBrowserRouter([
 			},
 			{ path: 'agents', element: <AgentsPage /> },
 			{ path: 'wallet', element: <WalletPage /> },
+			{ path: 'workflows/:id', element: <WorkflowEditorPage />, loader: workflowByIdLoader },
 		],
 	},
 	{

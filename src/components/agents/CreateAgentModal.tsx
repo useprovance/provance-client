@@ -75,11 +75,10 @@ export default function CreateAgentModal({ open, onOpenChange, onCreated }: Crea
       setSigning(true);
       setSignError(null);
       try {
-         if (typeof window === "undefined" || !window.ethereum) {
-            throw new Error("No wallet found. Install MetaMask or another EVM wallet.");
-         }
-         await window.ethereum.request({ method: "wallet_requestPermissions", params: [{ eth_accounts: {} }] });
-         const client = createWalletClient({ transport: custom(window.ethereum) });
+         const eth = (window as Window & { ethereum?: { request: (a: unknown) => Promise<unknown> } }).ethereum;
+         if (!eth) throw new Error("No wallet found. Install MetaMask or another EVM wallet.");
+         await eth.request({ method: "wallet_requestPermissions", params: [{ eth_accounts: {} }] });
+         const client = createWalletClient({ transport: custom(eth as Parameters<typeof custom>[0]) });
          const [account] = await client.requestAddresses();
          const signature = await client.signMessage({ account, message });
 

@@ -1,4 +1,3 @@
-// @ts-expect-error no types available
 import makeBlockie from "ethereum-blockies-base64";
 
 export function WalletBlockie({ address, size = 48 }: { address: string; size?: number }) {

@@ -1,5 +1,4 @@
 import { Link, useNavigate } from "react-router";
-import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, CircleUser, LogOut, Search, Settings2 } from "lucide-react";
 import {
@@ -9,7 +8,6 @@ import {
    DropdownMenuSeparator,
    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { HeaderDivider } from "@/components/shared/HeaderDivider";
 import ProvanceLogo from "@/components/shared/ProvanceLogo";
 import { authService } from "@/services/auth.service";
 
@@ -35,8 +33,6 @@ export default function AppHeader() {
          <Link to="/app" className="flex items-center shrink-0 px-1">
             <ProvanceLogo className="h-10 w-auto text-white" />
          </Link>
-
-         <HeaderDivider />
 
          <div className="flex-1" />
 

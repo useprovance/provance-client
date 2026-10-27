@@ -3,27 +3,22 @@ import { Bot, Activity, Zap, TrendingUp, Plus, Search } from "lucide-react";
 import { AgentCard, type Agent } from "@/components/agents/AgentCard";
 import CreateAgentModal from "@/components/agents/CreateAgentModal";
 
-const DUMMY_AGENTS: Agent[] = [
-   { id: "1", name: "GeckoTerminal", icon: "/icons/agents/geckoterminal.svg", status: "active", lastRun: "2 mins ago", runsToday: 48, earned: "0.24 USDC", workflow: "DeFi Scanner", author: "You" },
-   { id: "2", name: "GoPlus Security", icon: "/icons/agents/goplus.svg", status: "active", lastRun: "2 mins ago", runsToday: 48, earned: "0.00 USDC", workflow: "DeFi Scanner", author: "You" },
-   { id: "3", name: "Gruff Trader", icon: "/icons/agents/gruff.svg", status: "paused", lastRun: "1 hour ago", runsToday: 12, earned: "1.20 USDC", workflow: "DeFi Scanner", author: "You" },
-   { id: "4", name: "Telegram Bot", icon: "/icons/agents/telegram.svg", status: "idle", lastRun: "Never", runsToday: 0, earned: "0.00 USDC", workflow: "Notifications", author: "You" },
-];
+const agents: Agent[] = [];
 
 export default function AgentsPage() {
    const [search, setSearch] = useState("");
    const [createOpen, setCreateOpen] = useState(false);
 
-   const filtered = DUMMY_AGENTS.filter((a) =>
+   const filtered = agents.filter((a) =>
       a.name.toLowerCase().includes(search.toLowerCase())
    );
 
-   const active = DUMMY_AGENTS.filter((a) => a.status === "active").length;
-   const totalRuns = DUMMY_AGENTS.reduce((s, a) => s + a.runsToday, 0);
-   const totalEarned = DUMMY_AGENTS.reduce((s, a) => s + parseFloat(a.earned), 0).toFixed(2);
+   const active = 0;
+   const totalRuns = 0;
+   const totalEarned = "0.00";
 
    return (
-      <div className="p-8">
+      <div className="p-8 h-full overflow-y-auto">
          <CreateAgentModal open={createOpen} onOpenChange={setCreateOpen} />
          <div className="flex items-center gap-2.5">
             <div className="flex size-9 items-center justify-center rounded-full bg-orange/15 shrink-0">
@@ -35,7 +30,7 @@ export default function AgentsPage() {
          {/* Stats */}
          <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[
-               { label: "Total Agents", display: String(DUMMY_AGENTS.length).padStart(2, "0"), sub: "in your workspace", icon: Bot },
+               { label: "Total Agents", display: "00", sub: "in your workspace", icon: Bot },
                { label: "Active Now", display: String(active).padStart(2, "0"), sub: "running right now", icon: Activity },
                { label: "Runs Today", display: String(totalRuns), sub: "across all agents", icon: Zap },
                { label: "Earned Today", display: `${totalEarned}`, sub: "USDC", icon: TrendingUp },

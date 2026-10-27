@@ -11,17 +11,17 @@ import type { Workflow } from "@/services/workflow.service";
 
 export function WorkflowCard({ workflow, onDelete }: { workflow: Workflow; onDelete?: (id: string) => void }) {
    return (
-      <div className="flex flex-col bg-[#0f0f0f] border border-sand/15 hover:border-sand/25 transition-colors overflow-hidden group">
+      <div className="flex flex-col bg-[#1a1a1a] border border-sand/15 hover:border-sand/25 transition-colors overflow-hidden group rounded-md">
          {/* Canvas preview */}
          <div className="relative h-40 overflow-hidden">
             <div
                className="absolute inset-0"
                style={{
                   backgroundImage: workflow.published
-                     ? "radial-gradient(circle, rgba(0,0,0,0.4) 1px, transparent 1px)"
-                     : "radial-gradient(circle, rgba(227,216,197,0.3) 1px, transparent 1px)",
+                     ? "radial-gradient(circle, rgba(0,0,0,0.2) 1px, transparent 1px)"
+                     : "radial-gradient(circle, rgba(227,216,197,0.12) 1px, transparent 1px)",
                   backgroundSize: "6px 6px",
-                  backgroundColor: workflow.published ? "#d95e28" : "#0a0a0a",
+                  backgroundColor: workflow.published ? "#d95e28" : "#141414",
                }}
             />
 

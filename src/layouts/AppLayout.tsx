@@ -10,7 +10,7 @@ export default function AppLayout() {
          <AppHeader />
          <div className="flex flex-1 overflow-hidden">
             <AppSidebar />
-            <main className="flex-1 overflow-y-auto">
+            <main className="flex-1 overflow-hidden flex flex-col min-w-0">
                <Outlet />
             </main>
          </div>
