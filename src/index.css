@@ -188,6 +188,15 @@
 	}
 }
 
+/* NProgress bar */
+#nprogress .bar {
+   background: #d95e28 !important;
+   height: 3px !important;
+}
+#nprogress .peg {
+   box-shadow: 0 0 10px #d95e28, 0 0 5px #d95e28 !important;
+}
+
 .hero-dots {
 	background-color: rgba(204, 189, 159, 0.1);
 	mask: url("/icons/dots.svg") left top / 6px 6px alpha;

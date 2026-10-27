@@ -4,9 +4,12 @@ import LandingPage from './pages/LandingPage';
 import AuthModalRoute from './pages/AuthModalRoute';
 import AppLayout from './layouts/AppLayout';
 import AppHomePage from './pages/app/AppHomePage';
+import AgentsPage from './pages/app/AgentsPage';
+import WalletPage from './pages/app/WalletPage';
 import DocsLayout from './layouts/DocsLayout';
 import DocSlugPage from './pages/docs/DocSlugPage';
 import { Toaster } from 'react-hot-toast';
+import { workflowsLoader } from './utils/loaders.utils';
 
 const router = createBrowserRouter([
 	{
@@ -20,7 +23,13 @@ const router = createBrowserRouter([
 		path: '/app',
 		element: <AppLayout />,
 		children: [
-			{ index: true, element: <AppHomePage /> },
+			{
+				index: true,
+				element: <AppHomePage />,
+				loader: workflowsLoader,
+			},
+			{ path: 'agents', element: <AgentsPage /> },
+			{ path: 'wallet', element: <WalletPage /> },
 		],
 	},
 	{
@@ -36,7 +45,17 @@ const router = createBrowserRouter([
 function App() {
 	return (
 		<>
-			<Toaster />
+			<Toaster
+				position="bottom-right"
+				toastOptions={{
+					style: {
+						background: "#1a1a1a",
+						color: "#ffffff",
+						border: "1px solid rgba(255,255,255,0.08)",
+						fontSize: "13px",
+					},
+				}}
+			/>
 			<RouterProvider router={router} />
 		</>
 	);

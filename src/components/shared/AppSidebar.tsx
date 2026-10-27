@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { LayoutDashboard, Bot, Wallet, Settings, LogOut, Store } from "lucide-react";
+import { GitBranch, Bot, Wallet, Settings, LogOut, Store } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { authService } from "@/services/auth.service";
 
@@ -8,26 +8,24 @@ const NAV = [
    {
       section: "WORKSPACE",
       items: [
-         { label: "Workflows", icon: LayoutDashboard, to: "/app" },
+         { label: "Workflows", icon: GitBranch, to: "/app" },
          { label: "Agents", icon: Bot, to: "/app/agents" },
          { label: "Wallet", icon: Wallet, to: "/app/wallet" },
       ],
    },
 ];
 
-// sidebar collapsed = w-12 (48px). px-1 each side = 4px, inner = 40px.
-// icon span = w-10 (40px) → icon perfectly centered when collapsed.
 function NavItem({ label, icon: Icon, to, active }: { label: string; icon: React.ElementType; to: string; active: boolean }) {
    return (
       <Link
          to={to}
          className={cn(
             "flex items-center w-full py-2 rounded-md transition-colors",
-            active ? "bg-white/8 text-white" : "text-white/40 hover:bg-white/5 hover:text-white"
+            active ? "bg-white/8 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
          )}
       >
          <span className="w-10 flex items-center justify-center shrink-0">
-            <Icon className="size-[17px]" />
+            <Icon size={18} strokeWidth={1.5} />
          </span>
          <span className="text-[13px] font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 pr-3">
             {label}
@@ -73,10 +71,10 @@ export default function AppSidebar() {
             <hr className="border-white/10 my-1" />
             <button
                onClick={handleLogout}
-               className="flex items-center w-full py-2 rounded-md text-white/40 hover:bg-white/5 hover:text-white transition-colors"
+               className="flex items-center w-full py-2 rounded-md text-white/70 hover:bg-white/5 hover:text-white transition-colors"
             >
                <span className="w-10 flex items-center justify-center shrink-0">
-                  <LogOut className="size-[17px]" />
+                  <LogOut size={18} strokeWidth={1.5} />
                </span>
                <span className="text-[13px] font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 pr-3">
                   Sign out

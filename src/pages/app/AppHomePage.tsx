@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { LayoutDashboard, Search, Plus, Loader2 } from "lucide-react";
+import { LayoutDashboard, Search, Plus } from "lucide-react";
 import { WorkflowCard } from "@/components/workflow/WorkflowCard";
 import CreateWorkflowModal from "@/components/workflow/CreateWorkflowModal";
 import { workflowService } from "@/services/workflow.service";
@@ -10,7 +10,8 @@ export default function AppHomePage() {
    const [search, setSearch] = useState("");
    const [createOpen, setCreateOpen] = useState(false);
 
-   const { data, isPending } = useQuery({
+   // Data is prefetched by the route loader — no loading state needed here
+   const { data } = useQuery({
       queryKey: ["workflows"],
       queryFn: () => workflowService.getAll(),
    });
@@ -56,11 +57,7 @@ export default function AppHomePage() {
          </div>
 
          <div className="mt-6">
-            {isPending ? (
-               <div className="flex items-center justify-center py-24">
-                  <Loader2 className="size-5 text-white/30 animate-spin" />
-               </div>
-            ) : workflows.length === 0 ? (
+            {data === undefined ? null : workflows.length === 0 ? (
                <div className="flex flex-col items-center justify-center gap-4 py-24 border border-dashed border-white/10">
                   <p className="text-[13px] text-white/30">No workflows yet</p>
                   <button
@@ -78,7 +75,7 @@ export default function AppHomePage() {
                      <WorkflowCard key={w.id} workflow={w} onDelete={(id) => remove.mutate(id)} />
                   ))}
                </div>
-            )}
+            ) }
          </div>
 
          <CreateWorkflowModal open={createOpen} onOpenChange={setCreateOpen} />
