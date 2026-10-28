@@ -57,7 +57,7 @@ export default function AgentsPage() {
                   </div>
                   <div>
                      <p className="text-[32px] font-bold text-white leading-none font-manrope">{display}</p>
-                     <p className="text-[11px] text-white/30 mt-1.5">{sub}</p>
+                     <p className="text-[13px] text-white/30 mt-1.5">{sub}</p>
                   </div>
                </div>
             ))}

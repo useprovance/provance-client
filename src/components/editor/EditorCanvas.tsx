@@ -11,10 +11,12 @@ import { AiChatPanel } from "./AiChatPanel";
 import { AgentNode } from "./AgentNode";
 import { TriggerNode } from "./TriggerNode";
 import { EditorEdge } from "./EditorEdge";
+import { AddAgentModal } from "./AddAgentModal";
+import { EmptyCanvasNode } from "./EmptyCanvasNode";
 import { useEditorStore } from "@/stores/editorStore";
 import type { Workflow } from "@/services/workflow.service";
 
-const nodeTypes = { agent: AgentNode, trigger: TriggerNode };
+const nodeTypes = { agent: AgentNode, trigger: TriggerNode, choice: EmptyCanvasNode };
 const edgeTypes = { provance: EditorEdge };
 
 export function EditorCanvas({ workflow }: { workflow: Workflow }) {
@@ -31,7 +33,7 @@ export function EditorCanvas({ workflow }: { workflow: Workflow }) {
       <div className="flex w-full h-full">
          {aiPanelOpen && <AiChatPanel onCollapse={() => setAiPanelOpen(false)} />}
 
-         <div className="relative flex-1 min-w-0 bg-[#141414]">
+         <div className="relative flex-1 min-w-0 bg-[#141414] overflow-hidden">
             {!aiPanelOpen && (
                <button
                   onClick={() => setAiPanelOpen(true)}
@@ -52,6 +54,7 @@ export function EditorCanvas({ workflow }: { workflow: Workflow }) {
                edgeTypes={edgeTypes}
                defaultEdgeOptions={{ type: "provance" }}
                defaultViewport={workflow.viewport ?? { x: 400, y: 280, zoom: 1 }}
+               proOptions={{ hideAttribution: true }}
                snapToGrid
                snapGrid={[20, 20]}
                minZoom={0.1}
@@ -96,6 +99,8 @@ export function EditorCanvas({ workflow }: { workflow: Workflow }) {
                   }}
                />
             </ReactFlow>
+
+            <AddAgentModal />
          </div>
       </div>
    );

@@ -5,7 +5,9 @@ export interface WorkflowNode extends Record<string, unknown> {
    nodeId: string;
    type: "agent" | "trigger";
    position: { x: number; y: number };
-   action: { key: string; label: string };
+   action: { key: string; label: string; endpoint?: string };
+   label: string;
+   image_url: string | null;
    config: Record<string, unknown>;
 }
 
