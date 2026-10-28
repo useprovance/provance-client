@@ -1,23 +1,15 @@
 import { useState } from "react";
 import { createWalletClient, custom } from "viem";
-import { Loader2, Search, CheckCircle2, X } from "lucide-react";
+import { useConnectWallet, useWallets } from "@privy-io/react-auth";
+import { Loader2, Search, CheckCircle2, X, Wallet } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { FormInput } from "@/components/ui/form-input";
-
-type AgentPreview = {
-   agent_id: string;
-   name: string | null;
-   description: string | null;
-   image_url: string | null;
-   chain_id: number;
-   supported_protocols: string[];
-   owner_address: string;
-   tags: string[];
-};
+import { agentService, type AgentPreview } from "@/services/agent.service";
 
 const CHAIN_NAMES: Record<number, string> = {
    1: "Ethereum", 8453: "Base", 42220: "Celo", 137: "Polygon",
    10: "Optimism", 42161: "Arbitrum", 56: "BSC", 100: "Gnosis",
+   2345: "GOAT",
 };
 
 interface CreateAgentModalProps {
@@ -27,6 +19,9 @@ interface CreateAgentModalProps {
 }
 
 export default function CreateAgentModal({ open, onOpenChange, onCreated }: CreateAgentModalProps) {
+   const { connectWallet } = useConnectWallet();
+   const { wallets } = useWallets();
+
    const [agentId, setAgentId] = useState("");
    const [fetching, setFetching] = useState(false);
    const [fetchError, setFetchError] = useState<string | null>(null);
@@ -35,6 +30,9 @@ export default function CreateAgentModal({ open, onOpenChange, onCreated }: Crea
    const [signing, setSigning] = useState(false);
    const [signError, setSignError] = useState<string | null>(null);
    const [claimed, setClaimed] = useState(false);
+   const [imgError, setImgError] = useState(false);
+
+   const connectedWallet = wallets[wallets.length - 1] ?? null;
 
    function handleClose() {
       onOpenChange(false);
@@ -47,6 +45,7 @@ export default function CreateAgentModal({ open, onOpenChange, onCreated }: Crea
          setSigning(false);
          setSignError(null);
          setClaimed(false);
+         setImgError(false);
       }, 300);
    }
 
@@ -57,38 +56,28 @@ export default function CreateAgentModal({ open, onOpenChange, onCreated }: Crea
       setFetchError(null);
       setPreview(null);
       setSignError(null);
+      setImgError(false);
       try {
-         const res = await fetch(`/api/agents/claim?agent_id=${encodeURIComponent(id)}`);
-         const data = await res.json() as { error?: string; agent?: AgentPreview; message?: string };
-         if (!res.ok) { setFetchError(data.error ?? "Agent not found"); return; }
-         setPreview(data.agent!);
-         setMessage(data.message!);
-      } catch {
-         setFetchError("Could not reach 8004scan. Try again.");
+         const data = await agentService.lookup(id);
+         setPreview(data.agent);
+         setMessage(data.message);
+      } catch (err) {
+         setFetchError(err instanceof Error ? err.message : "Agent not found");
       } finally {
          setFetching(false);
       }
    }
 
    async function handleClaim() {
-      if (!preview || !message) return;
+      if (!preview || !message || !connectedWallet) return;
       setSigning(true);
       setSignError(null);
       try {
-         const eth = (window as Window & { ethereum?: { request: (a: unknown) => Promise<unknown> } }).ethereum;
-         if (!eth) throw new Error("No wallet found. Install MetaMask or another EVM wallet.");
-         await eth.request({ method: "wallet_requestPermissions", params: [{ eth_accounts: {} }] });
-         const client = createWalletClient({ transport: custom(eth as Parameters<typeof custom>[0]) });
+         const provider = await connectedWallet.getEthereumProvider();
+         const client = createWalletClient({ transport: custom(provider) });
          const [account] = await client.requestAddresses();
          const signature = await client.signMessage({ account, message });
-
-         const res = await fetch("/api/agents/claim", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ agent_id: preview.agent_id, signature }),
-         });
-         const data = await res.json() as { error?: string };
-         if (!res.ok) { setSignError(data.error ?? "Claim failed"); return; }
+         await agentService.claim(preview.agent_id, signature);
          setClaimed(true);
          onCreated?.();
       } catch (err) {
@@ -106,7 +95,6 @@ export default function CreateAgentModal({ open, onOpenChange, onCreated }: Crea
          >
             <DialogTitle className="sr-only">Claim Agent</DialogTitle>
 
-            {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/8 shrink-0">
                <p className="text-[15px] font-semibold text-white font-manrope">Claim agent</p>
                <button
@@ -117,7 +105,6 @@ export default function CreateAgentModal({ open, onOpenChange, onCreated }: Crea
                </button>
             </div>
 
-            {/* Body */}
             <div className="px-6 py-6 flex flex-col gap-5">
                {claimed ? (
                   <div className="flex flex-col items-center gap-3 py-8">
@@ -135,7 +122,7 @@ export default function CreateAgentModal({ open, onOpenChange, onCreated }: Crea
                            setFetchError(null);
                            if (preview) { setPreview(null); setMessage(null); }
                         }}
-                        placeholder="https://8004scan.io/agents/celo/9173"
+                        placeholder="https://8004scan.io/agents/goat/87"
                         suffix={
                            <button
                               type="button"
@@ -150,15 +137,20 @@ export default function CreateAgentModal({ open, onOpenChange, onCreated }: Crea
                         error={fetchError ?? undefined}
                         touched={!!fetchError}
                      />
-                     <p className="text-[11px] text-white/25 -mt-3">You can also use the short form: celo/9173</p>
+                     <p className="text-[11px] text-white/25 -mt-3">You can also use the short form: goat/87</p>
 
                      {preview && (
                         <div className="flex flex-col gap-3 p-4 border border-white/8 bg-white/3">
                            <div className="flex items-start gap-3">
-                              {preview.image_url ? (
-                                 <img src={preview.image_url} alt="" className="w-10 h-10 object-cover shrink-0 border border-white/10" />
+                              {preview.image_url && !imgError ? (
+                                 <img
+                                    src={preview.image_url}
+                                    alt=""
+                                    className="w-10 h-10 object-contain shrink-0 bg-white/5 p-1.5 rounded-full"
+                                    onError={() => setImgError(true)}
+                                 />
                               ) : (
-                                 <div className="w-10 h-10 bg-white/5 border border-white/10 shrink-0 flex items-center justify-center">
+                                 <div className="w-10 h-10 bg-white/5 shrink-0 flex items-center justify-center rounded-full">
                                     <span className="text-white/20 text-base">◈</span>
                                  </div>
                               )}
@@ -175,6 +167,16 @@ export default function CreateAgentModal({ open, onOpenChange, onCreated }: Crea
                               </div>
                            </div>
                            <p className="text-[11px] text-white/30 font-mono break-all border-t border-white/8 pt-3">{preview.owner_address}</p>
+
+                           <button
+                              onClick={() => connectWallet()}
+                              className="flex items-center justify-center gap-2 border border-white/10 bg-white/4 hover:bg-white/8 text-white/60 hover:text-white text-[12px] py-2 transition-colors cursor-pointer"
+                           >
+                              <Wallet size={13} strokeWidth={1.5} />
+                              {connectedWallet ? (
+                                 <span className="font-mono">{connectedWallet.address.slice(0, 6)}…{connectedWallet.address.slice(-4)}</span>
+                              ) : "Connect wallet to sign"}
+                           </button>
                         </div>
                      )}
 
@@ -183,7 +185,6 @@ export default function CreateAgentModal({ open, onOpenChange, onCreated }: Crea
                )}
             </div>
 
-            {/* Footer */}
             <div className="px-6 py-4 border-t border-white/8 shrink-0 flex items-center justify-between">
                <button
                   type="button"
@@ -192,7 +193,7 @@ export default function CreateAgentModal({ open, onOpenChange, onCreated }: Crea
                >
                   {claimed ? "Close" : "Cancel"}
                </button>
-               {!claimed && preview && (
+               {!claimed && preview && connectedWallet && (
                   <button
                      onClick={() => void handleClaim()}
                      disabled={signing}

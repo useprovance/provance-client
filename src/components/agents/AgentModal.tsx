@@ -1,35 +1,48 @@
-import { X, Pause, Play, Trash2, GitBranch, Clock, Zap, DollarSign } from "lucide-react";
+import { X, Trash2, ExternalLink, Zap } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import type { Agent, AgentStatus } from "./AgentCard";
+import type { Agent, ProvanceAction } from "@/services/agent.service";
 
-const STATUS: Record<AgentStatus, { label: string; dot: string }> = {
-   active: { label: "Active", dot: "bg-emerald-400" },
-   paused: { label: "Paused", dot: "bg-amber-400" },
-   idle: { label: "Idle", dot: "bg-sand/30" },
+const CHAIN_NAMES: Record<number, string> = {
+   1: "Ethereum", 8453: "Base", 42220: "Celo", 137: "Polygon",
+   10: "Optimism", 42161: "Arbitrum", 56: "BSC", 100: "Gnosis",
+   2345: "GOAT",
 };
+
+const RESERVED = new Set(["web", "mcp", "a2a", "oasf"]);
+
+function extractActions(services: Agent["services"]): ProvanceAction[] {
+   const webActions = (services.web as { actions?: ProvanceAction[] } | undefined)?.actions;
+   if (Array.isArray(webActions)) return webActions;
+
+   return Object.entries(services)
+      .filter(([key, val]) =>
+         !RESERVED.has(key) &&
+         typeof val === "object" && val !== null &&
+         "endpoint" in val && "config" in val
+      )
+      .map(([key, val]) => ({ key, ...(val as object) })) as ProvanceAction[];
+}
 
 interface AgentModalProps {
    agent: Agent;
-   status: AgentStatus;
    open: boolean;
    onOpenChange: (open: boolean) => void;
-   onPause: () => void;
-   onResume: () => void;
    onDelete: () => void;
 }
 
-export function AgentModal({ agent, status, open, onOpenChange, onPause, onResume, onDelete }: AgentModalProps) {
-   const s = STATUS[status];
+export function AgentModal({ agent, open, onOpenChange, onDelete }: AgentModalProps) {
+   const actions = extractActions(agent.services);
+   const chainName = CHAIN_NAMES[agent.chain_id] ?? `Chain ${agent.chain_id}`;
+   const webEndpoint = agent.services.web?.endpoint;
 
    return (
       <Dialog open={open} onOpenChange={onOpenChange}>
          <DialogContent
             aria-describedby={undefined}
-            className="bg-[#141414] border border-white/10 p-0 gap-0 flex flex-col sm:max-w-[480px] [&>button]:hidden overflow-hidden"
+            className="bg-[#141414] border border-white/10 p-0 gap-0 flex flex-col sm:max-w-[480px] max-h-[85vh] [&>button]:hidden overflow-hidden"
          >
             <DialogTitle className="sr-only">{agent.name}</DialogTitle>
 
-            {/* Dot header with agent icon */}
             <div className="relative h-24 shrink-0">
                <div className="absolute inset-0" style={{ backgroundColor: "rgba(204,189,159,0.06)" }} />
                <div
@@ -42,7 +55,6 @@ export function AgentModal({ agent, status, open, onOpenChange, onPause, onResum
                      backgroundColor: "rgba(204,189,159,0.12)",
                   }}
                />
-               {/* Close button */}
                <button
                   onClick={() => onOpenChange(false)}
                   className="absolute top-3 right-4 w-8 h-8 rounded-full bg-[#1a1a1a]/80 border border-[#333] flex items-center justify-center text-white/50 hover:text-white transition-colors cursor-pointer z-10"
@@ -51,76 +63,83 @@ export function AgentModal({ agent, status, open, onOpenChange, onPause, onResum
                </button>
             </div>
 
-            {/* Agent icon overlapping header */}
             <div className="relative px-6 pb-0">
-               <div className="absolute -top-7 left-6 w-14 h-14 bg-[#1a1a1a] border-2 border-[#141414] rounded-full flex items-center justify-center z-10 ring-1 ring-[#333]">
-                  <img src={agent.icon} alt={agent.name} className="w-7 h-7 object-contain" />
+               <div className="absolute -top-7 left-6 w-14 h-14 bg-[#1a1a1a] border-2 border-[#141414] rounded-full flex items-center justify-center z-10 ring-1 ring-[#333] overflow-hidden">
+                  {agent.image_url ? (
+                     <img src={agent.image_url} alt={agent.name} className="w-full h-full object-cover" />
+                  ) : (
+                     <span className="text-white/20 text-xl">◈</span>
+                  )}
                </div>
             </div>
 
-            {/* Body */}
+            <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.2)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-track]:bg-transparent">
             <div className="px-6 pt-10 pb-6 flex flex-col gap-5">
-               {/* Name + status */}
                <div>
-                  <p className="text-[11px] text-white/30 mb-0.5">{agent.author}</p>
+                  <p className="text-[11px] text-white/30 mb-0.5 font-mono uppercase tracking-widest">{chainName}</p>
                   <p className="text-[22px] font-semibold text-white leading-tight font-manrope">{agent.name}</p>
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  {agent.description && (
+                     <p className="text-[13px] text-white/40 mt-1.5 leading-relaxed">{agent.description}</p>
+                  )}
+                  <div className="flex items-center gap-2 mt-3 flex-wrap">
                      <span className="flex items-center gap-1.5 text-[12px] font-medium text-white/60 px-2.5 py-1 bg-white/5">
-                        <span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} />
-                        {s.label}
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${agent.is_active ? "bg-emerald-400" : "bg-sand/30"}`} />
+                        {agent.is_active ? "Active" : "Inactive"}
                      </span>
-                     <span className="flex items-center gap-1.5 text-[12px] text-white/50 px-2.5 py-1 bg-white/5">
-                        <GitBranch size={12} strokeWidth={1.5} />
-                        {agent.workflow}
-                     </span>
+                     {agent.supported_protocols.map((p) => (
+                        <span key={p} className="text-[10px] font-mono uppercase tracking-widest text-white/40 px-2.5 py-1 bg-white/5">
+                           {p}
+                        </span>
+                     ))}
                   </div>
                </div>
 
-               {/* Stats */}
-               <div className="grid grid-cols-3 gap-2">
-                  {[
-                     { icon: Zap, label: "Runs today", value: String(agent.runsToday) },
-                     { icon: Clock, label: "Last run", value: agent.lastRun },
-                     { icon: DollarSign, label: "Earned", value: agent.earned },
-                  ].map(({ icon: Icon, label, value }) => (
-                     <div key={label} className="flex flex-col gap-1.5 bg-white/4 border border-white/6 p-3 rounded-md">
-                        <div className="flex items-center gap-1.5 text-white/30">
-                           <Icon size={12} strokeWidth={1.5} />
-                           <p className="text-[10px] uppercase tracking-widest font-mono">{label}</p>
-                        </div>
-                        <p className="text-[14px] font-semibold text-white font-manrope">{value}</p>
-                     </div>
-                  ))}
+               <div className="border-t border-white/8 pt-4">
+                  <p className="text-[11px] font-mono uppercase tracking-widest text-white/30 mb-1">Owner</p>
+                  <p className="text-[12px] text-white/50 font-mono break-all">{agent.owner_address}</p>
                </div>
+
+               {actions.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                     <p className="text-[11px] font-mono uppercase tracking-widest text-white/30">Actions</p>
+                     {actions.map((action) => (
+                        <div key={action.key} className="flex items-center gap-3 px-3 py-2.5 bg-white/4 border border-white/6">
+                           <div className="flex size-7 items-center justify-center bg-orange/10 shrink-0">
+                              <Zap size={12} strokeWidth={1.5} className="text-orange" />
+                           </div>
+                           <div className="flex-1 min-w-0">
+                              <p className="text-[13px] text-white font-medium leading-tight">{action.name}</p>
+                              {action.description && (
+                                 <p className="text-[11px] text-white/40 mt-0.5 line-clamp-1">{action.description}</p>
+                              )}
+                           </div>
+                        </div>
+                     ))}
+                  </div>
+               )}
+
+               {webEndpoint && (
+                  <a
+                     href={webEndpoint}
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     className="flex items-center gap-2 text-[12px] text-white/30 hover:text-white/60 transition-colors"
+                  >
+                     <ExternalLink size={12} strokeWidth={1.5} />
+                     <span className="truncate">{webEndpoint}</span>
+                  </a>
+               )}
+            </div>
             </div>
 
-            {/* Footer actions */}
-            <div className="px-6 py-4 border-t border-white/8 flex items-center justify-between">
+            <div className="px-6 py-4 border-t border-white/8 flex items-center justify-between shrink-0 bg-[#141414] z-10">
                <button
                   onClick={() => { onDelete(); onOpenChange(false); }}
-                  className="flex items-center gap-2 text-[13px] text-red-400/60 hover:text-red-400 transition-colors cursor-pointer"
+                  className="flex items-center gap-2 text-[13px] text-red-400 hover:text-red-300 transition-colors cursor-pointer"
                >
                   <Trash2 size={14} strokeWidth={1.5} />
-                  Delete
+                  Remove agent
                </button>
-
-               {status === "active" ? (
-                  <button
-                     onClick={onPause}
-                     className="flex items-center gap-2 bg-white/8 hover:bg-white/12 border border-white/10 text-white/70 hover:text-white text-[12px] font-medium px-5 py-2 transition-colors cursor-pointer"
-                  >
-                     <Pause size={13} strokeWidth={1.5} />
-                     Pause agent
-                  </button>
-               ) : (
-                  <button
-                     onClick={onResume}
-                     className="flex items-center gap-2 bg-white/8 hover:bg-white/12 border border-white/10 text-white/70 hover:text-white text-[12px] font-medium px-5 py-2 transition-colors cursor-pointer"
-                  >
-                     <Play size={13} strokeWidth={1.5} />
-                     Resume agent
-                  </button>
-               )}
             </div>
          </DialogContent>
       </Dialog>

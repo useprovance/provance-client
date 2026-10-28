@@ -1,25 +1,39 @@
 import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Bot, Activity, Zap, TrendingUp, Plus, Search } from "lucide-react";
-import { AgentCard, type Agent } from "@/components/agents/AgentCard";
+import { AgentCard } from "@/components/agents/AgentCard";
 import CreateAgentModal from "@/components/agents/CreateAgentModal";
-
-const agents: Agent[] = [];
+import { agentService } from "@/services/agent.service";
+import { queryClient } from "@/lib/queryClient";
 
 export default function AgentsPage() {
    const [search, setSearch] = useState("");
    const [createOpen, setCreateOpen] = useState(false);
 
-   const filtered = agents.filter((a) =>
+   const { data } = useQuery({
+      queryKey: ["agents"],
+      queryFn: () => agentService.getAll(),
+   });
+
+   const remove = useMutation({
+      mutationFn: (id: string) => agentService.remove(id),
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: ["agents"] }),
+   });
+
+   const agents = (data ?? []).filter((a) =>
       a.name.toLowerCase().includes(search.toLowerCase())
    );
 
-   const active = 0;
-   const totalRuns = 0;
-   const totalEarned = "0.00";
+   const activeCount = agents.filter((a) => a.is_active).length;
 
    return (
       <div className="p-8 h-full overflow-y-auto">
-         <CreateAgentModal open={createOpen} onOpenChange={setCreateOpen} />
+         <CreateAgentModal
+            open={createOpen}
+            onOpenChange={setCreateOpen}
+            onCreated={() => queryClient.invalidateQueries({ queryKey: ["agents"] })}
+         />
+
          <div className="flex items-center gap-2.5">
             <div className="flex size-9 items-center justify-center rounded-full bg-orange/15 shrink-0">
                <Bot className="size-4 text-orange" />
@@ -27,13 +41,12 @@ export default function AgentsPage() {
             <h1 className="text-2xl font-semibold text-white font-manrope">Agents</h1>
          </div>
 
-         {/* Stats */}
          <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[
-               { label: "Total Agents", display: "00", sub: "in your workspace", icon: Bot },
-               { label: "Active Now", display: String(active).padStart(2, "0"), sub: "running right now", icon: Activity },
-               { label: "Runs Today", display: String(totalRuns), sub: "across all agents", icon: Zap },
-               { label: "Earned Today", display: `${totalEarned}`, sub: "USDC", icon: TrendingUp },
+               { label: "Total Agents", display: String(agents.length).padStart(2, "0"), sub: "in your workspace", icon: Bot },
+               { label: "Active Now", display: String(activeCount).padStart(2, "0"), sub: "running right now", icon: Activity },
+               { label: "Runs Today", display: "00", sub: "across all agents", icon: Zap },
+               { label: "Earned Today", display: "0.00", sub: "USDC", icon: TrendingUp },
             ].map(({ label, display, sub, icon: Icon }) => (
                <div key={label} className="flex flex-col gap-4 bg-[#1a1a1a] border border-white/8 p-5 rounded-lg">
                   <div className="flex items-start justify-between">
@@ -72,17 +85,16 @@ export default function AgentsPage() {
             </button>
          </div>
 
-         {/* Cards */}
          <div className="mt-6">
-            {filtered.length === 0 ? (
+            {data === undefined ? null : agents.length === 0 ? (
                <div className="flex flex-col items-center justify-center py-24 border border-dashed border-white/10">
                   <Bot size={40} strokeWidth={1} className="text-white/20 mb-4" />
                   <p className="text-[13px] text-white/30">No agents yet</p>
                </div>
             ) : (
                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {filtered.map((agent) => (
-                     <AgentCard key={agent.id} agent={agent} />
+                  {agents.map((agent) => (
+                     <AgentCard key={agent.id} agent={agent} onDelete={(id) => remove.mutate(id)} />
                   ))}
                </div>
             )}
