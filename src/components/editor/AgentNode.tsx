@@ -1,17 +1,40 @@
-import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
+import { useRef, useState } from "react";
+import { Handle, Position, useReactFlow, useEdges, type NodeProps, type Node } from "@xyflow/react";
 import { Plus } from "lucide-react";
 import type { WorkflowNode } from "@/services/workflow.service";
-import { useEditorStore } from "@/stores/editorStore";
+import { useEditorStore } from "@/stores/editor.store";
+import { NodeToolbar } from "./NodeToolbar";
 
 const BOX_SIZE = 96;
 
 export function AgentNode({ id, data, selected }: NodeProps<Node<WorkflowNode>>) {
    const openModal = useEditorStore((s) => s.openModal);
+   const openConfig = useEditorStore((s) => s.openConfig);
+   const { deleteElements } = useReactFlow();
+   const edges = useEdges();
+   const hasOutgoing = edges.some((e) => e.source === id);
+   const [toolbarVisible, setToolbarVisible] = useState(false);
+   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+   const showToolbar = () => {
+      if (hideTimer.current) clearTimeout(hideTimer.current);
+      setToolbarVisible(true);
+   };
+
+   const hideToolbar = () => {
+      hideTimer.current = setTimeout(() => setToolbarVisible(false), 120);
+   };
 
    return (
-      <div className="relative" style={{ width: BOX_SIZE }}>
+      <div
+         className="relative"
+         style={{ width: BOX_SIZE }}
+         onMouseEnter={showToolbar}
+         onMouseLeave={hideToolbar}
+      >
          <div
             style={{ width: BOX_SIZE, height: BOX_SIZE, borderWidth: "1.5px" }}
+            onClick={() => openConfig(id)}
             className={`
                relative flex items-center justify-center rounded-md cursor-pointer
                bg-[hsl(0,0%,17%)] [background-clip:padding-box] transition-shadow
@@ -19,6 +42,13 @@ export function AgentNode({ id, data, selected }: NodeProps<Node<WorkflowNode>>)
                ${selected ? "shadow-[0_0_0_6px_oklch(100%_0_89.88_/_0.4)]" : ""}
             `}
          >
+            <NodeToolbar
+               visible={toolbarVisible || (selected ?? false)}
+               onDelete={() => deleteElements({ nodes: [{ id }] })}
+               onMouseEnter={showToolbar}
+               onMouseLeave={hideToolbar}
+            />
+
             <Handle
                type="target"
                position={Position.Left}
@@ -31,9 +61,14 @@ export function AgentNode({ id, data, selected }: NodeProps<Node<WorkflowNode>>)
             />
 
             {data.image_url ? (
-               <img src={data.image_url} alt={data.label} className="w-12 h-12 object-contain p-1.5 rounded-full" />
+               <img
+                  src={data.image_url}
+                  alt={data.label}
+                  className="object-contain rounded-sm"
+                  style={{ width: 48, height: 48 }}
+               />
             ) : (
-               <div className="w-12 h-12 rounded-sm bg-white/8 flex items-center justify-center">
+               <div className="flex items-center justify-center rounded-sm bg-white/8" style={{ width: 48, height: 48 }}>
                   <span className="text-[11px] font-mono text-white/40 uppercase tracking-widest text-center leading-tight px-1">
                      {data.label?.slice(0, 4) ?? "?"}
                   </span>
@@ -41,14 +76,7 @@ export function AgentNode({ id, data, selected }: NodeProps<Node<WorkflowNode>>)
             )}
          </div>
 
-         {/* + button on right edge */}
-         <button
-            onPointerDown={(e) => { e.stopPropagation(); openModal(id); }}
-            className="nodrag absolute top-1/2 -translate-y-1/2 -right-8 w-6 h-6 rounded-full bg-[#2a2a2a] border border-white/15 flex items-center justify-center text-white/40 hover:text-white hover:border-white/40 hover:bg-[#333] transition-all cursor-pointer opacity-0 group-hover:opacity-100"
-         >
-            <Plus size={12} strokeWidth={2} />
-         </button>
-
+         {/* Label + action subtitle */}
          <div
             className="absolute pointer-events-none text-center"
             style={{ top: "100%", marginTop: 8, left: "50%", transform: "translateX(-50%)", minWidth: BOX_SIZE * 2 }}
@@ -65,6 +93,22 @@ export function AgentNode({ id, data, selected }: NodeProps<Node<WorkflowNode>>)
                </p>
             )}
          </div>
+
+         {/* Plus button — line + square button, only when no outgoing edge */}
+         {!hasOutgoing && (
+            <div
+               className="nodrag absolute flex items-center"
+               style={{ top: BOX_SIZE / 2, left: BOX_SIZE + 4, transform: "translateY(-50%)", zIndex: 0 }}
+            >
+               <div className="w-[60px] h-[2px] bg-[oklch(42%_0_0)]" />
+               <button
+                  onClick={() => openModal(id)}
+                  className="w-6 h-6 rounded-[4px] bg-[hsl(0,0%,17%)] text-[oklch(90.67%_0_89.88)] hover:bg-[oklch(31.71%_0_89.88)] hover:text-[oklch(95.51%_0_89.88)] transition-colors cursor-pointer inline-flex items-center justify-center shrink-0"
+               >
+                  <Plus size={12} strokeWidth={3} />
+               </button>
+            </div>
+         )}
       </div>
    );
 }

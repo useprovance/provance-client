@@ -1,11 +1,24 @@
 import { queryClient } from "@/lib/queryClient";
 import { workflowService } from "@/services/workflow.service";
+import { agentService } from "@/services/agent.service";
 
 export const workflowsLoader = async () => {
    try {
       return await queryClient.query({
          queryKey: ["workflows"],
          queryFn: () => workflowService.getAll(),
+         staleTime: "static",
+      });
+   } catch {
+      return null;
+   }
+};
+
+export const agentsLoader = async () => {
+   try {
+      return await queryClient.query({
+         queryKey: ["agents"],
+         queryFn: () => agentService.getAll(),
          staleTime: "static",
       });
    } catch {

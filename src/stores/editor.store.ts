@@ -10,24 +10,11 @@ import {
    type NodeChange,
 } from "@xyflow/react";
 import type { Workflow, WorkflowNode } from "@/services/workflow.service";
-
-const CHOICE_NODE: Node = {
-   id: "__choice__",
-   type: "choice",
-   position: { x: 0, y: 0 },
-   data: {},
-   draggable: false,
-};
-
-function withChoiceSync(nodes: Node[]): Node[] {
-   const real = nodes.filter((n) => n.id !== "__choice__");
-   const hasChoice = nodes.some((n) => n.id === "__choice__");
-   if (real.length === 0 && !hasChoice) return [CHOICE_NODE];
-   if (real.length > 0 && hasChoice) return real;
-   return nodes;
-}
+import { workflowService } from "@/services/workflow.service";
+import { withChoiceSync } from "@/utils/editor.utils";
 
 interface EditorStore {
+   workflowId: string;
    nodes: Node[];
    edges: Edge[];
    onNodesChange: (changes: NodeChange[]) => void;
@@ -43,10 +30,17 @@ interface EditorStore {
       agent: { agentId: string; label: string; image_url: string | null },
       action: { key: string; label: string; endpoint?: string }
    ) => void;
+
+   isConfigOpen: boolean;
+   configNodeId: string | null;
+   openConfig: (nodeId: string) => void;
+   closeConfig: () => void;
+   updateNodeConfig: (nodeId: string, config: Record<string, unknown>) => void;
 }
 
 export const useEditorStore = create<EditorStore>((set, get) => ({
-   nodes: [CHOICE_NODE],
+   workflowId: "",
+   nodes: withChoiceSync([]),
    edges: [],
    isModalOpen: false,
    sourceNodeId: null,
@@ -66,8 +60,9 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
    onConnect: (connection) =>
       set((state) => ({ edges: addEdge({ ...connection, type: "provance" }, state.edges) })),
 
-   initCanvas: (workflow) =>
+   initCanvas: (workflow) => {
       set({
+         workflowId: workflow.id,
          nodes: withChoiceSync(
             workflow.canvas.nodes.map((n) => ({
                id: n.id,
@@ -77,7 +72,20 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
             }))
          ),
          edges: workflow.canvas.edges.map((e) => ({ ...e, type: "provance" })),
-      }),
+      });
+   },
+
+   isConfigOpen: false,
+   configNodeId: null,
+
+   openConfig: (nodeId) => set({ isConfigOpen: true, configNodeId: nodeId }),
+   closeConfig: () => set({ isConfigOpen: false, configNodeId: null }),
+   updateNodeConfig: (nodeId, config) =>
+      set((state) => ({
+         nodes: state.nodes.map((n) =>
+            n.id === nodeId ? { ...n, data: { ...n.data, config } } : n
+         ),
+      })),
 
    openModal: (sourceNodeId = null) =>
       set({ isModalOpen: true, sourceNodeId }),
@@ -120,3 +128,23 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
       set({ nodes: updatedNodes, edges: newEdges, isModalOpen: false, sourceNodeId: null });
    },
 }));
+
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+
+useEditorStore.subscribe((state, prev) => {
+   if (state.nodes === prev.nodes && state.edges === prev.edges) return;
+   if (saveTimer) clearTimeout(saveTimer);
+   saveTimer = setTimeout(() => {
+      const { workflowId: storedId, nodes, edges } = useEditorStore.getState();
+      const workflowId =
+         storedId || window.location.pathname.match(/\/workflows\/([^/]+)/)?.[1] || "";
+      const realNodes = nodes.filter((n) => n.id !== "__choice__");
+      if (!workflowId || realNodes.length === 0) return;
+      void workflowService.update(workflowId, {
+         canvas: {
+            nodes: realNodes.map((n) => ({ ...n.data, position: n.position })) as WorkflowNode[],
+            edges: edges.map((e) => ({ id: e.id, source: e.source, target: e.target })),
+         },
+      });
+   }, 2000);
+});

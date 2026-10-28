@@ -12,8 +12,9 @@ import { AgentNode } from "./AgentNode";
 import { TriggerNode } from "./TriggerNode";
 import { EditorEdge } from "./EditorEdge";
 import { AddAgentModal } from "./AddAgentModal";
+import { NodeConfigSheet } from "./NodeConfigSheet";
 import { EmptyCanvasNode } from "./EmptyCanvasNode";
-import { useEditorStore } from "@/stores/editorStore";
+import { useEditorStore } from "@/stores/editor.store";
 import type { Workflow } from "@/services/workflow.service";
 
 const nodeTypes = { agent: AgentNode, trigger: TriggerNode, choice: EmptyCanvasNode };
@@ -101,6 +102,7 @@ export function EditorCanvas({ workflow }: { workflow: Workflow }) {
             </ReactFlow>
 
             <AddAgentModal />
+            <NodeConfigSheet />
          </div>
       </div>
    );

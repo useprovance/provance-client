@@ -50,6 +50,7 @@ export interface Agent {
    chain_type: string;
    contract_address: string;
    owner_address: string;
+   agent_wallet: string | null;
    name: string;
    description: string;
    image_url: string | null;
@@ -83,6 +84,7 @@ export interface AgentPreview {
    registrations: { agentId: number; agentRegistry: string }[];
    x402_support: boolean;
    supported_trust: string[];
+   agent_wallet: string | null;
 }
 
 class AgentService extends BaseApiService {
@@ -90,6 +92,15 @@ class AgentService extends BaseApiService {
       try {
          const res = await this.api.get<{ agents: Agent[] }>('/agents');
          return res.data.agents;
+      } catch (error) {
+         throw this.handleError(error);
+      }
+   }
+
+   async getById(id: string): Promise<Agent> {
+      try {
+         const res = await this.api.get<{ agent: Agent }>(`/agents/${id}`);
+         return res.data.agent;
       } catch (error) {
          throw this.handleError(error);
       }
