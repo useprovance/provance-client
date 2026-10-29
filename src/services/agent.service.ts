@@ -97,6 +97,15 @@ class AgentService extends BaseApiService {
       }
    }
 
+   async exploreAll(): Promise<Agent[]> {
+      try {
+         const res = await this.api.get<{ agents: Agent[] }>('/agents/explore');
+         return res.data.agents;
+      } catch (error) {
+         throw this.handleError(error);
+      }
+   }
+
    async getById(id: string): Promise<Agent> {
       try {
          const res = await this.api.get<{ agent: Agent }>(`/agents/${id}`);

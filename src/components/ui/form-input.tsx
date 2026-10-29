@@ -50,7 +50,7 @@ export function FormInput({
 
    return (
       <div className={cn("flex flex-col gap-1.5", className)}>
-         <label htmlFor={id} className="text-[11px] font-mono uppercase tracking-widest text-white/40">
+         <label htmlFor={id} className="text-[11px] font-mono uppercase tracking-widest text-white/60">
             {label}
             {required && <span className="text-orange ml-1">*</span>}
          </label>

@@ -13,6 +13,7 @@ import { TriggerNode } from "./TriggerNode";
 import { EditorEdge } from "./EditorEdge";
 import { AddAgentModal } from "./AddAgentModal";
 import { NodeConfigSheet } from "./NodeConfigSheet";
+import { EditorBottomPanel } from "./EditorBottomPanel";
 import { EmptyCanvasNode } from "./EmptyCanvasNode";
 import { useEditorStore } from "@/stores/editor.store";
 import type { Workflow } from "@/services/workflow.service";
@@ -34,7 +35,8 @@ export function EditorCanvas({ workflow }: { workflow: Workflow }) {
       <div className="flex w-full h-full">
          {aiPanelOpen && <AiChatPanel onCollapse={() => setAiPanelOpen(false)} />}
 
-         <div className="relative flex-1 min-w-0 bg-[#141414] overflow-hidden">
+         <div className="flex flex-col flex-1 min-w-0">
+         <div className="relative flex-1 min-h-0 bg-[#141414] overflow-hidden">
             {!aiPanelOpen && (
                <button
                   onClick={() => setAiPanelOpen(true)}
@@ -71,7 +73,7 @@ export function EditorCanvas({ workflow }: { workflow: Workflow }) {
             >
                <Background variant={BackgroundVariant.Dots} gap={16} size={1} color="oklch(38.67% 0 89.88)" />
                <MiniMap
-                  position="bottom-left"
+                  position="bottom-right"
                   pannable
                   zoomable
                   nodeColor="hsl(0,0%,45%)"
@@ -103,6 +105,8 @@ export function EditorCanvas({ workflow }: { workflow: Workflow }) {
 
             <AddAgentModal />
             <NodeConfigSheet />
+         </div>
+         <EditorBottomPanel />
          </div>
       </div>
    );

@@ -1,4 +1,46 @@
-import type { Node } from "@xyflow/react";
+import type { Node, Edge } from "@xyflow/react";
+import type { WorkflowNode } from "@/services/workflow.service";
+
+/**
+ * getNodeAncestors
+ *
+ * IN:  nodeId  — the node ID whose ancestors we want
+ *      nodes   — all WorkflowNodes in the canvas
+ *      edges   — all WorkflowEdges in the canvas
+ *
+ * OUT: WorkflowNode[] — every ancestor in BFS order (closest first),
+ *      triggers excluded
+ *
+ * Example:
+ *   trigger → geckoterminal → goplus
+ *   getNodeAncestors("goplus-id", nodes, edges)
+ *   → [geckoterminal WorkflowNode]
+ */
+export function getNodeAncestors(
+  nodeId: string,
+  nodes: Node[],
+  edges: Edge[]
+): WorkflowNode[] {
+  const ancestors: WorkflowNode[] = [];
+  const visited = new Set<string>();
+  const queue: string[] = [nodeId];
+
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    if (visited.has(current)) continue;
+    visited.add(current);
+
+    for (const edge of edges.filter((e) => e.target === current)) {
+      const parent = nodes.find((n) => n.id === edge.source);
+      if (!parent || parent.type === "trigger") continue;
+
+      ancestors.push(parent.data as WorkflowNode);
+      queue.push(edge.source);
+    }
+  }
+
+  return ancestors;
+}
 
 const CHOICE_NODE: Node = {
    id: "__choice__",

@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Search, X, ChevronLeft, ChevronRight, ExternalLink, Wallet } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { agentService, type Agent } from "@/services/agent.service";
@@ -7,16 +8,14 @@ import { useEditorStore } from "@/stores/editor.store";
 
 export function AddAgentModal() {
    const { isModalOpen, closeModal, addAgentNode } = useEditorStore();
-   const [agents, setAgents] = useState<Agent[]>([]);
    const [search, setSearch] = useState("");
    const [selected, setSelected] = useState<Agent | null>(null);
 
-   useEffect(() => {
-      if (!isModalOpen) return;
-      setSearch("");
-      setSelected(null);
-      void agentService.getAll().then(setAgents);
-   }, [isModalOpen]);
+   const { data: agents = [], isLoading } = useQuery({
+      queryKey: ["agents", "explore"],
+      queryFn: () => agentService.exploreAll(),
+      enabled: isModalOpen,
+   });
 
    const filtered = agents.filter((a) =>
       !search || a.name.toLowerCase().includes(search.toLowerCase())
@@ -27,7 +26,7 @@ export function AddAgentModal() {
    const webEndpoint = selected?.services.web?.endpoint;
 
    return (
-      <Dialog open={isModalOpen} onOpenChange={(o) => { if (!o) closeModal(); }}>
+      <Dialog open={isModalOpen} onOpenChange={(o) => { if (!o) { closeModal(); setSelected(null); setSearch(""); } }}>
          <DialogContent
             aria-describedby={undefined}
             className="bg-[#141414] border border-white/10 p-0 gap-0 flex flex-col sm:max-w-[480px] max-h-[85vh] [&>button]:hidden overflow-hidden"
@@ -62,7 +61,19 @@ export function AddAgentModal() {
                   </div>
 
                   <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent]">
-                     {filtered.length === 0 ? (
+                     {isLoading ? (
+                        <div className="p-2 flex flex-col gap-0.5">
+                           {[1, 2, 3, 4].map((i) => (
+                              <div key={i} className="flex items-center gap-3 px-3 py-2.5">
+                                 <div className="w-9 h-9 rounded-full bg-white/5 animate-pulse shrink-0" />
+                                 <div className="flex flex-col gap-1.5 flex-1">
+                                    <div className="h-3 w-28 rounded bg-white/8 animate-pulse" />
+                                    <div className="h-2.5 w-44 rounded bg-white/5 animate-pulse" />
+                                 </div>
+                              </div>
+                           ))}
+                        </div>
+                     ) : filtered.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-16 gap-2">
                            <p className="text-[13px] text-white/50">No agents found</p>
                            <p className="text-[11px] text-white/40">Add agents from the Agents page first</p>
@@ -173,12 +184,14 @@ export function AddAgentModal() {
                               {actions.map((action) => (
                                  <button
                                     key={action.key}
-                                    onClick={() =>
+                                    onClick={() => {
                                        addAgentNode(
                                           { agentId: selected.id, label: selected.name, image_url: selected.image_url },
                                           { key: action.key, label: action.name, endpoint: action.endpoint }
-                                       )
-                                    }
+                                       );
+                                       setSelected(null);
+                                       setSearch("");
+                                    }}
                                     className="w-full flex items-start gap-3 px-3 py-3 bg-white/4 border border-white/6 hover:bg-white/7 hover:border-white/12 transition-colors cursor-pointer text-left group"
                                  >
                                     <span className={`mt-0.5 text-[9px] font-mono font-bold tracking-wider px-1.5 py-0.5 shrink-0 ${action.method === "GET" ? "bg-sky-500/10 text-sky-400" : "bg-emerald-500/10 text-emerald-400"}`}>

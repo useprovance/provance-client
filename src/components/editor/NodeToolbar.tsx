@@ -18,25 +18,25 @@ export function NodeToolbar({ visible, onDelete, onMouseEnter, onMouseLeave }: N
       <div
          onMouseEnter={onMouseEnter}
          onMouseLeave={onMouseLeave}
-         className={`nodrag absolute -top-9 left-1/2 -translate-x-1/2 flex items-center gap-px bg-[hsl(0,0%,13%)] border border-white/10 rounded px-0.5 py-0.5 transition-opacity duration-150 ${visible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+         className={`nodrag absolute -top-11 left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-[hsl(0,0%,13%)] border border-white/10 rounded-md px-1 py-1 transition-opacity duration-150 ${visible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
       >
          <button
             onClick={onDelete}
             title="Delete"
-            className="w-5 h-5 flex items-center justify-center rounded text-white/40 hover:text-red-400 hover:bg-white/10 transition-colors cursor-pointer"
+            className="w-7 h-7 flex items-center justify-center rounded text-white/40 hover:text-red-400 hover:bg-white/10 transition-colors cursor-pointer"
          >
-            <Trash2 size={9} strokeWidth={2} />
+            <Trash2 size={12} strokeWidth={2} />
          </button>
 
-         <div className="w-px h-2.5 bg-white/10 mx-0.5" />
+         <div className="w-px h-4 bg-white/10 mx-0.5" />
 
          <DropdownMenu>
             <DropdownMenuTrigger asChild>
                <button
                   title="More"
-                  className="w-5 h-5 flex items-center justify-center rounded text-white/40 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                  className="w-7 h-7 flex items-center justify-center rounded text-white/40 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                >
-                  <MoreHorizontal size={10} strokeWidth={2} />
+                  <MoreHorizontal size={13} strokeWidth={2} />
                </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
