@@ -12,13 +12,11 @@ import {
 import type {
 	Workflow,
 	RunEvent,
-	NodeRunResult,
 	WorkflowRun,
+	WorkflowNode,
 } from '@/services/workflow.service';
 import { workflowService } from '@/services/workflow.service';
 import { withChoiceSync } from '@/utils/editor.utils';
-
-export type { NodeRunResult, WorkflowRun };
 
 export interface RunLog {
 	time: string;
@@ -30,9 +28,11 @@ interface EditorStore {
 	workflowId: string;
 	nodes: Node[];
 	edges: Edge[];
+	viewport: Workflow['viewport'];
 	onNodesChange: (changes: NodeChange[]) => void;
 	onEdgesChange: (changes: EdgeChange[]) => void;
 	onConnect: (connection: Connection) => void;
+	setViewport: (viewport: Workflow['viewport']) => void;
 	initCanvas: (workflow: Workflow) => void;
 
 	isModalOpen: boolean;
@@ -57,6 +57,7 @@ interface EditorStore {
 	runs: WorkflowRun[];
 	setLogsOpen: (open: boolean) => void;
 	setPanelTab: (tab: 'logs' | 'runs') => void;
+	clearLogs: () => void;
 	triggerRun: () => Promise<void>;
 	stopRun: () => void;
 }
@@ -65,6 +66,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 	workflowId: '',
 	nodes: withChoiceSync([]),
 	edges: [],
+	viewport: { x: 0, y: 0, zoom: 1 },
 	isModalOpen: false,
 	sourceNodeId: null,
 
@@ -87,6 +89,10 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 		})),
 
 	initCanvas: workflow => {
+		const savedLogs = localStorage.getItem(`provance_logs_${workflow.id}`);
+		const savedViewport = localStorage.getItem(
+			`provance_viewport_${workflow.id}`
+		);
 		set({
 			workflowId: workflow.id,
 			nodes: withChoiceSync(
@@ -99,9 +105,15 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 			),
 			edges: workflow.canvas.edges.map(e => ({ ...e, type: 'provance' })),
 			runs: [],
+			logs: savedLogs ? (JSON.parse(savedLogs) as RunLog[]) : [],
+			viewport: savedViewport
+				? (JSON.parse(savedViewport) as Workflow['viewport'])
+				: (workflow.viewport ?? { x: 0, y: 0, zoom: 1 }),
 		});
 		void workflowService.getRuns(workflow.id).then(runs => set({ runs }));
 	},
+
+	setViewport: viewport => set({ viewport }),
 
 	isConfigOpen: false,
 	configNodeId: null,
@@ -126,11 +138,16 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 	runs: [],
 	setLogsOpen: open => set({ logsOpen: open }),
 	setPanelTab: tab => set({ panelTab: tab }),
+	clearLogs: () => {
+		const { workflowId } = get();
+		localStorage.removeItem(`provance_logs_${workflowId}`);
+		set({ logs: [] });
+	},
 	triggerRun: async () => {
 		const { workflowId } = get();
 		if (!workflowId) return;
 
-		set({ isRunning: true, logsOpen: true, panelTab: 'logs', logs: [] });
+		set({ isRunning: true, logsOpen: true, panelTab: 'logs' });
 
 		let runId: string;
 		try {
@@ -140,7 +157,14 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 			const msg = err instanceof Error ? err.message : 'Failed to start run';
 			set(s => ({
 				isRunning: false,
-				logs: [...s.logs, { time: new Date().toLocaleTimeString(), level: 'error' as const, message: msg }],
+				logs: [
+					...s.logs,
+					{
+						time: new Date().toLocaleTimeString(),
+						level: 'error' as const,
+						message: msg,
+					},
+				],
 			}));
 			return;
 		}
@@ -150,9 +174,17 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 		workflowService.stream(runId, (event: RunEvent) => {
 			const time = new Date().toLocaleTimeString();
 			if (event.type === 'log') {
-				set(s => ({
-					logs: [...s.logs, { time, level: event.level, message: event.message }],
-				}));
+				set(s => {
+					const updated = [
+						...s.logs,
+						{ time, level: event.level, message: event.message },
+					];
+					localStorage.setItem(
+						`provance_logs_${workflowId}`,
+						JSON.stringify(updated)
+					);
+					return { logs: updated };
+				});
 			} else if (event.type === 'complete') {
 				const run: WorkflowRun = {
 					id: runId,
@@ -168,7 +200,14 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 			} else if (event.type === 'stream_error') {
 				set(s => ({
 					isRunning: false,
-					logs: [...s.logs, { time, level: 'error' as const, message: 'Lost connection to run stream' }],
+					logs: [
+						...s.logs,
+						{
+							time,
+							level: 'error' as const,
+							message: 'Lost connection to run stream',
+						},
+					],
 				}));
 			}
 		});
@@ -229,7 +268,14 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
 useEditorStore.subscribe((state, prev) => {
+	if (state.viewport !== prev.viewport && state.workflowId) {
+		localStorage.setItem(
+			`provance_viewport_${state.workflowId}`,
+			JSON.stringify(state.viewport)
+		);
+	}
 	if (state.nodes === prev.nodes && state.edges === prev.edges) return;
+	// TODO: slight stutter on first drag — clearTimeout/setTimeout fires on every mousemove, investigate debounce that doesn't reset mid-drag
 	if (saveTimer) clearTimeout(saveTimer);
 	saveTimer = setTimeout(() => {
 		const { workflowId: storedId, nodes, edges } = useEditorStore.getState();

@@ -236,7 +236,7 @@ type PanelTab = "logs" | "runs";
 
 export function EditorBottomPanel() {
    const navigate = useNavigate();
-   const { workflowId, isRunning, logsOpen, logs, runs, setLogsOpen, panelTab: tab, setPanelTab: setTab, triggerRun, stopRun } = useEditorStore();
+   const { workflowId, isRunning, logsOpen, logs, runs, setLogsOpen, panelTab: tab, setPanelTab: setTab, triggerRun, stopRun, clearLogs } = useEditorStore();
 
    const [panelHeight, setPanelHeight] = useState(MIN_HEIGHT);
 
@@ -372,6 +372,14 @@ export function EditorBottomPanel() {
                      </div>
                   ) : (
                      <div className="flex flex-col">
+                        <div className="flex items-center justify-end px-4 py-1.5 border-b border-[#1e1e1e]">
+                           <button
+                              onClick={clearLogs}
+                              className="text-[11px] text-white/40 hover:text-red-400 transition-colors cursor-pointer"
+                           >
+                              Clear logs
+                           </button>
+                        </div>
                         {logs.map((log, i) => (
                            <div key={i} className="flex items-start gap-3 px-4 py-1.5 border-b border-[#1e1e1e] last:border-0">
                               <span className="text-[11px] text-white/65 shrink-0 mt-px">{log.time}</span>

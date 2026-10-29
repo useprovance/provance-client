@@ -22,7 +22,7 @@ const nodeTypes = { agent: AgentNode, trigger: TriggerNode, choice: EmptyCanvasN
 const edgeTypes = { provance: EditorEdge };
 
 export function EditorCanvas({ workflow }: { workflow: Workflow }) {
-   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, initCanvas } = useEditorStore();
+   const { nodes, edges, viewport, onNodesChange, onEdgesChange, onConnect, initCanvas, setViewport } = useEditorStore();
    const [aiPanelOpen, setAiPanelOpen] = useState(true);
    const [minimapVisible, setMinimapVisible] = useState(false);
    const minimapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -30,6 +30,11 @@ export function EditorCanvas({ workflow }: { workflow: Workflow }) {
    useEffect(() => {
       initCanvas(workflow);
    }, [workflow.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+   const savedVp = localStorage.getItem(`provance_viewport_${workflow.id}`);
+   const initialViewport: Workflow["viewport"] = savedVp
+      ? JSON.parse(savedVp)
+      : (workflow.viewport ?? { x: 0, y: 0, zoom: 1 });
 
    return (
       <div className="flex w-full h-full">
@@ -56,7 +61,7 @@ export function EditorCanvas({ workflow }: { workflow: Workflow }) {
                nodeTypes={nodeTypes}
                edgeTypes={edgeTypes}
                defaultEdgeOptions={{ type: "provance" }}
-               defaultViewport={workflow.viewport ?? { x: 400, y: 280, zoom: 1 }}
+               defaultViewport={initialViewport}
                proOptions={{ hideAttribution: true }}
                snapToGrid
                snapGrid={[20, 20]}
@@ -66,7 +71,8 @@ export function EditorCanvas({ workflow }: { workflow: Workflow }) {
                   if (minimapTimer.current) clearTimeout(minimapTimer.current);
                   setMinimapVisible(true);
                }}
-               onMoveEnd={() => {
+               onMoveEnd={(_, vp) => {
+                  setViewport(vp);
                   minimapTimer.current = setTimeout(() => setMinimapVisible(false), 1000);
                }}
                style={{ background: "transparent", width: "100%", height: "100%" }}
