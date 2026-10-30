@@ -312,6 +312,19 @@ export function NodeConfigSheet() {
 
 			{/* Fields */}
 			<div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-5">
+				{action?.payment !== undefined && (
+					<div className="flex items-center justify-between px-4 py-3 bg-white/4 ring-1 ring-white/8 ring-offset-2 ring-offset-[#141414]">
+						<div className="flex items-center gap-2.5">
+							<span className="text-[12px] text-white/40">Price</span>
+							<span className="text-[9px] font-mono font-bold uppercase tracking-widest text-white/40 bg-white/6 px-2 py-0.5">
+								x402
+							</span>
+						</div>
+						<span className="text-[13px] font-medium text-white/70">
+							${action.payment.amount} {action.payment.token}
+						</span>
+					</div>
+				)}
 				{!agent ? (
 					<>
 						{[1, 2, 3].map(i => (
@@ -329,23 +342,6 @@ export function NodeConfigSheet() {
 					</div>
 				) : (
 					<>
-						{action.price !== undefined && (
-							<div
-								className="flex items-center justify-between py-3 px-4"
-								style={{
-									background: 'oklch(18% 0 0)',
-									border: '1px solid oklch(28% 0 0)',
-								}}
-							>
-								<div className="flex items-center gap-2 text-white/50 text-[13px]">
-									<DollarSign size={13} strokeWidth={2} />
-									<span>Price per call</span>
-								</div>
-								<span className="text-[13px] font-medium text-white/80">
-									${action.price.amount} / {action.price.unit}
-								</span>
-							</div>
-						)}
 						{activeTabData.fields.map(f => (
 							<Field
 								key={f.key}

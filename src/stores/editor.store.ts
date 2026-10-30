@@ -13,20 +13,17 @@ import type {
 	Workflow,
 	RunEvent,
 	WorkflowRun,
+	WorkflowLog,
 	WorkflowNode,
+	NodeRunResult,
+	PaymentContext,
 } from '@/services/workflow.service';
 import { workflowService } from '@/services/workflow.service';
-import { withChoiceSync } from '@/utils/editor.utils';
-
-export interface RunLog {
-	time: string;
-	level: 'info' | 'warn' | 'error';
-	message: string;
-}
 
 interface EditorStore {
+	// canvas
 	workflowId: string;
-	nodes: Node[];
+	nodes: Node<WorkflowNode>[];
 	edges: Edge[];
 	viewport: Workflow['viewport'];
 	onNodesChange: (changes: NodeChange[]) => void;
@@ -35,50 +32,49 @@ interface EditorStore {
 	setViewport: (viewport: Workflow['viewport']) => void;
 	initCanvas: (workflow: Workflow) => void;
 
+	// add agent modal
 	isModalOpen: boolean;
 	sourceNodeId: string | null;
 	openModal: (sourceNodeId?: string | null) => void;
 	closeModal: () => void;
 	addAgentNode: (
 		agent: { agentId: string; label: string; image_url: string | null },
-		action: { key: string; label: string; endpoint?: string }
+		action: { key: string; label: string; endpoint?: string; x402?: boolean }
 	) => void;
 
+	// node config sheet
 	isConfigOpen: boolean;
 	configNodeId: string | null;
 	openConfig: (nodeId: string) => void;
 	closeConfig: () => void;
 	updateNodeConfig: (nodeId: string, config: Record<string, unknown>) => void;
 
+	// run & logs
 	isRunning: boolean;
+	runningNodeId: string | null;
 	logsOpen: boolean;
 	panelTab: 'logs' | 'runs';
-	logs: RunLog[];
+	logs: WorkflowLog[];
 	runs: WorkflowRun[];
 	setLogsOpen: (open: boolean) => void;
 	setPanelTab: (tab: 'logs' | 'runs') => void;
 	clearLogs: () => void;
-	triggerRun: () => Promise<void>;
+	triggerRun: (paymentContext?: PaymentContext) => Promise<void>;
 	stopRun: () => void;
 }
 
 export const useEditorStore = create<EditorStore>((set, get) => ({
 	workflowId: '',
-	nodes: withChoiceSync([]),
+	nodes: [],
 	edges: [],
 	viewport: { x: 0, y: 0, zoom: 1 },
 	isModalOpen: false,
 	sourceNodeId: null,
 
 	onNodesChange: changes =>
-		set(state => {
-			const filtered = changes.filter(
-				c => !(c.type === 'position' && 'id' in c && c.id === '__choice__')
-			);
-			return {
-				nodes: withChoiceSync(applyNodeChanges(filtered, state.nodes)),
-			};
-		}),
+		set(state => ({
+			nodes: applyNodeChanges(changes, state.nodes) as Node<WorkflowNode>[],
+		})),
 
 	onEdgesChange: changes =>
 		set(state => ({ edges: applyEdgeChanges(changes, state.edges) })),
@@ -95,17 +91,15 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 		);
 		set({
 			workflowId: workflow.id,
-			nodes: withChoiceSync(
-				workflow.canvas.nodes.map(n => ({
-					id: n.id,
-					type: n.type,
-					position: n.position,
-					data: n,
-				}))
-			),
+			nodes: workflow.canvas.nodes.map(n => ({
+				id: n.id,
+				type: n.type,
+				position: n.position,
+				data: n,
+			})),
 			edges: workflow.canvas.edges.map(e => ({ ...e, type: 'provance' })),
 			runs: [],
-			logs: savedLogs ? (JSON.parse(savedLogs) as RunLog[]) : [],
+			logs: savedLogs ? (JSON.parse(savedLogs) as WorkflowLog[]) : [],
 			viewport: savedViewport
 				? (JSON.parse(savedViewport) as Workflow['viewport'])
 				: (workflow.viewport ?? { x: 0, y: 0, zoom: 1 }),
@@ -132,6 +126,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 	closeModal: () => set({ isModalOpen: false, sourceNodeId: null }),
 
 	isRunning: false,
+	runningNodeId: null,
 	logsOpen: false,
 	panelTab: 'logs',
 	logs: [],
@@ -143,71 +138,81 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 		localStorage.removeItem(`provance_logs_${workflowId}`);
 		set({ logs: [] });
 	},
-	triggerRun: async () => {
-		const { workflowId } = get();
+	triggerRun: async (paymentContext?: PaymentContext) => {
+		const { workflowId, nodes } = get();
 		if (!workflowId) return;
 
-		set({ isRunning: true, logsOpen: true, panelTab: 'logs' });
+		set({ isRunning: true, logsOpen: true, panelTab: 'runs' });
 
 		let runId: string;
 		try {
-			const res = await workflowService.run(workflowId);
+			const res = await workflowService.run(workflowId, paymentContext);
 			runId = res.runId;
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : 'Failed to start run';
 			set(s => ({
 				isRunning: false,
-				logs: [
-					...s.logs,
-					{
-						time: new Date().toLocaleTimeString(),
-						level: 'error' as const,
-						message: msg,
-					},
-				],
+				logs: [...s.logs, { time: new Date().toLocaleTimeString(), level: 'error' as const, message: msg }],
 			}));
 			return;
 		}
 
 		const startedAt = new Date().toISOString();
 
+		// Push the in-progress run immediately so the runs table shows it live
+		set(s => ({
+			runs: [{ id: runId, status: 'running', startedAt, nodeResults: [] }, ...s.runs],
+		}));
+
+		// Track per-node start time + input so we can build NodeRunResult on success/error
+		const nodeStartData = new Map<string, { startedAt: string; input: Record<string, unknown> }>();
+
 		workflowService.stream(runId, (event: RunEvent) => {
 			const time = new Date().toLocaleTimeString();
+
 			if (event.type === 'log') {
 				set(s => {
-					const updated = [
-						...s.logs,
-						{ time, level: event.level, message: event.message },
-					];
-					localStorage.setItem(
-						`provance_logs_${workflowId}`,
-						JSON.stringify(updated)
-					);
+					const updated = [...s.logs, { time, level: event.level, message: event.message }];
+					localStorage.setItem(`provance_logs_${workflowId}`, JSON.stringify(updated));
 					return { logs: updated };
 				});
-			} else if (event.type === 'complete') {
-				const run: WorkflowRun = {
-					id: runId,
-					status: event.status,
-					startedAt,
-					nodeResults: event.nodeResults,
+			} else if (event.type === 'node_start') {
+				nodeStartData.set(event.nodeId, { startedAt: new Date().toISOString(), input: event.input });
+				set({ runningNodeId: event.nodeId });
+			} else if (event.type === 'node_success' || event.type === 'node_error') {
+				const start = nodeStartData.get(event.nodeId);
+				const nodeLabel = nodes.find(n => n.id === event.nodeId)?.data.label ?? event.nodeId;
+				const result: NodeRunResult = {
+					nodeId: event.nodeId,
+					label: nodeLabel,
+					status: event.type === 'node_success' ? 'success' : 'error',
+					input: start?.input ?? {},
+					output: event.type === 'node_success' ? event.output : {},
+					error: event.type === 'node_error' ? event.error : undefined,
+					startedAt: start?.startedAt ?? new Date().toISOString(),
+					durationMs: start ? Date.now() - new Date(start.startedAt).getTime() : 0,
 				};
 				set(s => ({
+					runningNodeId: null,
+					runs: s.runs.map(r => r.id === runId
+						? { ...r, nodeResults: [...r.nodeResults, result] }
+						: r
+					),
+				}));
+			} else if (event.type === 'complete') {
+				set(s => ({
 					isRunning: false,
-					runs: [run, ...s.runs],
-					panelTab: 'runs',
+					runningNodeId: null,
+					runs: s.runs.map(r => r.id === runId
+						? { ...r, status: event.status, nodeResults: event.nodeResults }
+						: r
+					),
 				}));
 			} else if (event.type === 'stream_error') {
 				set(s => ({
 					isRunning: false,
-					logs: [
-						...s.logs,
-						{
-							time,
-							level: 'error' as const,
-							message: 'Lost connection to run stream',
-						},
-					],
+					runningNodeId: null,
+					logs: [...s.logs, { time, level: 'error' as const, message: 'Lost connection to run stream' }],
 				}));
 			}
 		});
@@ -218,13 +223,12 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 		const { nodes, edges, sourceNodeId } = get();
 		const newId = crypto.randomUUID();
 
-		const realNodes = nodes.filter(n => n.id !== '__choice__');
 		const sourceNode = sourceNodeId
-			? realNodes.find(n => n.id === sourceNodeId)
+			? nodes.find(n => n.id === sourceNodeId)
 			: null;
 		const position = sourceNode
 			? { x: sourceNode.position.x + 280, y: sourceNode.position.y }
-			: { x: 100 + realNodes.length * 60, y: 200 };
+			: { x: 100 + nodes.length * 60, y: 200 };
 
 		const newNode: Node<WorkflowNode> = {
 			id: newId,
@@ -254,10 +258,8 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 				]
 			: edges;
 
-		// Remove choice node and add real node, then re-sync
-		const updatedNodes = withChoiceSync([...realNodes, newNode]);
 		set({
-			nodes: updatedNodes,
+			nodes: [...nodes, newNode],
 			edges: newEdges,
 			isModalOpen: false,
 			sourceNodeId: null,
@@ -283,11 +285,10 @@ useEditorStore.subscribe((state, prev) => {
 			storedId ||
 			window.location.pathname.match(/\/workflows\/([^/]+)/)?.[1] ||
 			'';
-		const realNodes = nodes.filter(n => n.id !== '__choice__');
-		if (!workflowId || realNodes.length === 0) return;
+		if (!workflowId || nodes.length === 0) return;
 		void workflowService.update(workflowId, {
 			canvas: {
-				nodes: realNodes.map(n => ({
+				nodes: nodes.map(n => ({
 					...n.data,
 					position: n.position,
 				})) as WorkflowNode[],

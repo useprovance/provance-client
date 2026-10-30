@@ -29,7 +29,13 @@ export interface ProvanceAction {
    endpoint: string;
    method: "POST" | "GET";
    x402?: boolean;
-   price?: { amount: number; currency: "USD"; unit: string };
+   payment?: {
+      amount: number;
+      chainId: number;
+      token: string;
+      tokenAddress: string;
+      walletAddress: string;
+   };
    config: ProvanceConfigTab[];
    result?: Record<string, ProvanceOutputField>;
 }

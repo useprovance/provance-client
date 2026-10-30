@@ -15,6 +15,34 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+@property --node-gradient-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes node-border-rotate {
+  from { --node-gradient-angle: 0deg; }
+  to   { --node-gradient-angle: 360deg; }
+}
+
+.node-running-border {
+  position: absolute;
+  inset: -2px;
+  border-radius: 9px;
+  z-index: -1;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--node-gradient-angle),
+    #d95e28,
+    #d95e28 30%,
+    #d95e2815 60%,
+    #d95e2815 85%,
+    #d95e28
+  );
+  animation: node-border-rotate 0.6s linear infinite;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @variant command-input (&:has([data-slot='command-input']) [data-slot='command-input-wrapper']);

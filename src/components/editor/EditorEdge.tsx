@@ -1,16 +1,30 @@
 import { useRef, useState } from "react";
 import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, useReactFlow, type EdgeProps } from "@xyflow/react";
-import { Trash2 } from "lucide-react";
+import { Trash2, DollarSign } from "lucide-react";
+import { useEditorStore } from "@/stores/editor.store";
 
 const HIDE_DELAY = 600;
 
-export function EditorEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition }: EdgeProps) {
+export function EditorEdge({ id, source, target, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition }: EdgeProps) {
    const [hovered, setHovered] = useState(false);
    const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
    const [edgePath, labelX, labelY] = getSmoothStepPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition });
    const { deleteElements } = useReactFlow();
+   const nodes = useEditorStore(s => s.nodes);
 
-   const edgeColor = hovered ? "oklch(62% 0 0)" : "oklch(42% 0 0)";
+   const latestRun = useEditorStore(s => s.runs[0]);
+   const sourceResults = latestRun?.nodeResults.filter(r => r.nodeId === source) ?? [];
+   const sourceResult = sourceResults.some(r => r.status === 'error') ? 'error'
+      : sourceResults.some(r => r.status === 'success') ? 'success'
+      : sourceResults.length > 0 ? 'skipped'
+      : undefined;
+   const targetNode = nodes.find(n => n.id === target);
+   const isX402 = !!targetNode?.data.action?.x402;
+
+   const edgeColor = sourceResult === "success" ? "oklch(63.2% 0.186 147.37)"
+      : sourceResult === "error"   ? "#ef4444"
+      : sourceResult === "skipped" ? "oklch(32% 0 0)"
+      : hovered ? "oklch(62% 0 0)" : "oklch(42% 0 0)";
 
    const showToolbar = () => {
       if (hideTimer.current) clearTimeout(hideTimer.current);
@@ -65,6 +79,27 @@ export function EditorEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosit
          />
 
          <EdgeLabelRenderer>
+            {isX402 && (
+               <div
+                  className="nodrag nopan absolute"
+                  style={{
+                     transform: `translate(-50%, -50%) translate(${
+                        Math.abs(targetY - sourceY) > Math.abs(targetX - sourceX)
+                           ? labelX + 18
+                           : labelX
+                     }px,${
+                        Math.abs(targetY - sourceY) > Math.abs(targetX - sourceX)
+                           ? labelY
+                           : labelY - 18
+                     }px)`,
+                     pointerEvents: "none",
+                  }}
+               >
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center bg-[oklch(28%_0_0)] border-[1.5px] border-sand/60 text-sand">
+                     <DollarSign size={10} strokeWidth={2.5} />
+                  </div>
+               </div>
+            )}
             <div
                className="nodrag nopan absolute flex items-center"
                style={{

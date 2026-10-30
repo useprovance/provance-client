@@ -1,5 +1,39 @@
 import { BaseApiService } from './api.service';
 
+export interface WorkflowLog {
+  time: string;
+  level: 'info' | 'warn' | 'error';
+  message: string;
+}
+
+export interface PermitSignature {
+  owner: `0x${string}`;
+  spender: `0x${string}`;
+  tokenAddress: `0x${string}`;
+  chainId: number;
+  amount: bigint;
+  nonce: bigint;
+  deadline: bigint;
+  v: number;
+  r: `0x${string}`;
+  s: `0x${string}`;
+}
+
+export interface NodePayment {
+  nodeId: string;
+  agentId: string;
+  amount: number;
+  token: string;
+  tokenAddress: `0x${string}`;
+  walletAddress: `0x${string}`;
+  chainId: number;
+  permit: PermitSignature;
+}
+
+export interface PaymentContext {
+  payments: NodePayment[];
+}
+
 export type WorkflowRun = {
   id: string;
   status: 'running' | 'success' | 'error';
@@ -31,7 +65,7 @@ export interface WorkflowNode extends Record<string, unknown> {
    nodeId: string;
    type: "agent" | "trigger";
    position: { x: number; y: number };
-   action: { key: string; label: string; endpoint?: string };
+   action: { key: string; label: string; endpoint?: string; x402?: boolean };
    label: string;
    image_url: string | null;
    config: Record<string, unknown>;
@@ -115,9 +149,27 @@ class WorkflowService extends BaseApiService {
       }
    }
 
-   async run(id: string): Promise<{ runId: string }> {
+   async run(id: string, paymentContext?: PaymentContext): Promise<{ runId: string }> {
       try {
-         const res = await this.api.post<{ runId: string }>(`/workflows/${id}/run`);
+         const body = paymentContext ? {
+            paymentContext: {
+               payments: paymentContext.payments.map(p => ({
+                  nodeId: p.nodeId,
+                  callIndex: 0,
+                  permit: {
+                     owner:    p.permit.owner,
+                     spender:  p.permit.spender,
+                     value:    p.permit.amount.toString(),
+                     nonce:    p.permit.nonce.toString(),
+                     deadline: p.permit.deadline.toString(),
+                     v: p.permit.v,
+                     r: p.permit.r,
+                     s: p.permit.s,
+                  },
+               })),
+            },
+         } : {};
+         const res = await this.api.post<{ runId: string }>(`/workflows/${id}/run`, body);
          return res.data;
       } catch (error) {
          throw this.handleError(error);

@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Handle, Position, useReactFlow, useEdges, type NodeProps, type Node } from "@xyflow/react";
-import { Plus } from "lucide-react";
+import { Plus, Check, X, Minus } from "lucide-react";
 import type { WorkflowNode } from "@/services/workflow.service";
 import { useEditorStore } from "@/stores/editor.store";
 import { NodeToolbar } from "./NodeToolbar";
@@ -10,11 +10,20 @@ const BOX_SIZE = 96;
 export function AgentNode({ id, data, selected }: NodeProps<Node<WorkflowNode>>) {
    const openModal = useEditorStore((s) => s.openModal);
    const openConfig = useEditorStore((s) => s.openConfig);
+   const runningNodeId = useEditorStore((s) => s.runningNodeId);
+   const latestRun = useEditorStore((s) => s.runs[0]);
    const { deleteElements } = useReactFlow();
    const edges = useEdges();
    const hasOutgoing = edges.some((e) => e.source === id);
    const [toolbarVisible, setToolbarVisible] = useState(false);
    const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+   const isNodeRunning = runningNodeId === id;
+   const nodeResultsForNode = latestRun?.nodeResults.filter(r => r.nodeId === id) ?? [];
+   const nodeStatus = nodeResultsForNode.some(r => r.status === 'error') ? 'error'
+      : nodeResultsForNode.some(r => r.status === 'success') ? 'success'
+      : nodeResultsForNode.length > 0 ? 'skipped'
+      : undefined;
 
    const showToolbar = () => {
       if (hideTimer.current) clearTimeout(hideTimer.current);
@@ -40,8 +49,12 @@ export function AgentNode({ id, data, selected }: NodeProps<Node<WorkflowNode>>)
                bg-[hsl(0,0%,17%)] [background-clip:padding-box] transition-shadow
                border border-[oklch(100%_0_89.88_/_0.2)]
                ${selected ? "shadow-[0_0_0_6px_oklch(100%_0_89.88_/_0.4)]" : ""}
+               ${isNodeRunning ? "!border-transparent" : ""}
+               ${nodeStatus === "success" ? "!border-[oklch(63.2%_0.186_147.37)] !border-[2px]" : ""}
+               ${nodeStatus === "error" ? "!border-[#ef4444] !border-[2px]" : ""}
             `}
          >
+            {isNodeRunning && <div className="node-running-border" />}
             <NodeToolbar
                visible={toolbarVisible || (selected ?? false)}
                onDelete={() => deleteElements({ nodes: [{ id }] })}
@@ -73,6 +86,22 @@ export function AgentNode({ id, data, selected }: NodeProps<Node<WorkflowNode>>)
                      {data.label?.slice(0, 4) ?? "?"}
                   </span>
                </div>
+            )}
+
+            {!isNodeRunning && nodeStatus === "success" && (
+               <span className="absolute" style={{ bottom: 6, right: 7, lineHeight: 0 }}>
+                  <Check size={14} strokeWidth={2.5} color="oklch(63.2% 0.186 147.37)" />
+               </span>
+            )}
+            {!isNodeRunning && nodeStatus === "error" && (
+               <span className="absolute" style={{ bottom: 6, right: 7, lineHeight: 0 }}>
+                  <X size={14} strokeWidth={2.5} color="#ef4444" />
+               </span>
+            )}
+            {!isNodeRunning && nodeStatus === "skipped" && (
+               <span className="absolute" style={{ bottom: 6, right: 7, lineHeight: 0 }}>
+                  <Minus size={14} strokeWidth={2.5} color="oklch(50% 0 0)" />
+               </span>
             )}
          </div>
 

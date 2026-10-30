@@ -25,6 +25,16 @@ export function AddAgentModal() {
    const chainName = selected ? getChainName(selected.chain_id) : "";
    const webEndpoint = selected?.services.web?.endpoint;
 
+   const handleSelectAction = (action: typeof actions[number]) => {
+      if (!selected) return;
+      addAgentNode(
+         { agentId: selected.id, label: selected.name, image_url: selected.image_url },
+         { key: action.key, label: action.name, endpoint: action.endpoint, x402: !!action.x402 }
+      );
+      setSelected(null);
+      setSearch("");
+   };
+
    return (
       <Dialog open={isModalOpen} onOpenChange={(o) => { if (!o) { closeModal(); setSelected(null); setSearch(""); } }}>
          <DialogContent
@@ -184,14 +194,7 @@ export function AddAgentModal() {
                               {actions.map((action) => (
                                  <button
                                     key={action.key}
-                                    onClick={() => {
-                                       addAgentNode(
-                                          { agentId: selected.id, label: selected.name, image_url: selected.image_url },
-                                          { key: action.key, label: action.name, endpoint: action.endpoint }
-                                       );
-                                       setSelected(null);
-                                       setSearch("");
-                                    }}
+                                    onClick={() => handleSelectAction(action)}
                                     className="w-full flex items-start gap-3 px-3 py-3 bg-white/4 border border-white/6 hover:bg-white/7 hover:border-white/12 transition-colors cursor-pointer text-left group"
                                  >
                                     <span className={`mt-0.5 text-[9px] font-mono font-bold tracking-wider px-1.5 py-0.5 shrink-0 ${action.method === "GET" ? "bg-sky-500/10 text-sky-400" : "bg-emerald-500/10 text-emerald-400"}`}>
@@ -202,14 +205,10 @@ export function AddAgentModal() {
                                        {action.description && (
                                           <p className="text-[11px] text-white/55 mt-0.5 line-clamp-2 leading-relaxed">{action.description}</p>
                                        )}
-                                       {(action.x402 || action.price) && (
-                                          <div className="flex items-center gap-2 mt-1.5">
-                                             {action.x402 && (
-                                                <span className="text-[9px] font-mono uppercase tracking-widest text-orange/80 bg-orange/10 px-1.5 py-0.5">x402</span>
-                                             )}
-                                             {action.price && (
-                                                <span className="text-[10px] text-white/60 font-mono">${action.price.amount} / {action.price.unit}</span>
-                                             )}
+                                       {action.payment && (
+                                          <div className="flex items-center gap-1.5 mt-1.5">
+                                             <span className="text-[9px] font-mono font-bold tracking-wider px-2 py-1 bg-white/6 text-white/55 ring-1 ring-white/10 ring-offset-1 ring-offset-[#141414]">x402</span>
+                                             <span className="text-[9px] font-mono font-bold tracking-wider px-2 py-1 bg-white/6 text-white/75 ring-1 ring-white/10 ring-offset-1 ring-offset-[#141414]">${action.payment.amount} {action.payment.token}</span>
                                           </div>
                                        )}
                                     </div>

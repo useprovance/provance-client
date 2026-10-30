@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import {
    ChevronUp, ChevronDown, FlaskConical, Square,
    MoreHorizontal, Trash2, Globe, EyeOff, ChevronRight,
-   CheckCircle2, XCircle,
+   CheckCircle2, XCircle, Loader2,
 } from "lucide-react";
 import {
    DropdownMenu,
@@ -12,8 +12,9 @@ import {
    DropdownMenuSeparator,
    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useEditorStore, type WorkflowRun, type NodeRunResult } from "@/stores/editor.store";
-import { workflowService } from "@/services/workflow.service";
+import { useEditorStore } from "@/stores/editor.store";
+import { workflowService, type WorkflowRun, type NodeRunResult } from "@/services/workflow.service";
+import { WorkflowPaymentModal } from "@/components/editor/WorkflowPaymentModal";
 
 function JsonValue({ value, depth = 0 }: { value: unknown; depth?: number }) {
    if (value === null) return <span className="text-white/60">null</span>;
@@ -189,7 +190,8 @@ function NodeStep({ result, index, isLast }: { result: NodeRunResult; index: num
 }
 
 function RunHistoryRow({ run }: { run: WorkflowRun }) {
-   const [expanded, setExpanded] = useState(false);
+   const isRunning = run.status === "running";
+   const [expanded, setExpanded] = useState(isRunning);
    const succeeded = run.nodeResults.filter((r) => r.status === "success").length;
    const failed = run.nodeResults.filter((r) => r.status === "error").length;
 
@@ -197,20 +199,22 @@ function RunHistoryRow({ run }: { run: WorkflowRun }) {
       <div className="border-b border-[#1e1e1e] last:border-0">
          <button
             onClick={() => setExpanded((v) => !v)}
-            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/3 transition-colors cursor-pointer text-left"
+            className={`w-full flex items-center gap-3 px-4 py-3 transition-colors cursor-pointer text-left hover:bg-white/3 ${expanded ? "bg-white/[0.04]" : ""}`}
          >
-            {run.status === "success"
-               ? <CheckCircle2 size={15} className="text-green-500 shrink-0" />
-               : <XCircle size={15} className="text-red-400 shrink-0" />
+            {isRunning
+               ? <Loader2 size={15} className="text-orange shrink-0 animate-spin" />
+               : run.status === "success"
+                  ? <CheckCircle2 size={15} className="text-green-500 shrink-0" />
+                  : <XCircle size={15} className="text-red-400 shrink-0" />
             }
 
-            {/* Label */}
-            <p className={`flex-1 text-[13px] font-medium ${run.status === "success" ? "text-white" : "text-red-400"}`}>
-               {run.status === "success" ? "Completed successfully" : "Run failed"}
+            <p className={`flex-1 text-[13px] font-medium ${isRunning ? "text-orange" : run.status === "success" ? "text-white" : "text-red-400"}`}>
+               {isRunning ? "Running..." : run.status === "success" ? "Completed successfully" : "Run failed"}
             </p>
 
             <p className="text-[12px] text-white/60 shrink-0">
-               {timeAgo(run.startedAt)} · {totalDuration(run.nodeResults)} · {run.nodeResults.length} step{run.nodeResults.length !== 1 ? "s" : ""}
+               {timeAgo(run.startedAt)}
+               {!isRunning && ` · ${totalDuration(run.nodeResults)} · ${run.nodeResults.length} step${run.nodeResults.length !== 1 ? "s" : ""}`}
             </p>
 
             <ChevronDown size={13} className={`shrink-0 text-white/50 transition-transform ${expanded ? "rotate-180" : ""}`} />
@@ -218,14 +222,18 @@ function RunHistoryRow({ run }: { run: WorkflowRun }) {
 
          {expanded && (
             <div className="px-4 pt-2 pb-1">
-               {/* Summary bar */}
-               <div className="flex items-center gap-3 mb-4 text-[12px] font-medium">
-                  {succeeded > 0 && <span className="text-green-500">{succeeded} succeeded</span>}
-                  {failed > 0 && <span className="text-red-400">{failed} failed</span>}
-               </div>
+               {!isRunning && (
+                  <div className="flex items-center gap-3 mb-4 text-[12px] font-medium">
+                     {succeeded > 0 && <span className="text-green-500">{succeeded} succeeded</span>}
+                     {failed > 0 && <span className="text-red-400">{failed} failed</span>}
+                  </div>
+               )}
                {run.nodeResults.map((r, i) => (
                   <NodeStep key={`${r.nodeId}-${i}`} result={r} index={i} isLast={i === run.nodeResults.length - 1} />
                ))}
+               {isRunning && run.nodeResults.length === 0 && (
+                  <p className="text-[12px] text-white/30 pb-3">Waiting for first node...</p>
+               )}
             </div>
          )}
       </div>
@@ -236,7 +244,18 @@ type PanelTab = "logs" | "runs";
 
 export function EditorBottomPanel() {
    const navigate = useNavigate();
-   const { workflowId, isRunning, logsOpen, logs, runs, setLogsOpen, panelTab: tab, setPanelTab: setTab, triggerRun, stopRun, clearLogs } = useEditorStore();
+   const { workflowId, nodes, isRunning, logsOpen, logs, runs, setLogsOpen, panelTab: tab, setPanelTab: setTab, triggerRun, stopRun, clearLogs } = useEditorStore();
+
+   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+   const handleRun = () => {
+      const hasX402 = nodes.some(n => n.data.action?.x402);
+      if (hasX402) {
+         setIsPaymentModalOpen(true);
+      } else {
+         void triggerRun();
+      }
+   };
 
    const [panelHeight, setPanelHeight] = useState(MIN_HEIGHT);
 
@@ -271,6 +290,11 @@ export function EditorBottomPanel() {
    const collapsed = !logsOpen;
 
    return (
+      <>
+      <WorkflowPaymentModal
+         isOpen={isPaymentModalOpen}
+         onClose={() => setIsPaymentModalOpen(false)}
+      />
       <div
          className="relative shrink-0 bg-[#111] flex flex-col border-t border-[#2a2a2a]"
          style={{ height: collapsed ? "36px" : `${panelHeight}px`, transition: collapsed ? "height 0.2s" : "none" }}
@@ -286,7 +310,7 @@ export function EditorBottomPanel() {
          {/* Run / Stop — float above */}
          <div className="absolute -top-14 left-4 flex items-center gap-2 z-10">
             <button
-               onClick={triggerRun}
+               onClick={handleRun}
                disabled={isRunning}
                className="flex items-center gap-2 px-4 h-10 bg-[#1e1e1e] border border-white/20 text-white text-[12px] font-medium rounded-md hover:bg-[#2a2a2a] hover:border-white/40 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
             >
@@ -324,6 +348,16 @@ export function EditorBottomPanel() {
             ))}
 
             <div className="flex items-center gap-1 ml-auto">
+               {tab === "logs" && logs.length > 0 && !collapsed && (
+                  <button
+                     onClick={clearLogs}
+                     title="Clear logs"
+                     className="p-1.5 text-white/30 hover:text-red-400 transition-colors cursor-pointer hover:bg-white/5"
+                  >
+                     <Trash2 size={13} strokeWidth={1.5} />
+                  </button>
+               )}
+
                <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-white/40">
                   <EyeOff size={12} strokeWidth={1.5} />
                   Unpublished
@@ -372,14 +406,6 @@ export function EditorBottomPanel() {
                      </div>
                   ) : (
                      <div className="flex flex-col">
-                        <div className="flex items-center justify-end px-4 py-1.5 border-b border-[#1e1e1e]">
-                           <button
-                              onClick={clearLogs}
-                              className="text-[11px] text-white/40 hover:text-red-400 transition-colors cursor-pointer"
-                           >
-                              Clear logs
-                           </button>
-                        </div>
                         {logs.map((log, i) => (
                            <div key={i} className="flex items-start gap-3 px-4 py-1.5 border-b border-[#1e1e1e] last:border-0">
                               <span className="text-[11px] text-white/65 shrink-0 mt-px">{log.time}</span>
@@ -408,5 +434,6 @@ export function EditorBottomPanel() {
             </div>
          )}
       </div>
+      </>
    );
 }

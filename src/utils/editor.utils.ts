@@ -1,5 +1,5 @@
-import type { Node, Edge } from "@xyflow/react";
-import type { WorkflowNode } from "@/services/workflow.service";
+import type { Node, Edge } from '@xyflow/react';
+import type { WorkflowNode } from '@/services/workflow.service';
 
 /**
  * getNodeAncestors
@@ -17,43 +17,43 @@ import type { WorkflowNode } from "@/services/workflow.service";
  *   → [geckoterminal WorkflowNode]
  */
 export function getNodeAncestors(
-  nodeId: string,
-  nodes: Node[],
-  edges: Edge[]
+	nodeId: string,
+	nodes: Node[],
+	edges: Edge[]
 ): WorkflowNode[] {
-  const ancestors: WorkflowNode[] = [];
-  const visited = new Set<string>();
-  const queue: string[] = [nodeId];
+	const ancestors: WorkflowNode[] = [];
+	const visited = new Set<string>();
+	const queue: string[] = [nodeId];
 
-  while (queue.length > 0) {
-    const current = queue.shift()!;
-    if (visited.has(current)) continue;
-    visited.add(current);
+	while (queue.length > 0) {
+		const current = queue.shift()!;
+		if (visited.has(current)) continue;
+		visited.add(current);
 
-    for (const edge of edges.filter((e) => e.target === current)) {
-      const parent = nodes.find((n) => n.id === edge.source);
-      if (!parent || parent.type === "trigger") continue;
+		for (const edge of edges.filter(e => e.target === current)) {
+			const parent = nodes.find(n => n.id === edge.source);
+			if (!parent || parent.type === 'trigger') continue;
 
-      ancestors.push(parent.data as WorkflowNode);
-      queue.push(edge.source);
-    }
-  }
+			ancestors.push(parent.data as WorkflowNode);
+			queue.push(edge.source);
+		}
+	}
 
-  return ancestors;
+	return ancestors;
 }
 
 const CHOICE_NODE: Node = {
-   id: "__choice__",
-   type: "choice",
-   position: { x: 0, y: 0 },
-   data: {},
-   draggable: false,
+	id: '__choice__',
+	type: 'choice',
+	position: { x: 0, y: 0 },
+	data: {},
+	draggable: false,
 };
 
-export function withChoiceSync(nodes: Node[]): Node[] {
-   const real = nodes.filter((n) => n.id !== "__choice__");
-   const hasChoice = nodes.some((n) => n.id === "__choice__");
-   if (real.length === 0 && !hasChoice) return [CHOICE_NODE];
-   if (real.length > 0 && hasChoice) return real;
-   return nodes;
+export function withChoiceSync(nodes: Node<WorkflowNode>[]): Node[] {
+	const real = nodes.filter(n => n.id !== '__choice__');
+	const hasChoice = nodes.some(n => n.id === '__choice__');
+	if (real.length === 0 && !hasChoice) return [CHOICE_NODE];
+	if (real.length > 0 && hasChoice) return real;
+	return nodes;
 }
