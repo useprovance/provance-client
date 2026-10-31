@@ -60,6 +60,7 @@ interface EditorStore {
 	setLogsOpen: (open: boolean) => void;
 	setPanelTab: (tab: 'logs' | 'runs') => void;
 	clearLogs: () => void;
+	clearRuns: () => void;
 	triggerRun: () => Promise<void>;
 	clearPendingPayment: () => void;
 	stopRun: () => void;
@@ -141,6 +142,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 		localStorage.removeItem(`provance_logs_${workflowId}`);
 		set({ logs: [] });
 	},
+	clearRuns: () => set({ runs: [] }),
 	clearPendingPayment: () => set({ pendingPayment: null }),
 
 	triggerRun: async () => {

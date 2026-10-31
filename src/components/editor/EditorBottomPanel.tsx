@@ -4,6 +4,7 @@ import {
    ChevronUp, ChevronDown, FlaskConical, Square,
    MoreHorizontal, Trash2, Globe, EyeOff, ChevronRight,
    CheckCircle2, XCircle, Loader2, Copy, Check,
+   CircleOff, Eraser,
 } from "lucide-react";
 import {
    DropdownMenu,
@@ -283,7 +284,7 @@ type PanelTab = "logs" | "runs";
 
 export function EditorBottomPanel() {
    const navigate = useNavigate();
-   const { workflowId, isRunning, logsOpen, logs, runs, setLogsOpen, panelTab: tab, setPanelTab: setTab, triggerRun, stopRun, clearLogs } = useEditorStore();
+   const { workflowId, isRunning, logsOpen, logs, runs, setLogsOpen, panelTab: tab, setPanelTab: setTab, triggerRun, stopRun, clearLogs, clearRuns } = useEditorStore();
 
    const handleRun = () => {
       void triggerRun();
@@ -358,7 +359,7 @@ export function EditorBottomPanel() {
          </div>
 
          {/* Tab bar */}
-         <div className="flex items-center h-9 px-3 shrink-0 gap-1">
+         <div className="flex items-center h-9 px-2 shrink-0 gap-0.5">
             {(["logs", "runs"] as PanelTab[]).map((t) => (
                <button
                   key={t}
@@ -376,37 +377,45 @@ export function EditorBottomPanel() {
                </button>
             ))}
 
-            <div className="flex items-center gap-1 ml-auto">
-               {tab === "logs" && logs.length > 0 && !collapsed && (
-                  <button
-                     onClick={clearLogs}
-                     title="Clear logs"
-                     className="p-1.5 text-white/30 hover:text-red-400 transition-colors cursor-pointer hover:bg-white/5"
-                  >
-                     <Trash2 size={13} strokeWidth={1.5} />
-                  </button>
-               )}
-
-               <div className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-white/40">
-                  <EyeOff size={12} strokeWidth={1.5} />
+            <div className="flex items-center gap-0.5 ml-auto">
+               {/* Publish status badge */}
+               <div className="flex items-center gap-1.5 px-2.5 py-1 mr-1 rounded-sm border border-white/10 bg-white/4 text-[11px] font-medium text-white/60">
+                  <EyeOff size={12} strokeWidth={2} />
                   Unpublished
                </div>
 
                <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                     <button className="p-1.5 text-white/50 hover:text-white transition-colors cursor-pointer hover:bg-white/5">
-                        <MoreHorizontal size={14} strokeWidth={1.5} />
+                     <button className="h-7 w-7 flex items-center justify-center rounded-sm text-white/60 hover:text-white hover:bg-white/8 transition-colors cursor-pointer">
+                        <MoreHorizontal size={16} strokeWidth={2} />
                      </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" side="top" className="w-44 bg-[#1c1c1c] border border-[#2a2a2a] p-0.5 mb-1">
-                     <DropdownMenuItem className="cursor-pointer px-2.5 py-1.5 text-[12px] text-orange font-medium focus:text-orange focus:bg-orange/8 gap-2 [&_svg]:!size-[12px]">
+                  <DropdownMenuContent align="end" side="top" className="w-48 bg-[#181818] border border-white/10 p-1 mb-1 shadow-xl">
+                     <DropdownMenuItem className="cursor-pointer px-3 py-2 text-[12px] text-white/80 font-medium rounded-sm focus:text-white focus:bg-white/8 gap-2.5 [&_svg]:!size-[13px] [&_svg]:text-white/50">
                         <Globe strokeWidth={1.5} />
                         Publish
                      </DropdownMenuItem>
-                     <DropdownMenuSeparator className="bg-white/6 my-0.5" />
+                     <DropdownMenuSeparator className="bg-white/8 my-1" />
+                     <DropdownMenuItem
+                        onClick={clearLogs}
+                        disabled={logs.length === 0}
+                        className="cursor-pointer px-3 py-2 text-[12px] text-white/80 font-medium rounded-sm focus:text-white focus:bg-white/8 gap-2.5 [&_svg]:!size-[13px] [&_svg]:text-white/50 disabled:opacity-35 disabled:pointer-events-none"
+                     >
+                        <CircleOff strokeWidth={1.5} />
+                        Clear logs
+                     </DropdownMenuItem>
+                     <DropdownMenuItem
+                        onClick={clearRuns}
+                        disabled={runs.length === 0}
+                        className="cursor-pointer px-3 py-2 text-[12px] text-white/80 font-medium rounded-sm focus:text-white focus:bg-white/8 gap-2.5 [&_svg]:!size-[13px] [&_svg]:text-white/50 disabled:opacity-35 disabled:pointer-events-none"
+                     >
+                        <Eraser strokeWidth={1.5} />
+                        Clear runs
+                     </DropdownMenuItem>
+                     <DropdownMenuSeparator className="bg-white/8 my-1" />
                      <DropdownMenuItem
                         onClick={() => void handleDelete()}
-                        className="cursor-pointer px-2.5 py-1.5 text-[12px] text-red-400/70 focus:text-red-400 focus:bg-red-400/8 gap-2 [&_svg]:!size-[12px]"
+                        className="cursor-pointer px-3 py-2 text-[12px] text-red-400 font-medium rounded-sm focus:text-red-300 focus:bg-red-500/10 gap-2.5 [&_svg]:!size-[13px] [&_svg]:text-red-400"
                      >
                         <Trash2 strokeWidth={1.5} />
                         Delete workflow
@@ -416,7 +425,7 @@ export function EditorBottomPanel() {
 
                <button
                   onClick={() => setLogsOpen(!logsOpen)}
-                  className="p-1.5 text-white/50 hover:text-white transition-colors cursor-pointer"
+                  className="h-7 w-7 flex items-center justify-center rounded-sm text-white/60 hover:text-white hover:bg-white/8 transition-colors cursor-pointer"
                >
                   {collapsed ? <ChevronUp size={16} strokeWidth={2} /> : <ChevronDown size={16} strokeWidth={2} />}
                </button>
