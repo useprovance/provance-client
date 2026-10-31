@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import {
    ChevronUp, ChevronDown, FlaskConical, Square,
    MoreHorizontal, Trash2, Globe, EyeOff, ChevronRight,
-   CheckCircle2, XCircle, Loader2,
+   CheckCircle2, XCircle, Loader2, Copy, Check,
 } from "lucide-react";
 import {
    DropdownMenu,
@@ -64,11 +64,55 @@ function JsonValue({ value, depth = 0 }: { value: unknown; depth?: number }) {
    return <span className="text-white/60">{String(value)}</span>;
 }
 
+function ErrorBlock({ error }: { error: string }) {
+   const [copied, setCopied] = useState(false);
+
+   const copy = () => {
+      void navigator.clipboard.writeText(error).then(() => {
+         setCopied(true);
+         setTimeout(() => setCopied(false), 1500);
+      });
+   };
+
+   return (
+      <div className="rounded border border-red-500/20 overflow-hidden">
+         <div className="px-3 py-1.5 bg-red-500/8 border-b border-red-500/15 flex items-center justify-between">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-red-400/70">Error</span>
+            <button
+               onClick={copy}
+               className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[12px] font-medium bg-white/8 text-white/90 hover:bg-white/14 hover:text-white transition-colors cursor-pointer"
+            >
+               {copied ? <><Check size={10} strokeWidth={2.5} className="text-green-400" /><span className="text-green-400">Copied</span></> : <><Copy size={10} strokeWidth={2} /><span>Copy</span></>}
+            </button>
+         </div>
+         <div className="p-3 font-mono text-[11px] text-red-300 leading-relaxed">{error}</div>
+      </div>
+   );
+}
+
 function JsonBlock({ label, data }: { label: string; data: Record<string, unknown> }) {
+   const [copied, setCopied] = useState(false);
+
+   const copy = () => {
+      void navigator.clipboard.writeText(JSON.stringify(data, null, 2)).then(() => {
+         setCopied(true);
+         setTimeout(() => setCopied(false), 1500);
+      });
+   };
+
    return (
       <div className="rounded border border-white/8 overflow-hidden">
-         <div className="px-3 py-1.5 bg-white/4 border-b border-white/8">
+         <div className="px-3 py-1.5 bg-white/4 border-b border-white/8 flex items-center justify-between">
             <span className="text-[10px] font-semibold uppercase tracking-widest text-white/50">{label}</span>
+            <button
+               onClick={copy}
+               className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[12px] font-medium bg-white/8 text-white/90 hover:bg-white/14 hover:text-white transition-colors cursor-pointer"
+            >
+               {copied
+                  ? <><Check size={10} strokeWidth={2.5} className="text-green-400" /><span className="text-green-400">Copied</span></>
+                  : <><Copy size={10} strokeWidth={2} /><span>Copy</span></>
+               }
+            </button>
          </div>
          <div className="p-3 font-mono text-[11px] leading-[1.7] overflow-x-auto">
             <JsonValue value={data} />
@@ -173,12 +217,7 @@ function NodeStep({ result, index, isLast }: { result: NodeRunResult; index: num
             {showDetails && (
                <div className="mt-2 flex flex-col gap-2">
                   {result.error && (
-                     <div className="rounded border border-red-500/20 overflow-hidden">
-                        <div className="px-3 py-1.5 bg-red-500/8 border-b border-red-500/15">
-                           <span className="text-[10px] font-semibold uppercase tracking-widest text-red-400/70">Error</span>
-                        </div>
-                        <div className="p-3 font-mono text-[11px] text-red-300 leading-relaxed">{result.error}</div>
-                     </div>
+                     <ErrorBlock error={result.error} />
                   )}
                   <JsonBlock label="Input" data={result.input} />
                   {result.status === "success" && <JsonBlock label="Output" data={result.output} />}
@@ -244,17 +283,10 @@ type PanelTab = "logs" | "runs";
 
 export function EditorBottomPanel() {
    const navigate = useNavigate();
-   const { workflowId, nodes, isRunning, logsOpen, logs, runs, setLogsOpen, panelTab: tab, setPanelTab: setTab, triggerRun, stopRun, clearLogs } = useEditorStore();
-
-   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+   const { workflowId, isRunning, logsOpen, logs, runs, setLogsOpen, panelTab: tab, setPanelTab: setTab, triggerRun, stopRun, clearLogs } = useEditorStore();
 
    const handleRun = () => {
-      const hasX402 = nodes.some(n => n.data.action?.x402);
-      if (hasX402) {
-         setIsPaymentModalOpen(true);
-      } else {
-         void triggerRun();
-      }
+      void triggerRun();
    };
 
    const [panelHeight, setPanelHeight] = useState(MIN_HEIGHT);
@@ -291,10 +323,7 @@ export function EditorBottomPanel() {
 
    return (
       <>
-      <WorkflowPaymentModal
-         isOpen={isPaymentModalOpen}
-         onClose={() => setIsPaymentModalOpen(false)}
-      />
+      <WorkflowPaymentModal />
       <div
          className="relative shrink-0 bg-[#111] flex flex-col border-t border-[#2a2a2a]"
          style={{ height: collapsed ? "36px" : `${panelHeight}px`, transition: collapsed ? "height 0.2s" : "none" }}

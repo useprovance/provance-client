@@ -16,7 +16,7 @@ import type {
 	WorkflowLog,
 	WorkflowNode,
 	NodeRunResult,
-	PaymentContext,
+	PendingPayment,
 } from '@/services/workflow.service';
 import { workflowService } from '@/services/workflow.service';
 
@@ -52,6 +52,7 @@ interface EditorStore {
 	// run & logs
 	isRunning: boolean;
 	runningNodeId: string | null;
+	pendingPayment: PendingPayment | null;
 	logsOpen: boolean;
 	panelTab: 'logs' | 'runs';
 	logs: WorkflowLog[];
@@ -59,7 +60,8 @@ interface EditorStore {
 	setLogsOpen: (open: boolean) => void;
 	setPanelTab: (tab: 'logs' | 'runs') => void;
 	clearLogs: () => void;
-	triggerRun: (paymentContext?: PaymentContext) => Promise<void>;
+	triggerRun: () => Promise<void>;
+	clearPendingPayment: () => void;
 	stopRun: () => void;
 }
 
@@ -127,6 +129,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 
 	isRunning: false,
 	runningNodeId: null,
+	pendingPayment: null,
 	logsOpen: false,
 	panelTab: 'logs',
 	logs: [],
@@ -138,7 +141,9 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 		localStorage.removeItem(`provance_logs_${workflowId}`);
 		set({ logs: [] });
 	},
-	triggerRun: async (paymentContext?: PaymentContext) => {
+	clearPendingPayment: () => set({ pendingPayment: null }),
+
+	triggerRun: async () => {
 		const { workflowId, nodes } = get();
 		if (!workflowId) return;
 
@@ -146,7 +151,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 
 		let runId: string;
 		try {
-			const res = await workflowService.run(workflowId, paymentContext);
+			const res = await workflowService.run(workflowId);
 			runId = res.runId;
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : 'Failed to start run';
@@ -199,10 +204,25 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 						: r
 					),
 				}));
+			} else if (event.type === 'payment_required') {
+				set({
+					pendingPayment: {
+						runId,
+						nodeId: event.nodeId,
+						itemCount: event.itemCount,
+						pricePerCall: event.pricePerCall,
+						totalAmount: event.totalAmount,
+						token: event.token,
+						tokenAddress: event.tokenAddress as `0x${string}`,
+						walletAddress: event.walletAddress as `0x${string}`,
+						chainId: event.chainId,
+					},
+				});
 			} else if (event.type === 'complete') {
 				set(s => ({
 					isRunning: false,
 					runningNodeId: null,
+					pendingPayment: null,
 					runs: s.runs.map(r => r.id === runId
 						? { ...r, status: event.status, nodeResults: event.nodeResults }
 						: r

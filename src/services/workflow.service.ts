@@ -19,20 +19,6 @@ export interface PermitSignature {
   s: `0x${string}`;
 }
 
-export interface NodePayment {
-  nodeId: string;
-  agentId: string;
-  amount: number;
-  token: string;
-  tokenAddress: `0x${string}`;
-  walletAddress: `0x${string}`;
-  chainId: number;
-  permit: PermitSignature;
-}
-
-export interface PaymentContext {
-  payments: NodePayment[];
-}
 
 export type WorkflowRun = {
   id: string;
@@ -52,12 +38,25 @@ export type NodeRunResult = {
   durationMs: number;
 };
 
+export type PendingPayment = {
+  runId: string;
+  nodeId: string;
+  itemCount: number;
+  pricePerCall: number;
+  totalAmount: number;
+  token: string;
+  tokenAddress: `0x${string}`;
+  walletAddress: `0x${string}`;
+  chainId: number;
+};
+
 export type RunEvent =
-  | { type: "node_start";   nodeId: string; input: Record<string, unknown> }
-  | { type: "node_success"; nodeId: string; output: Record<string, unknown> }
-  | { type: "node_error";   nodeId: string; error: string }
-  | { type: "log";          level: "info" | "error"; message: string }
-  | { type: "complete";     status: "success" | "error"; nodeResults: NodeRunResult[] }
+  | { type: "node_start";       nodeId: string; input: Record<string, unknown> }
+  | { type: "node_success";     nodeId: string; output: Record<string, unknown> }
+  | { type: "node_error";       nodeId: string; error: string }
+  | { type: "log";              level: "info" | "error"; message: string }
+  | { type: "complete";         status: "success" | "error"; nodeResults: NodeRunResult[] }
+  | { type: "payment_required"; nodeId: string; itemCount: number; pricePerCall: number; totalAmount: number; token: string; tokenAddress: string; walletAddress: string; chainId: number }
   | { type: "stream_error" };
 
 export interface WorkflowNode extends Record<string, unknown> {
@@ -149,28 +148,31 @@ class WorkflowService extends BaseApiService {
       }
    }
 
-   async run(id: string, paymentContext?: PaymentContext): Promise<{ runId: string }> {
+   async run(id: string): Promise<{ runId: string }> {
       try {
-         const body = paymentContext ? {
-            paymentContext: {
-               payments: paymentContext.payments.map(p => ({
-                  nodeId: p.nodeId,
-                  callIndex: 0,
-                  permit: {
-                     owner:    p.permit.owner,
-                     spender:  p.permit.spender,
-                     value:    p.permit.amount.toString(),
-                     nonce:    p.permit.nonce.toString(),
-                     deadline: p.permit.deadline.toString(),
-                     v: p.permit.v,
-                     r: p.permit.r,
-                     s: p.permit.s,
-                  },
-               })),
-            },
-         } : {};
-         const res = await this.api.post<{ runId: string }>(`/workflows/${id}/run`, body);
+         const res = await this.api.post<{ runId: string }>(`/workflows/${id}/run`, {});
          return res.data;
+      } catch (error) {
+         throw this.handleError(error);
+      }
+   }
+
+   async submitPayment(runId: string, permit: PermitSignature, nodeId: string): Promise<void> {
+      try {
+         await this.api.post(`/runs/${runId}/payment`, {
+            nodeId,
+            callIndex: 0,
+            permit: {
+               owner:    permit.owner,
+               spender:  permit.spender,
+               value:    permit.amount.toString(),
+               nonce:    permit.nonce.toString(),
+               deadline: permit.deadline.toString(),
+               v: permit.v,
+               r: permit.r,
+               s: permit.s,
+            },
+         });
       } catch (error) {
          throw this.handleError(error);
       }
