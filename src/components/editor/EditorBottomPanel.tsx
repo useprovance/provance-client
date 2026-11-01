@@ -242,13 +242,13 @@ function RunHistoryRow({ run }: { run: WorkflowRun }) {
             className={`w-full flex items-center gap-3 px-4 py-3 transition-colors cursor-pointer text-left hover:bg-white/3 ${expanded ? "bg-white/[0.04]" : ""}`}
          >
             {isRunning
-               ? <Loader2 size={15} className="text-orange shrink-0 animate-spin" />
+               ? <Loader2 size={15} className="text-amber-400 shrink-0 animate-spin" />
                : run.status === "success"
                   ? <CheckCircle2 size={15} className="text-green-500 shrink-0" />
                   : <XCircle size={15} className="text-red-400 shrink-0" />
             }
 
-            <p className={`flex-1 text-[13px] font-medium ${isRunning ? "text-orange" : run.status === "success" ? "text-white" : "text-red-400"}`}>
+            <p className={`flex-1 text-[13px] font-medium ${isRunning ? "text-amber-400" : run.status === "success" ? "text-white" : "text-red-400"}`}>
                {isRunning ? "Running..." : run.status === "success" ? "Completed successfully" : "Run failed"}
             </p>
 

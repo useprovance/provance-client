@@ -39,8 +39,10 @@ interface EditorStore {
 	closeModal: () => void;
 	addAgentNode: (
 		agent: { agentId: string; label: string; image_url: string | null },
-		action: { key: string; label: string; endpoint?: string; x402?: boolean }
-	) => void;
+		action: { key: string; label: string; endpoint?: string; x402?: boolean },
+		nodeId?: string
+	) => string;
+	removeNode: (nodeId: string) => void;
 
 	// node config sheet
 	isConfigOpen: boolean;
@@ -51,6 +53,7 @@ interface EditorStore {
 
 	// run & logs
 	isRunning: boolean;
+	activeRunId: string | null;
 	runningNodeId: string | null;
 	pendingPayment: PendingPayment | null;
 	logsOpen: boolean;
@@ -129,6 +132,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 	closeModal: () => set({ isModalOpen: false, sourceNodeId: null }),
 
 	isRunning: false,
+	activeRunId: null,
 	runningNodeId: null,
 	pendingPayment: null,
 	logsOpen: false,
@@ -155,10 +159,12 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 		try {
 			const res = await workflowService.run(workflowId);
 			runId = res.runId;
+			set({ activeRunId: runId });
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : 'Failed to start run';
 			set(s => ({
 				isRunning: false,
+				activeRunId: null,
 				logs: [...s.logs, { time: new Date().toLocaleTimeString(), level: 'error' as const, message: msg }],
 			}));
 			return;
@@ -223,6 +229,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 			} else if (event.type === 'complete') {
 				set(s => ({
 					isRunning: false,
+					activeRunId: null,
 					runningNodeId: null,
 					pendingPayment: null,
 					runs: s.runs.map(r => r.id === runId
@@ -233,24 +240,29 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 			} else if (event.type === 'stream_error') {
 				set(s => ({
 					isRunning: false,
+					activeRunId: null,
 					runningNodeId: null,
 					logs: [...s.logs, { time, level: 'error' as const, message: 'Lost connection to run stream' }],
 				}));
 			}
 		});
 	},
-	stopRun: () => set({ isRunning: false }),
+	stopRun: () => {
+		const { activeRunId } = get();
+		if (activeRunId) void workflowService.stopRun(activeRunId);
+		set({ isRunning: false, activeRunId: null, runningNodeId: null, pendingPayment: null });
+	},
 
-	addAgentNode: (agent, action) => {
+	addAgentNode: (agent, action, nodeId) => {
 		const { nodes, edges, sourceNodeId } = get();
-		const newId = crypto.randomUUID();
+		const newId = nodeId ?? crypto.randomUUID();
 
 		const sourceNode = sourceNodeId
 			? nodes.find(n => n.id === sourceNodeId)
 			: null;
 		const position = sourceNode
 			? { x: sourceNode.position.x + 280, y: sourceNode.position.y }
-			: { x: 100 + nodes.length * 60, y: 200 };
+			: { x: 100 + (nodes.length % 3) * 300, y: 150 + Math.floor(nodes.length / 3) * 220 };
 
 		const newNode: Node<WorkflowNode> = {
 			id: newId,
@@ -286,6 +298,14 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 			isModalOpen: false,
 			sourceNodeId: null,
 		});
+		return newId;
+	},
+
+	removeNode: (nodeId) => {
+		set(state => ({
+			nodes: state.nodes.filter(n => n.id !== nodeId),
+			edges: state.edges.filter(e => e.source !== nodeId && e.target !== nodeId),
+		}));
 	},
 }));
 

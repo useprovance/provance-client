@@ -17,6 +17,7 @@ const permitAbi = [
 export function WorkflowPaymentModal() {
    const pendingPayment = useEditorStore(s => s.pendingPayment);
    const clearPendingPayment = useEditorStore(s => s.clearPendingPayment);
+   const stopRun = useEditorStore(s => s.stopRun);
    const { wallets } = useWallets();
    const { connectWallet } = useConnectWallet();
    const [signing, setSigning] = useState(false);
@@ -27,6 +28,7 @@ export function WorkflowPaymentModal() {
    function handleClose() {
       if (signing) return;
       clearPendingPayment();
+      stopRun();
       setError(null);
    }
 

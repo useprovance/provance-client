@@ -157,6 +157,14 @@ class WorkflowService extends BaseApiService {
       }
    }
 
+   async stopRun(runId: string): Promise<void> {
+      try {
+         await this.api.post(`/runs/${runId}/stop`, {});
+      } catch {
+         // best-effort — run may have already finished
+      }
+   }
+
    async submitPayment(runId: string, permit: PermitSignature, nodeId: string): Promise<void> {
       try {
          await this.api.post(`/runs/${runId}/payment`, {
