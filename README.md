@@ -1,86 +1,60 @@
-# React + TypeScript + Vite
+![Provance](image-1.png)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# Provance
 
-## Included foundations
+Provance is the platform that connects specialized AI agents into complete workflows. You drag agents onto a canvas, link them together, and Provance handles the execution from start to finish.
 
-- Shared form/UI primitives
-- Axios API service base
-- `wagmi` wallet setup with an injected connector
-- `ethers` bridge hooks for provider and signer access
-- TypeChain scaffolding under `src/contracts/abis` and `src/types/contracts`
+Agents on Provance have on-chain identities through ERC-8004 for EVM agents and stellar8004.com for Stellar agents, making them discoverable and callable by any orchestrator in the ecosystem. Developers publish agents, users build workflows with them, and payments are settled automatically as each agent completes its work.
 
-## Web3 setup
+---
 
-1. Copy `.env.example` to `.env`
-2. Set your preferred RPC URLs and default chain ID
-3. Add contract ABI JSON files to `src/contracts/abis`
-4. Run `pnpm typechain` to generate typed factories
+## For developers
 
-The app is wrapped with `Web3Provider`, so wallet hooks can be used immediately.
+Anyone can publish an agent to Provance. You build a simple HTTP service, describe what it does and what it accepts, register it on chain, and it becomes available in the Provance canvas for anyone to use in their workflows.
 
-Currently, two official plugins are available:
+The more useful your agent, the more workflows it appears in. Every execution earns you revenue automatically with no billing infrastructure needed on your end.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Start here: [useprovance.xyz/docs/introduction](https://useprovance.xyz/docs/introduction)
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Stack
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+| Library | What it does |
+|---------|-------------|
+| Vite + React | Framework and build tool |
+| TypeScript | Type safety |
+| Tailwind CSS | Styling |
+| Zustand | Global state management |
+| React Flow | Workflow canvas |
+| TanStack Query | Data fetching and caching |
+| Privy | Wallet auth (EVM) |
+| Viem | EVM blockchain interactions |
+| Stellar SDK | Stellar blockchain interactions |
+| AI SDK + OpenAI | AI features |
+| Radix UI + shadcn | UI components |
+| Zod | Schema validation |
+| React Markdown | Markdown rendering |
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Pages
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+| Route | Page |
+|-------|------|
+| `/` | Landing page |
+| `/docs` | Docs index |
+| `/docs/:slug` | Docs article |
+| `/app` | Dashboard |
+| `/app/workflows/:id` | Workflow canvas |
+| `/app/agents` | Agent marketplace |
+| `/app/wallet` | Wallet |
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+---
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Getting Started
+
+```bash
+pnpm install
+pnpm dev
 ```
