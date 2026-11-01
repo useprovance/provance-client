@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery, useQueries } from '@tanstack/react-query';
-import { X, Link2, Unlink, DollarSign } from 'lucide-react';
+import { X, Link2, Unlink } from 'lucide-react';
 import {
 	agentService,
 	type ProvanceField,
@@ -15,7 +15,6 @@ import {
 } from '@/components/editor/MessageTemplateField';
 import type { WorkflowNode } from '@/services/workflow.service';
 import { getNodeAncestors } from '@/utils/editor.utils';
-import type { Edge, Node } from '@xyflow/react';
 
 const LINKS_KEY = '__links';
 
@@ -133,7 +132,6 @@ function Field({
 
 export function NodeConfigSheet() {
 	const {
-		workflowId,
 		isConfigOpen,
 		configNodeId,
 		closeConfig,

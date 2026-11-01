@@ -21,14 +21,9 @@ function ActionCard({ action }: { action: ProvanceAction }) {
             {action.description && (
                <p className="text-[11px] text-white/55 mt-0.5 line-clamp-2 leading-relaxed">{action.description}</p>
             )}
-            {(action.x402 || action.price) && (
+            {action.x402 && (
                <div className="flex items-center gap-2 mt-1.5">
-                  {action.x402 && (
-                     <span className="text-[9px] font-mono uppercase tracking-widest text-orange/80 bg-orange/10 px-1.5 py-0.5">x402</span>
-                  )}
-                  {action.price && (
-                     <span className="text-[10px] text-white/60 font-mono">${action.price.amount} / {action.price.unit}</span>
-                  )}
+                  <span className="text-[9px] font-mono uppercase tracking-widest text-orange/80 bg-orange/10 px-1.5 py-0.5">x402</span>
                </div>
             )}
          </div>
