@@ -10,7 +10,7 @@ import WorkflowEditorPage from './pages/app/WorkflowEditorPage';
 import DocsLayout from './layouts/DocsLayout';
 import DocSlugPage from './pages/docs/DocSlugPage';
 import { Toaster } from 'react-hot-toast';
-import { workflowsLoader, workflowByIdLoader, agentsLoader } from './utils/loaders.utils';
+import { workflowsLoader, workflowByIdLoader, agentsLoader, authLoader } from './utils/loaders.utils';
 
 const router = createBrowserRouter([
 	{
@@ -23,6 +23,7 @@ const router = createBrowserRouter([
 	{
 		path: '/app',
 		element: <AppLayout />,
+		loader: authLoader,
 		children: [
 			{
 				index: true,

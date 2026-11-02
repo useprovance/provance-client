@@ -1,6 +1,17 @@
+import { redirect } from "react-router";
 import { queryClient } from "@/lib/queryClient";
 import { workflowService } from "@/services/workflow.service";
 import { agentService } from "@/services/agent.service";
+import { authService } from "@/services/auth.service";
+
+export const authLoader = async () => {
+   try {
+      const user = await authService.me();
+      return user;
+   } catch {
+      throw redirect("/");
+   }
+};
 
 export const workflowsLoader = async () => {
    try {
