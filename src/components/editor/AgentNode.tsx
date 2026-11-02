@@ -25,6 +25,8 @@ export function AgentNode({ id, data, selected }: NodeProps<Node<WorkflowNode>>)
       : nodeResultsForNode.length > 0 ? 'skipped'
       : undefined;
 
+   const isUnconfigured = !data.config?.parameters;
+
    const showToolbar = () => {
       if (hideTimer.current) clearTimeout(hideTimer.current);
       setToolbarVisible(true);
@@ -101,6 +103,11 @@ export function AgentNode({ id, data, selected }: NodeProps<Node<WorkflowNode>>)
             {!isNodeRunning && nodeStatus === "skipped" && (
                <span className="absolute" style={{ bottom: 6, right: 7, lineHeight: 0 }}>
                   <Minus size={14} strokeWidth={2.5} color="oklch(50% 0 0)" />
+               </span>
+            )}
+            {isUnconfigured && nodeStatus === undefined && !isNodeRunning && (
+               <span className="absolute" style={{ bottom: 6, right: 6, lineHeight: 0 }}>
+                  <img src="/icons/node-validation-error.svg" alt="Unconfigured" width={14} height={14} />
                </span>
             )}
          </div>

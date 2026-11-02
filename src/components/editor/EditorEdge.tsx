@@ -95,7 +95,7 @@ export function EditorEdge({ id, source, target, sourceX, sourceY, targetX, targ
                      pointerEvents: "none",
                   }}
                >
-                  <div className="w-5 h-5 rounded-full flex items-center justify-center bg-[oklch(28%_0_0)] border-[1.5px] border-sand/60 text-sand">
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center bg-[oklch(28%_0_0)] border-[1.5px] border-white/60 text-white">
                      <DollarSign size={10} strokeWidth={2.5} />
                   </div>
                </div>
