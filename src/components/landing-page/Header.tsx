@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Link, useNavigate } from "react-router";
+import { useQuery } from "@tanstack/react-query";
 import ProvanceLogo from "@/components/shared/ProvanceLogo";
+import { authService } from "@/services/auth.service";
 
 const navLinks = [
    { label: "Docs", href: "/docs/introduction" },
@@ -13,6 +15,14 @@ const navLinks = [
 export default function Header() {
    const [open, setOpen] = useState(false);
    const navigate = useNavigate();
+   const { data: user } = useQuery({
+      queryKey: ["auth", "me"],
+      queryFn: () => authService.me(),
+      retry: false,
+      staleTime: 1000 * 60 * 5,
+   });
+   const ctaLabel = user ? "DASHBOARD" : "GET STARTED";
+   const ctaPath = user ? "/app" : "/auth";
 
    return (
       <header className="sticky top-0 z-50 bg-ink-dark border-b border-sand-faint">
@@ -32,10 +42,10 @@ export default function Header() {
                   </a>
                ))}
                <button
-                  onClick={() => navigate("/auth")}
+                  onClick={() => navigate(ctaPath)}
                   className="px-6 py-3 text-xs font-bold bg-orange text-ink-dark hover:bg-orange-dark transition-colors h-full flex items-center cursor-pointer tracking-widest"
                >
-                  GET STARTED
+                  {ctaLabel}
                </button>
             </nav>
 
@@ -62,11 +72,11 @@ export default function Header() {
                      </a>
                   ))}
                   <button
-                     onClick={() => { setOpen(false); navigate("/auth"); }}
+                     onClick={() => { setOpen(false); navigate(ctaPath); }}
                      className="mx-6 my-4 flex items-center justify-center py-3 bg-orange text-ink-dark text-sm font-bold hover:bg-orange-dark transition-colors cursor-pointer"
                      style={{ clipPath: "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)" }}
                   >
-                     GET STARTED
+                     {ctaLabel}
                   </button>
                </div>
             </div>

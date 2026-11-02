@@ -13,16 +13,6 @@ export const authLoader = async () => {
    }
 };
 
-export const guestLoader = async () => {
-   try {
-      await authService.me();
-      throw redirect("/app");
-   } catch (err) {
-      if (err instanceof Response) throw err;
-      return null;
-   }
-};
-
 export const workflowsLoader = async () => {
    try {
       return await queryClient.query({

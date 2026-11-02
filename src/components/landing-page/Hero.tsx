@@ -1,8 +1,18 @@
 import { useNavigate } from "react-router";
+import { useQuery } from "@tanstack/react-query";
 import HeroGraphic from "@/components/landing-page/HeroGraphic";
+import { authService } from "@/services/auth.service";
 
 export default function Hero() {
    const navigate = useNavigate();
+   const { data: user } = useQuery({
+      queryKey: ["auth", "me"],
+      queryFn: () => authService.me(),
+      retry: false,
+      staleTime: 1000 * 60 * 5,
+   });
+   const ctaLabel = user ? "GO TO DASHBOARD" : "GET STARTED";
+   const ctaPath = user ? "/app" : "/auth";
 
    return (
       <section className="grid grid-cols-1 md:grid-cols-2 md:gap-8 min-h-screen bg-ink max-w-7xl mx-auto border-b border-b-sand-faint">
@@ -33,11 +43,11 @@ export default function Hero() {
 
                <div className="flex flex-col gap-4 w-full max-w-lg">
                   <button
-                     onClick={() => navigate("/auth")}
+                     onClick={() => navigate(ctaPath)}
                      className="flex items-center justify-center w-full h-[52px] bg-sand text-ink-dark font-bold text-sm hover:bg-sand-light transition-colors cursor-pointer"
                      style={{ clipPath: "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)" }}
                   >
-                     GET STARTED
+                     {ctaLabel}
                   </button>
                   <div
                      className="w-full h-[52px] p-[2px]"
