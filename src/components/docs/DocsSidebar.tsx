@@ -1,7 +1,11 @@
 import { Link, useParams } from "react-router";
 import { DOC_NAV } from "@/config/docs.config";
 
-export function DocsSidebar() {
+type Props = {
+  onNavigate?: () => void;
+};
+
+export function DocsSidebar({ onNavigate }: Props) {
   const { slug } = useParams<{ slug: string }>();
 
   return (
@@ -17,6 +21,7 @@ export function DocsSidebar() {
                   <Link
                     key={item.slug}
                     to={`/docs/${item.slug}`}
+                    onClick={onNavigate}
                     className={`px-3 py-2 text-[15px] transition-colors ${
                       active ? "text-[#ff7a3d]" : "text-white/50 hover:text-white"
                     }`}

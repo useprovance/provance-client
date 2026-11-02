@@ -30,7 +30,7 @@ export default function DocSlugPage() {
         content={body}
         slug={slug}
       />
-      <div className="max-w-3xl px-12 pt-6 pb-14">
+      <div className="max-w-3xl px-4 md:px-12 pt-6 pb-14">
         <h1 className="text-[36px] font-semibold text-white mb-3 leading-tight">
           {current?.title ?? title ?? slug}
         </h1>

@@ -35,7 +35,7 @@ export function DocsTopBar({ sectionTitle, pageTitle, content, slug }: Props) {
   }
 
   return (
-    <div className="flex items-center justify-between px-12 pt-8 pb-4">
+    <div className="flex items-center justify-between px-4 md:px-12 pt-6 md:pt-8 pb-4">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
