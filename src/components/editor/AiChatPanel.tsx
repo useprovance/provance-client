@@ -104,31 +104,80 @@ export function AiChatPanel({ onCollapse }: { onCollapse: () => void }) {
 			sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
 			onToolCall({ toolCall }) {
 				type TC =
-					| { toolName: 'add_node';      toolCallId: string; input: { agentId: string; actionKey: string } }
-					| { toolName: 'connect_nodes'; toolCallId: string; input: { sourceId: string; targetId: string } }
-					| { toolName: 'configure_node';toolCallId: string; input: { nodeId: string; params: Record<string, string> } }
-					| { toolName: 'remove_node';   toolCallId: string; input: { nodeId: string } };
+					| {
+							toolName: 'add_node';
+							toolCallId: string;
+							input: { agentId: string; actionKey: string };
+					  }
+					| {
+							toolName: 'connect_nodes';
+							toolCallId: string;
+							input: { sourceId: string; targetId: string };
+					  }
+					| {
+							toolName: 'configure_node';
+							toolCallId: string;
+							input: { nodeId: string; config: { parameters: Record<string, string> } };
+					  }
+					| {
+							toolName: 'remove_node';
+							toolCallId: string;
+							input: { nodeId: string };
+					  };
 
 				const tc = toolCall as TC;
 
 				if (tc.toolName === 'add_node') {
 					void agentService.getById(tc.input.agentId).then(agent => {
-						const action = agent.services[tc.input.actionKey] as ProvanceAction;
+						const action = agent.services[
+							tc.input.actionKey
+						] as ProvanceAction;
 						const nodeId = addAgentNode(
-							{ agentId: agent.id, label: agent.name, image_url: agent.image_url },
-							{ key: tc.input.actionKey, label: action.name, endpoint: action.endpoint, x402: !!action.x402 }
+							{
+								agentId: agent.id,
+								label: agent.name,
+								image_url: agent.image_url,
+							},
+							{
+								key: tc.input.actionKey,
+								label: action.name,
+								endpoint: action.endpoint,
+								x402: !!action.x402,
+							}
 						);
-						addToolOutput({ tool: 'add_node', toolCallId: tc.toolCallId, output: nodeId });
+						addToolOutput({
+							tool: 'add_node',
+							toolCallId: tc.toolCallId,
+							output: nodeId,
+						});
 					});
 				} else if (tc.toolName === 'connect_nodes') {
-					onConnect({ source: tc.input.sourceId, target: tc.input.targetId, sourceHandle: null, targetHandle: null });
-					addToolOutput({ tool: 'connect_nodes', toolCallId: tc.toolCallId, output: 'done' });
+					onConnect({
+						source: tc.input.sourceId,
+						target: tc.input.targetId,
+						sourceHandle: null,
+						targetHandle: null,
+					});
+					addToolOutput({
+						tool: 'connect_nodes',
+						toolCallId: tc.toolCallId,
+						output: 'done',
+					});
 				} else if (tc.toolName === 'configure_node') {
-					updateNodeConfig(tc.input.nodeId, tc.input.params);
-					addToolOutput({ tool: 'configure_node', toolCallId: tc.toolCallId, output: 'done' });
+					console.log(tc);
+					updateNodeConfig(tc.input.nodeId, tc.input.config);
+					addToolOutput({
+						tool: 'configure_node',
+						toolCallId: tc.toolCallId,
+						output: 'done',
+					});
 				} else if (tc.toolName === 'remove_node') {
 					removeNode(tc.input.nodeId);
-					addToolOutput({ tool: 'remove_node', toolCallId: tc.toolCallId, output: 'done' });
+					addToolOutput({
+						tool: 'remove_node',
+						toolCallId: tc.toolCallId,
+						output: 'done',
+					});
 				}
 			},
 			onFinish({ message }) {
