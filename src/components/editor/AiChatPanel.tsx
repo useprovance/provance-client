@@ -117,7 +117,7 @@ export function AiChatPanel({ onCollapse }: { onCollapse: () => void }) {
 					| {
 							toolName: 'configure_node';
 							toolCallId: string;
-							input: { nodeId: string; config: { parameters: Record<string, string> } };
+							input: { nodeId: string; config: { parameters?: Record<string, string>; __links?: Record<string, string> } };
 					  }
 					| {
 							toolName: 'remove_node';
