@@ -4,10 +4,13 @@ import { Plus, Check, X, Minus } from "lucide-react";
 import type { WorkflowNode } from "@/services/workflow.service";
 import { useEditorStore } from "@/stores/editor.store";
 import { NodeToolbar } from "./NodeToolbar";
+import { AgentAvatar } from '@/components/agents/AgentAvatar';
 
 const BOX_SIZE = 96;
 
 export function AgentNode({ id, data, selected }: NodeProps<Node<WorkflowNode>>) {
+   const requestBlockRun=useEditorStore(s=>s.requestBlockRun);
+   const isRunning=useEditorStore(s=>s.isRunning);
    const openModal = useEditorStore((s) => s.openModal);
    const openConfig = useEditorStore((s) => s.openConfig);
    const runningNodeId = useEditorStore((s) => s.runningNodeId);
@@ -59,6 +62,8 @@ export function AgentNode({ id, data, selected }: NodeProps<Node<WorkflowNode>>)
             {isNodeRunning && <div className="node-running-border" />}
             <NodeToolbar
                visible={toolbarVisible || (selected ?? false)}
+               onRun={()=>requestBlockRun(id)}
+               runDisabled={isRunning}
                onDelete={() => deleteElements({ nodes: [{ id }] })}
                onMouseEnter={showToolbar}
                onMouseLeave={hideToolbar}
@@ -75,20 +80,7 @@ export function AgentNode({ id, data, selected }: NodeProps<Node<WorkflowNode>>)
                className="!w-4 !h-4 !bg-[hsl(0,0%,17%)] !border !border-[oklch(0.5_0_0)] !rounded-full !transition-[transform,background,border-width] !duration-200 hover:!scale-150 hover:!border-[1.5px] hover:!border-[oklch(88.53%_0_89.88)] hover:!bg-[hsl(0,0%,38%)] !z-20"
             />
 
-            {data.image_url ? (
-               <img
-                  src={data.image_url}
-                  alt={data.label}
-                  className="object-contain rounded-sm"
-                  style={{ width: 48, height: 48 }}
-               />
-            ) : (
-               <div className="flex items-center justify-center rounded-sm bg-white/8" style={{ width: 48, height: 48 }}>
-                  <span className="text-[11px] font-mono text-white/40 uppercase tracking-widest text-center leading-tight px-1">
-                     {data.label?.slice(0, 4) ?? "?"}
-                  </span>
-               </div>
-            )}
+            <AgentAvatar name={data.label ?? data.nodeId} src={data.image_url} className="size-12 rounded-sm bg-transparent [&_img]:p-0" />
 
             {!isNodeRunning && nodeStatus === "success" && (
                <span className="absolute" style={{ bottom: 6, right: 7, lineHeight: 0 }}>

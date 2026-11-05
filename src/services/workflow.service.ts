@@ -1,4 +1,5 @@
 import { BaseApiService } from './api.service';
+import type { BudgetSnapshot } from './budget.service';
 
 export interface WorkflowLog {
   time: string;
@@ -20,7 +21,11 @@ export interface PermitSignature {
 }
 
 
+export type BlockRunOptions = {nodeId:string;inputMode:'manual'|'saved';input?:Record<string,unknown>;sourceRunId?:string;sourceItemIndex?:number};
+export type BlockRunScope = {kind:'block';nodeId:string;label:string;sourceRunId?:string;sourceItemIndex?:number};
+
 export type WorkflowRun = {
+  scope?: BlockRunScope;
   id: string;
   status: 'running' | 'success' | 'error';
   startedAt: string;
@@ -50,11 +55,15 @@ export type PendingPayment = {
   chainId: number;
 };
 
+export type PendingApproval = {runId:string;nodeId:string;callIndex:number;label:string;input:Record<string,unknown>;maxFeeUsd:string;approvalId?:string;providerPolicy?:{scheme?:'exact'|'free';network:string|null;asset:string|null;payTo:string|null;url:string;policyHash:string;registryRevision:string}};
+
 export type RunEvent =
+  | { type: "budget"; budget: BudgetSnapshot }
+  | ({type:"approval_required"} & Omit<PendingApproval,'runId'>)
   | { type: "node_start";       nodeId: string; input: Record<string, unknown> }
   | { type: "node_success";     nodeId: string; output: Record<string, unknown> }
   | { type: "node_error";       nodeId: string; error: string }
-  | { type: "log";              level: "info" | "error"; message: string }
+  | { type: "log";              level: "info" | "warn" | "error"; message: string }
   | { type: "complete";         status: "success" | "error"; nodeResults: NodeRunResult[] }
   | { type: "payment_required"; nodeId: string; itemCount: number; pricePerCall: number; totalAmount: number; token: string; tokenAddress: string; walletAddress: string; chainId: number }
   | { type: "stream_error" };
@@ -85,6 +94,7 @@ export interface Workflow {
    canvas: {
       nodes: WorkflowNode[];
       edges: WorkflowEdge[];
+      maxExecutionFee?: string | null;
    };
    viewport: { x: number; y: number; zoom: number };
    created_at: string;
@@ -148,13 +158,20 @@ class WorkflowService extends BaseApiService {
       }
    }
 
-   async run(id: string): Promise<{ runId: string }> {
+   async run(id: string, maxExecutionFee: string | null): Promise<{ runId: string; budget: BudgetSnapshot }> {
       try {
-         const res = await this.api.post<{ runId: string }>(`/workflows/${id}/run`, {});
+         const res = await this.api.post<{ runId: string; budget: BudgetSnapshot }>(`/workflows/${id}/run`, { maxExecutionFee });
          return res.data;
       } catch (error) {
          throw this.handleError(error);
       }
+   }
+
+   async runBlock(id:string,options:BlockRunOptions,maxExecutionFee:string|null):Promise<{runId:string;budget:BudgetSnapshot;scope:BlockRunScope}>{
+      try{
+         const {nodeId,...input}=options;
+         return (await this.api.post(`/workflows/${encodeURIComponent(id)}/nodes/${encodeURIComponent(nodeId)}/run`,{...input,maxExecutionFee})).data;
+      }catch(error){throw this.handleError(error);}
    }
 
    async stopRun(runId: string): Promise<void> {
@@ -208,8 +225,8 @@ class WorkflowService extends BaseApiService {
       };
 
       es.onerror = () => {
-         onEvent({ type: "stream_error" });
-         es.close();
+         // EventSource reconnects with Last-Event-ID after transient disconnects.
+         if(es.readyState===EventSource.CLOSED)onEvent({type:'stream_error'});
       };
 
       // Return a cleanup function so the caller can close the stream early

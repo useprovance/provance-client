@@ -15,6 +15,7 @@ export function extractActions(services: ProvanceServices): ProvanceAction[] {
 }
 
 export const CHAIN_NAMES: Record<number, string> = {
+   0: "External service",
    1: "Ethereum", 8453: "Base", 42220: "Celo", 137: "Polygon",
    10: "Optimism", 42161: "Arbitrum", 56: "BSC", 100: "Gnosis",
    2345: "GOAT",

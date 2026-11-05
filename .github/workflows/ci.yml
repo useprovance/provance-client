@@ -1,0 +1,24 @@
+name: Client checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      VITE_API_URL: http://localhost:4000/api/v1
+      VITE_PRIVY_APP_ID: ci-public-placeholder
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: pnpm/action-setup@v6
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run test:masterkey
+      - run: pnpm run build
