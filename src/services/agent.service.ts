@@ -37,6 +37,9 @@ export interface ProvanceAction {
       walletAddress: string;
    };
    config: ProvanceConfigTab[];
+   execution?: {adapter:'masterkey';serviceId:string;operation?:string;inputFormat:'fields'};
+   inputSchema?: unknown;
+   inputExample?: Record<string, unknown>;
    result?: Record<string, ProvanceOutputField>;
 }
 

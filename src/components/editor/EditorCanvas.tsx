@@ -13,6 +13,7 @@ import { TriggerNode } from './TriggerNode';
 import { EditorEdge } from './EditorEdge';
 import { AddAgentModal } from './AddAgentModal';
 import { NodeConfigSheet } from './NodeConfigSheet';
+import {RunBlockDialog} from './RunBlockDialog';
 import { EditorBottomPanel } from './EditorBottomPanel';
 import { EmptyCanvasNode } from './EmptyCanvasNode';
 import { useEditorStore } from '@/stores/editor.store';
@@ -151,6 +152,7 @@ export function EditorCanvas({ workflow }: { workflow: Workflow }) {
 
 					<AddAgentModal />
 					<NodeConfigSheet />
+                    <RunBlockDialog />
 				</div>
 				<EditorBottomPanel />
 			</div>

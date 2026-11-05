@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { X, ArrowUpRight, Zap, Loader2 } from "lucide-react";
-import { createPublicClient, createWalletClient, custom } from "viem";
+import { createPublicClient, createWalletClient, custom, parseUnits } from "viem";
 import { useWallets, useConnectWallet } from "@privy-io/react-auth";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useEditorStore } from "@/stores/editor.store";
@@ -54,7 +54,7 @@ export function WorkflowPaymentModal() {
             publicClient.readContract({ address: pendingPayment.tokenAddress, abi: permitAbi, functionName: 'decimals' }),
          ]);
 
-         const value = BigInt(Math.round(pendingPayment.totalAmount * 10 ** decimals));
+         const value = parseUnits(pendingPayment.totalAmount.toFixed(decimals),decimals);
 
          const sig = await walletClient.signTypedData({
             account: owner,
@@ -146,7 +146,7 @@ export function WorkflowPaymentModal() {
                   <div className="flex items-start gap-3 px-3 py-3 bg-white/3 border border-dashed border-white/8">
                      <Zap size={15} className="text-white/60 shrink-0 mt-0.5" />
                      <p className="text-[12px] text-white/65 leading-relaxed">
-                        Uses EIP-2612 gasless permits on GOAT Network. No gas fees. Funds only move if the action succeeds.
+                        Authorizes execution fees through an EIP-2612 permit. Fees may be collected before the action completes. Trade amounts and other transfers need separate limits.
                      </p>
                   </div>
 

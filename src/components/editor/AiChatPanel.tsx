@@ -117,7 +117,14 @@ export function AiChatPanel({ onCollapse }: { onCollapse: () => void }) {
 					| {
 							toolName: 'configure_node';
 							toolCallId: string;
-							input: { nodeId: string; config: { parameters?: Record<string, string>; __links?: Record<string, string> } };
+							input: {
+								nodeId: string;
+								config: {
+									parameters?: Record<string, unknown>;
+									__links?: Record<string, string>;
+									settings?: Record<string, unknown>;
+								};
+							};
 					  }
 					| {
 							toolName: 'remove_node';
@@ -143,6 +150,7 @@ export function AiChatPanel({ onCollapse }: { onCollapse: () => void }) {
 								label: action.name,
 								endpoint: action.endpoint,
 								x402: !!action.x402,
+                                execution:action.execution,
 							}
 						);
 						addToolOutput({

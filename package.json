@@ -8,6 +8,8 @@
 		"dev": "vite --host",
 		"build": "tsc -b && vite build",
 		"lint": "eslint .",
+		"test:service-input": "node --experimental-strip-types --test tests/service-input.test.ts",
+		"test:masterkey": "node --experimental-strip-types --test tests/service-input.test.ts tests/masterkey-availability.test.ts tests/agent-input.test.ts",
 		"preview": "vite preview",
 		"typechain": "typechain --target ethers-v6 --out-dir src/types/contracts \"src/contracts/abis/*.json\""
 	},

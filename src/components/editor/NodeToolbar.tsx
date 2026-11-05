@@ -1,4 +1,4 @@
-import { Trash2, MoreHorizontal } from "lucide-react";
+import { Trash2, MoreHorizontal, Play } from "lucide-react";
 import {
    DropdownMenu,
    DropdownMenuContent,
@@ -9,17 +9,21 @@ import {
 interface NodeToolbarProps {
    visible: boolean;
    onDelete: () => void;
+   onRun?: () => void;
+   runDisabled?: boolean;
    onMouseEnter?: () => void;
    onMouseLeave?: () => void;
 }
 
-export function NodeToolbar({ visible, onDelete, onMouseEnter, onMouseLeave }: NodeToolbarProps) {
+export function NodeToolbar({ visible, onDelete, onRun, runDisabled, onMouseEnter, onMouseLeave }: NodeToolbarProps) {
    return (
       <div
+         onClick={event=>event.stopPropagation()}
          onMouseEnter={onMouseEnter}
          onMouseLeave={onMouseLeave}
-         className={`nodrag absolute -top-11 left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-[hsl(0,0%,13%)] border border-white/10 rounded-md px-1 py-1 transition-opacity duration-150 ${visible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+         className={`nodrag absolute -top-11 left-1/2 -translate-x-1/2 w-max flex items-center gap-0.5 bg-[hsl(0,0%,13%)] border border-white/10 rounded-md px-1 py-1 transition-opacity duration-150 focus-within:opacity-100 focus-within:pointer-events-auto ${visible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
       >
+         {onRun&&<button type="button" onClick={onRun} disabled={runDisabled} className="h-7 flex items-center gap-1.5 whitespace-nowrap px-2 text-xs text-sand hover:bg-white/10 rounded disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-orange"><Play size={12}/>Run block</button>}
          <button
             onClick={onDelete}
             title="Delete"

@@ -15,6 +15,12 @@ import {
 } from '@/components/editor/MessageTemplateField';
 import type { WorkflowNode } from '@/services/workflow.service';
 import { getNodeAncestors } from '@/utils/editor.utils';
+import { AgentAvatar } from '@/components/agents/AgentAvatar';
+import { ServiceInputForm } from './ServiceInputForm';
+import {agentParameterJson,agentInputSettings,saveAgentParameters} from '@/utils/agent-input';
+import { serviceInputDefinition, serviceInputErrors } from '@/utils/service-input';
+import { useMasterkeyAvailability } from '@/services/masterkey.service';
+import { masterkeyOperationStatus } from '@/utils/masterkey-availability';
 
 const LINKS_KEY = '__links';
 
@@ -138,16 +144,21 @@ export function NodeConfigSheet() {
 		nodes,
 		edges,
 		updateNodeConfig,
+		requestBlockRun,
+		isRunning,
 	} = useEditorStore();
 
 	const [activeTab, setActiveTab] = useState('');
-	const [config, setConfig] = useState<Record<string, Record<string, string>>>(
+	const [config, setConfig] = useState<Record<string, Record<string, unknown>>>(
 		{}
 	);
 	const [linked, setLinked] = useState<Record<string, string>>({});
+	const [parameterJson,setParameterJson]=useState('{}');
+	const [inputErrors, setInputErrors] = useState<Record<string, string>>({});
 
 	const node = configNodeId ? nodes.find(n => n.id === configNodeId) : null;
 	const nodeData = node?.data as WorkflowNode | undefined;
+	const availability = useMasterkeyAvailability(isConfigOpen && !!nodeData?.nodeId.startsWith('masterkey:'));
 
 	const hasParentEdges = edges.some(e => e.target === configNodeId);
 
@@ -164,9 +175,12 @@ export function NodeConfigSheet() {
 	useEffect(() => {
 		if (!isConfigOpen || !nodeData) return;
 		const savedConfig =
-			(nodeData.config as Record<string, Record<string, string>>) ?? {};
-		setConfig(savedConfig);
-		setLinked(hasParentEdges ? (savedConfig[LINKS_KEY] ?? {}) : {});
+			(nodeData.config as Record<string, Record<string, unknown>>) ?? {};
+		const managed=nodeData.nodeId.startsWith('masterkey:');
+		setConfig({...savedConfig,settings:agentInputSettings(nodeData.config,managed)});
+		setParameterJson(agentParameterJson(nodeData.config,managed));
+		setLinked(hasParentEdges ? (savedConfig[LINKS_KEY] ?? {}) as Record<string,string> : {});
+		setInputErrors({});
 	}, [isConfigOpen, configNodeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// set active tab once agent loads
@@ -233,11 +247,18 @@ export function NodeConfigSheet() {
 		[ancestorOptions]
 	);
 
-	const handleSave = useCallback(() => {
+	const handleSave = useCallback((runAfterSave=false) => {
 		if (!configNodeId) return;
-		updateNodeConfig(configNodeId, { ...config, [LINKS_KEY]: linked });
+		if (action?.inputSchema) {
+			const errors = serviceInputErrors(serviceInputDefinition(action.inputSchema, action.inputExample), parameterJson);
+			setInputErrors(errors);
+			if (Object.keys(errors).length) return;
+		}
+		const next={...nodeData?.config,...config,[LINKS_KEY]:linked};
+		updateNodeConfig(configNodeId,action?.inputSchema?saveAgentParameters(next,parameterJson,!!action.execution||!!nodeData?.nodeId.startsWith('masterkey:'),config.settings):next);
 		closeConfig();
-	}, [configNodeId, config, linked, updateNodeConfig, closeConfig]);
+		if(runAfterSave)requestBlockRun(configNodeId);
+	}, [requestBlockRun, parameterJson, configNodeId, config, linked, updateNodeConfig, closeConfig, nodeData?.nodeId, nodeData?.config, action]);
 
 	const activeTabData = action?.config.find(c => c.key === activeTab);
 
@@ -248,17 +269,7 @@ export function NodeConfigSheet() {
 			{/* Header */}
 			<div className="flex items-center gap-2 px-5 py-4 border-b border-[#2a2a2a]">
 				<div className="w-10 h-10 flex items-center justify-center shrink-0 overflow-hidden">
-					{nodeData.image_url ? (
-						<img
-							src={nodeData.image_url}
-							alt={nodeData.label}
-							width={40}
-							height={40}
-							className="object-contain"
-						/>
-					) : (
-						<span className="text-white/30 text-xl">◈</span>
-					)}
+					<AgentAvatar name={nodeData.label} src={agent?.image_url ?? nodeData.image_url} />
 				</div>
 				<div className="flex-1 min-w-0">
 					<p className="text-[15px] font-semibold text-white truncate">
@@ -310,6 +321,7 @@ export function NodeConfigSheet() {
 
 			{/* Fields */}
 			<div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-5">
+				{nodeData.nodeId.startsWith('masterkey:') && !masterkeyOperationStatus(nodeData.nodeId, nodeData.action.key, availability.data).executable && <p role="status" className="text-xs leading-relaxed text-amber-200/90">{masterkeyOperationStatus(nodeData.nodeId, nodeData.action.key, availability.data).label} · {masterkeyOperationStatus(nodeData.nodeId, nodeData.action.key, availability.data).reason} You can edit the saved input; the workflow will be blocked until this operation is available.</p>}
 				{action?.payment !== undefined && (
 					<div className="flex items-center justify-between px-4 py-3 bg-white/4 ring-1 ring-white/8 ring-offset-2 ring-offset-[#141414]">
 						<div className="flex items-center gap-2.5">
@@ -332,6 +344,8 @@ export function NodeConfigSheet() {
 							</div>
 						))}
 					</>
+				) : activeTab==='parameters'&&action?.inputSchema ? (
+                       <ServiceInputForm key={`${configNodeId}:${nodeData.action.key}`} schema={action.inputSchema} example={action.inputExample} value={parameterJson} onChange={v=>{setParameterJson(v);if(Object.keys(inputErrors).length)setInputErrors(serviceInputErrors(serviceInputDefinition(action.inputSchema,action.inputExample),v));}} variables={templateVariables} errors={inputErrors}/>
 				) : !activeTabData || activeTabData.fields.length === 0 ? (
 					<div className="flex items-center justify-center h-full">
 						<p className="text-[12px] text-white/30">
@@ -344,7 +358,7 @@ export function NodeConfigSheet() {
 							<Field
 								key={f.key}
 								field={f}
-								value={config[activeTab]?.[f.key] ?? ''}
+								value={String(config[activeTab]?.[f.key] ?? '')}
 								onChange={v =>
 									setConfig(prev => ({
 										...prev,
@@ -376,8 +390,9 @@ export function NodeConfigSheet() {
 				>
 					Cancel
 				</button>
+				{nodeData.type==='agent'&&<button disabled={isRunning} onClick={()=>handleSave(true)} className="whitespace-nowrap px-3 py-1.5 text-[13px] text-sand border border-white/20 hover:bg-white/10 disabled:opacity-50 focus-visible:outline focus-visible:outline-orange">Save & run block</button>}
 				<button
-					onClick={handleSave}
+					onClick={()=>handleSave()}
 					className="px-4 py-1.5 text-[13px] font-medium bg-orange text-white hover:bg-orange/90 transition-colors cursor-pointer"
 					style={{
 						clipPath:

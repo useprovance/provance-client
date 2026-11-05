@@ -16,6 +16,7 @@ import {
 import { useEditorStore } from "@/stores/editor.store";
 import { workflowService, type WorkflowRun, type NodeRunResult } from "@/services/workflow.service";
 import { WorkflowPaymentModal } from "@/components/editor/WorkflowPaymentModal";
+import { ExecutionBudget,ServiceApprovalModal } from './ExecutionBudget';
 
 function JsonValue({ value, depth = 0 }: { value: unknown; depth?: number }) {
    if (value === null) return <span className="text-white/60">null</span>;
@@ -143,6 +144,9 @@ function totalDuration(results: NodeRunResult[]) {
 
 function getErrorHint(error: string): string {
    const e = error.toLowerCase();
+   if (e.includes("free mcp search failed")) return "Exa could not complete that free search. Try running the block again; no payment was attempted.";
+   if (error.startsWith("Exa ") || e.includes("use a pair such as")) return error;
+   if (e.includes("reviewed free-service schema")) return "An input has the wrong format. Open the block configuration and follow the field examples.";
    if (e.includes("pair not found")) return "This token has no trading pair yet — it may be too new. Try again in a few minutes.";
    if (e.includes("required") && e.includes("token_address")) return "A required field is missing. Open the node config and link the correct output from the previous step.";
    if (e.includes("404")) return "The resource was not found. The token or pair may not be indexed on this chain yet.";
@@ -202,7 +206,7 @@ function NodeStep({ result, index, isLast }: { result: NodeRunResult; index: num
             )}
 
             {result.status === "error" && hint && (
-               <p className="text-[13px] text-amber-400 mt-1.5 leading-relaxed">{hint}</p>
+               <p className="text-[13px] text-amber-400 mt-1.5 leading-relaxed break-words">{hint}</p>
             )}
 
             {result.status !== "skipped" && (
@@ -249,7 +253,7 @@ function RunHistoryRow({ run }: { run: WorkflowRun }) {
             }
 
             <p className={`flex-1 text-[13px] font-medium ${isRunning ? "text-amber-400" : run.status === "success" ? "text-white" : "text-red-400"}`}>
-               {isRunning ? "Running..." : run.status === "success" ? "Completed successfully" : "Run failed"}
+               {run.scope?.kind==='block'&&<span>Block: {run.scope.label} · </span>}{isRunning ? "Running..." : run.status === "success" ? "Completed successfully" : "Run failed"}
             </p>
 
             <p className="text-[12px] text-white/60 shrink-0">
@@ -264,6 +268,7 @@ function RunHistoryRow({ run }: { run: WorkflowRun }) {
             <div className="px-4 pt-2 pb-1">
                {!isRunning && (
                   <div className="flex items-center gap-3 mb-4 text-[12px] font-medium">
+                     <button className="text-sand underline" onClick={()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(run.nodeResults,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=`workflow-${run.id}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}}>Download results</button>
                      {succeeded > 0 && <span className="text-green-500">{succeeded} succeeded</span>}
                      {failed > 0 && <span className="text-red-400">{failed} failed</span>}
                   </div>
@@ -325,6 +330,7 @@ export function EditorBottomPanel() {
    return (
       <>
       <WorkflowPaymentModal />
+      <ServiceApprovalModal />
       <div
          className="relative shrink-0 bg-[#111] flex flex-col border-t border-[#2a2a2a]"
          style={{ height: collapsed ? "36px" : `${panelHeight}px`, transition: collapsed ? "height 0.2s" : "none" }}
@@ -338,7 +344,9 @@ export function EditorBottomPanel() {
          )}
 
          {/* Run / Stop — float above */}
-         <div className="absolute -top-14 left-4 flex items-center gap-2 z-10">
+         <div className="absolute bottom-[calc(100%+12px)] left-4 flex flex-col items-start gap-2 z-10">
+            <ExecutionBudget />
+            <div className="flex items-center gap-2">
             <button
                onClick={handleRun}
                disabled={isRunning}
@@ -356,6 +364,7 @@ export function EditorBottomPanel() {
                   Stop
                </button>
             )}
+            </div>
          </div>
 
          {/* Tab bar */}

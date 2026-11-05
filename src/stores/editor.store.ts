@@ -17,8 +17,12 @@ import type {
 	WorkflowNode,
 	NodeRunResult,
 	PendingPayment,
+	PendingApproval,
+	BlockRunOptions,
+	BlockRunScope,
 } from '@/services/workflow.service';
 import { workflowService } from '@/services/workflow.service';
+import {validFee,type BudgetSnapshot} from '@/services/budget.service';
 
 interface EditorStore {
 	// canvas
@@ -39,7 +43,7 @@ interface EditorStore {
 	closeModal: () => void;
 	addAgentNode: (
 		agent: { agentId: string; label: string; image_url: string | null },
-		action: { key: string; label: string; endpoint?: string; x402?: boolean },
+		action: { key: string; label: string; endpoint?: string; x402?: boolean; execution?:{inputFormat:string} },
 		nodeId?: string
 	) => string;
 	removeNode: (nodeId: string) => void;
@@ -56,6 +60,11 @@ interface EditorStore {
 	activeRunId: string | null;
 	runningNodeId: string | null;
 	pendingPayment: PendingPayment | null;
+	pendingApproval: PendingApproval | null;
+	clearPendingApproval: () => void;
+	maxExecutionFee: string | null;
+	setMaxExecutionFee: (value: string | null) => void;
+	budget: BudgetSnapshot | null;
 	logsOpen: boolean;
 	panelTab: 'logs' | 'runs';
 	logs: WorkflowLog[];
@@ -64,10 +73,16 @@ interface EditorStore {
 	setPanelTab: (tab: 'logs' | 'runs') => void;
 	clearLogs: () => void;
 	clearRuns: () => void;
-	triggerRun: () => Promise<void>;
+	blockRunNodeId: string|null;
+	requestBlockRun: (id:string)=>void;
+	closeBlockRun: ()=>void;
+	triggerRun: (options?:BlockRunOptions) => Promise<boolean>;
+	attachRun: (runId:string) => void;
 	clearPendingPayment: () => void;
 	stopRun: () => void;
 }
+
+let closeRunStream:(()=>void)|undefined;
 
 export const useEditorStore = create<EditorStore>((set, get) => ({
 	workflowId: '',
@@ -97,6 +112,10 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 		);
 		set({
 			workflowId: workflow.id,
+			blockRunNodeId:null,
+			maxExecutionFee: workflow.canvas.maxExecutionFee ?? null,
+			budget: null,
+			pendingApproval: null,
 			nodes: workflow.canvas.nodes.map(n => ({
 				id: n.id,
 				type: n.type,
@@ -110,7 +129,8 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 				? (JSON.parse(savedViewport) as Workflow['viewport'])
 				: (workflow.viewport ?? { x: 0, y: 0, zoom: 1 }),
 		});
-		void workflowService.getRuns(workflow.id).then(runs => set({ runs }));
+        closeRunStream?.();set({isRunning:false,activeRunId:null});
+        void workflowService.getRuns(workflow.id).then(runs=>{if(get().workflowId!==workflow.id)return;set({runs});const active=runs.find(r=>r.status==='running');if(active)get().attachRun(active.id);});
 	},
 
 	setViewport: viewport => set({ viewport }),
@@ -135,6 +155,11 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 	activeRunId: null,
 	runningNodeId: null,
 	pendingPayment: null,
+	pendingApproval: null,
+	clearPendingApproval: () => set({pendingApproval:null}),
+	maxExecutionFee: null,
+	setMaxExecutionFee: value => set({maxExecutionFee:value}),
+	budget: null,
 	logsOpen: false,
 	panelTab: 'logs',
 	logs: [],
@@ -149,41 +174,62 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 	clearRuns: () => set({ runs: [] }),
 	clearPendingPayment: () => set({ pendingPayment: null }),
 
-	triggerRun: async () => {
-		const { workflowId, nodes } = get();
-		if (!workflowId) return;
+	blockRunNodeId:null,
+	requestBlockRun:id=>{if(!get().isRunning&&get().nodes.some(n=>n.id===id&&n.type==='agent'))set({blockRunNodeId:id,isConfigOpen:false,configNodeId:null});},
+	closeBlockRun:()=>set({blockRunNodeId:null}),
+	triggerRun: async (options) => {
+		const { workflowId, nodes, edges, maxExecutionFee, isRunning } = get();
+		if (!workflowId || isRunning) return false;
+		if(maxExecutionFee!==null&&!validFee(maxExecutionFee)){
+			set(s=>({logsOpen:true,panelTab:'logs',logs:[...s.logs,{time:new Date().toLocaleTimeString(),level:'error',message:'Enter a valid run fee cap with at most 6 decimal places.'}]}));return false;
+		}
 
 		set({ isRunning: true, logsOpen: true, panelTab: 'runs' });
 
 		let runId: string;
+		let scope:BlockRunScope|undefined;
 		try {
-			const res = await workflowService.run(workflowId);
+			await workflowService.update(workflowId,{canvas:{nodes:nodes.map(n=>({...n.data,position:n.position})),edges:edges.map(e=>({id:e.id,source:e.source,target:e.target})),maxExecutionFee}});
+			const res = options ? await workflowService.runBlock(workflowId,options,maxExecutionFee) : await workflowService.run(workflowId,maxExecutionFee);
+			if('scope' in res)scope=res.scope as BlockRunScope;
 			runId = res.runId;
-			set({ activeRunId: runId });
+			set({ activeRunId: runId, budget: res.budget });
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : 'Failed to start run';
 			set(s => ({
-				isRunning: false,
+				isRunning: false, panelTab:'logs',
 				activeRunId: null,
 				logs: [...s.logs, { time: new Date().toLocaleTimeString(), level: 'error' as const, message: msg }],
 			}));
-			return;
+			return false;
 		}
 
 		const startedAt = new Date().toISOString();
 
 		// Push the in-progress run immediately so the runs table shows it live
 		set(s => ({
-			runs: [{ id: runId, status: 'running', startedAt, nodeResults: [] }, ...s.runs],
+			runs: [{ id: runId, status: 'running', startedAt, nodeResults: [], scope }, ...s.runs],
 		}));
 
+		get().attachRun(runId);
+		return true;
+	},
+	attachRun: runId => {
+		const {workflowId,nodes}=get();
+		closeRunStream?.();
+		set({isRunning:true,activeRunId:runId,logsOpen:true});
 		// Track per-node start time + input so we can build NodeRunResult on success/error
 		const nodeStartData = new Map<string, { startedAt: string; input: Record<string, unknown> }>();
 
-		workflowService.stream(runId, (event: RunEvent) => {
+		closeRunStream=workflowService.stream(runId, (event: RunEvent) => {
+			if(get().activeRunId!==runId)return;
 			const time = new Date().toLocaleTimeString();
 
-			if (event.type === 'log') {
+			if(event.type==='budget'){
+				set({budget:event.budget});
+			}else if(event.type==='approval_required'){
+				set({pendingApproval:{runId,...event}});
+			}else if (event.type === 'log') {
 				set(s => {
 					const updated = [...s.logs, { time, level: event.level, message: event.message }];
 					localStorage.setItem(`provance_logs_${workflowId}`, JSON.stringify(updated));
@@ -207,6 +253,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 				};
 				set(s => ({
 					runningNodeId: null,
+					pendingApproval:null,
 					runs: s.runs.map(r => r.id === runId
 						? { ...r, nodeResults: [...r.nodeResults, result] }
 						: r
@@ -232,6 +279,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 					activeRunId: null,
 					runningNodeId: null,
 					pendingPayment: null,
+					pendingApproval: null,
 					runs: s.runs.map(r => r.id === runId
 						? { ...r, status: event.status, nodeResults: event.nodeResults }
 						: r
@@ -242,6 +290,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 					isRunning: false,
 					activeRunId: null,
 					runningNodeId: null,
+					pendingPayment: null, pendingApproval:null,
 					logs: [...s.logs, { time, level: 'error' as const, message: 'Lost connection to run stream' }],
 				}));
 			}
@@ -250,7 +299,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 	stopRun: () => {
 		const { activeRunId } = get();
 		if (activeRunId) void workflowService.stopRun(activeRunId);
-		set({ isRunning: false, activeRunId: null, runningNodeId: null, pendingPayment: null });
+		set({runningNodeId:null,pendingPayment:null,pendingApproval:null});
 	},
 
 	addAgentNode: (agent, action, nodeId) => {
@@ -273,10 +322,10 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 				nodeId: agent.agentId,
 				type: 'agent',
 				position,
-				action,
+				action:{key:action.key,label:action.label,endpoint:action.endpoint,x402:action.x402},
 				label: agent.label,
 				image_url: agent.image_url,
-				config: {},
+				config: action.execution?.inputFormat==='fields'?{__inputVersion:2,parameters:{}}:{},
 			},
 		};
 
@@ -318,11 +367,11 @@ useEditorStore.subscribe((state, prev) => {
 			JSON.stringify(state.viewport)
 		);
 	}
-	if (state.nodes === prev.nodes && state.edges === prev.edges) return;
+	if (state.nodes === prev.nodes && state.edges === prev.edges && state.maxExecutionFee === prev.maxExecutionFee) return;
 	// TODO: slight stutter on first drag — clearTimeout/setTimeout fires on every mousemove, investigate debounce that doesn't reset mid-drag
 	if (saveTimer) clearTimeout(saveTimer);
 	saveTimer = setTimeout(() => {
-		const { workflowId: storedId, nodes, edges } = useEditorStore.getState();
+		const { workflowId: storedId, nodes, edges, maxExecutionFee } = useEditorStore.getState();
 		const workflowId =
 			storedId ||
 			window.location.pathname.match(/\/workflows\/([^/]+)/)?.[1] ||
@@ -330,6 +379,7 @@ useEditorStore.subscribe((state, prev) => {
 		if (!workflowId || nodes.length === 0) return;
 		void workflowService.update(workflowId, {
 			canvas: {
+				maxExecutionFee,
 				nodes: nodes.map(n => ({
 					...n.data,
 					position: n.position,
