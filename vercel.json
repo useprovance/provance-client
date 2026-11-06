@@ -1,6 +1,6 @@
 {
 	"rewrites": [
-		{ "source": "/api/:path*", "destination": "https://provance-nodes.fly.dev/api/:path*" },
+		{ "source": "/api/:path*", "destination": "https://api.useprovance.xyz/api/:path*" },
 		{ "source": "/(.*)", "destination": "/" }
 	]
 }
