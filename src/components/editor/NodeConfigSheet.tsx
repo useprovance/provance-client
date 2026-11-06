@@ -198,12 +198,26 @@ export function NodeConfigSheet() {
 						| undefined
 				)?.result;
 				if (!result) return [];
-				return Object.entries(result).map(([key, field]) => ({
-					value: `${ancestors[i].id}::${key}`,
-					label: `${ancestors[i].label}: ${field.label}`,
-					icon: ancestors[i].image_url ?? undefined,
-					outputType: field.type,
-				}));
+				const options: AncestorOption[] = [];
+				for (const [key, field] of Object.entries(result)) {
+					options.push({
+						value: `${ancestors[i].id}::${key}`,
+						label: `${ancestors[i].label}: ${field.label}`,
+						icon: ancestors[i].image_url ?? undefined,
+						outputType: field.type,
+					});
+					if (field.properties) {
+						for (const [nestedKey, nestedField] of Object.entries(field.properties)) {
+							options.push({
+								value: `${ancestors[i].id}::${nestedKey}`,
+								label: `${ancestors[i].label}: ${nestedField.label}`,
+								icon: ancestors[i].image_url ?? undefined,
+								outputType: nestedField.type,
+							});
+						}
+					}
+				}
+				return options;
 			}),
 		[ancestors, ancestorQueries]
 	);

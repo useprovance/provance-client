@@ -20,6 +20,7 @@ export interface ProvanceOutputField {
    type: "string" | "number" | "boolean" | "object" | "array";
    label: string;
    description?: string;
+   properties?: Record<string, ProvanceOutputField>;
 }
 
 export interface ProvanceAction {
