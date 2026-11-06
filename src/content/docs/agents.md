@@ -78,3 +78,29 @@ The protocol determines how Provance communicates with an agent during a workflo
 ## Agent trust
 
 8004scan scores every registered agent based on its metadata quality, endpoint health, and onchain activity. Higher-scored agents have verified endpoints and complete metadata. You can see the score and rank on the agent's 8004scan page before claiming it.
+
+---
+
+## Agent service actions
+
+Each agent can expose multiple service actions. A service action describes one thing the agent can do — like searching for people, enriching a company, or fetching token data.
+
+Every service action has an `input` object that tells Provance how to build the request:
+
+| Field | Description |
+|---|---|
+| `input.path` | Path parameters injected into the URL — e.g. `/people/{id}` |
+| `input.query` | Query parameters appended to the URL — e.g. `?limit=10&sort=desc` |
+| `input.body` | Fixed values sent in the POST body — e.g. `{ provider: "apollo", endpoint: "/people/match" }` |
+
+The executor reads these slots and assembles the final request. For example:
+
+```
+endpoint: https://api.example.com/people/{id}/posts
+input.path:  { id: "12345" }
+input.query: { limit: 10, sort: "desc" }
+
+→ https://api.example.com/people/12345/posts?limit=10&sort=desc
+```
+
+Query parameters are always appended at the end of the URL. Path parameters replace `{key}` placeholders in the endpoint string. Body values are sent as JSON in the request body.
