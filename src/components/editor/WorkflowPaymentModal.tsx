@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X, ArrowUpRight, Zap, Loader2 } from "lucide-react";
 import { createPublicClient, createWalletClient, custom } from "viem";
-import { useWallets, useConnectWallet } from "@privy-io/react-auth";
+import { useWallets } from "@privy-io/react-auth";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useEditorStore } from "@/stores/editor.store";
 import { workflowService } from "@/services/workflow.service";
@@ -19,7 +19,6 @@ export function WorkflowPaymentModal() {
    const clearPendingPayment = useEditorStore(s => s.clearPendingPayment);
    const stopRun = useEditorStore(s => s.stopRun);
    const { wallets } = useWallets();
-   const { connectWallet } = useConnectWallet();
    const [signing, setSigning] = useState(false);
    const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +34,7 @@ export function WorkflowPaymentModal() {
    async function handleConfirm() {
       if (!pendingPayment) return;
       const wallet = wallets[wallets.length - 1] ?? null;
-      if (!wallet) { connectWallet(); return; }
+      if (!wallet) { setError("No wallet connected. Add a wallet on the Wallet page first."); return; }
 
       setSigning(true);
       setError(null);

@@ -21,6 +21,7 @@ interface CreateAgentModalProps {
 export default function CreateAgentModal({ open, onOpenChange, onCreated }: CreateAgentModalProps) {
    const { connectWallet } = useConnectWallet();
    const { wallets } = useWallets();
+   const connectedWallet = wallets[wallets.length - 1] ?? null;
 
    const [agentId, setAgentId] = useState("");
    const [fetching, setFetching] = useState(false);
@@ -31,8 +32,6 @@ export default function CreateAgentModal({ open, onOpenChange, onCreated }: Crea
    const [signError, setSignError] = useState<string | null>(null);
    const [claimed, setClaimed] = useState(false);
    const [imgError, setImgError] = useState(false);
-
-   const connectedWallet = wallets[wallets.length - 1] ?? null;
 
    function handleClose() {
       onOpenChange(false);

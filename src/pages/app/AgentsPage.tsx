@@ -35,8 +35,8 @@ export default function AgentsPage() {
          />
 
          <div className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-full bg-orange/15 shrink-0">
-               <Bot className="size-4 text-orange" />
+            <div className="flex size-9 items-center justify-center rounded-full bg-white/8 shrink-0">
+               <Bot className="size-4 text-white/60" />
             </div>
             <h1 className="text-2xl font-semibold text-white font-manrope">Agents</h1>
          </div>
