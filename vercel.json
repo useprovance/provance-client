@@ -1,6 +1,5 @@
 {
 	"rewrites": [
-		{ "source": "/api/:path*", "destination": "https://api.useprovance.xyz/api/:path*" },
 		{ "source": "/(.*)", "destination": "/" }
 	]
 }
