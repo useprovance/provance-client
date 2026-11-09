@@ -78,13 +78,14 @@ export default function WalletPage() {
 
 			<div className="mt-6">
 				{wallets.length === 0 ? (
-					<div className="flex flex-col items-center justify-center py-16 gap-3 border border-dashed border-white/10 rounded-lg max-w-lg">
-						<Wallet size={28} strokeWidth={1.2} className="text-white/20" />
-						<p className="text-[13px] text-white/30">No wallets added yet</p>
+					<div className="flex flex-col items-center justify-center gap-4 py-24 border border-dashed border-sand/10">
+						<p className="text-[13px] text-sand/30">No wallets added yet</p>
 						<button
 							onClick={() => connectWallet()}
-							className="text-[12px] text-orange hover:text-orange/80 transition-colors cursor-pointer"
+							className="flex items-center gap-2 bg-sand hover:bg-sand-light text-ink-dark text-[12px] font-bold px-5 py-2 transition-colors cursor-pointer"
+							style={{ clipPath: "polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)" }}
 						>
+							<Plus size={13} strokeWidth={2.5} />
 							Add your first wallet
 						</button>
 					</div>

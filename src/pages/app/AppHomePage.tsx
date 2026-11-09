@@ -58,8 +58,8 @@ export default function AppHomePage() {
 
          <div className="mt-6">
             {data === undefined ? null : workflows.length === 0 ? (
-               <div className="flex flex-col items-center justify-center gap-4 py-24 border border-dashed border-white/10">
-                  <p className="text-[13px] text-white/30">No workflows yet</p>
+               <div className="flex flex-col items-center justify-center gap-4 py-24 border border-dashed border-sand/10">
+                  <p className="text-[13px] text-sand/30">No workflows yet</p>
                   <button
                      onClick={() => setCreateOpen(true)}
                      className="flex items-center gap-2 bg-sand hover:bg-sand-light text-ink-dark text-[12px] font-bold px-5 py-2 transition-colors cursor-pointer"

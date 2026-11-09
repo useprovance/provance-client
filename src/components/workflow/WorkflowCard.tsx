@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router";
 import { Link } from "react-router";
 import { ArrowUpRight, MoreHorizontal, Trash2, Globe, Boxes } from "lucide-react";
 import {
@@ -12,18 +13,22 @@ import type { Workflow, WorkflowNode } from "@/services/workflow.service";
 function NodeIcon({ node }: { node: WorkflowNode }) {
    if (!node.image_url) return null;
    return (
-      <div className="w-10 h-10 rounded-md bg-[#222] border border-white/10 flex items-center justify-center overflow-hidden">
-         <img src={node.image_url} alt={node.label} className="w-6 h-6 object-contain" />
+      <div className="w-12 h-12 rounded bg-[#222] border border-white/10 flex items-center justify-center overflow-hidden">
+         <img src={node.image_url} alt={node.label} className="w-8 h-8 object-contain" />
       </div>
    );
 }
 
 export function WorkflowCard({ workflow, onDelete }: { workflow: Workflow; onDelete?: (id: string) => void }) {
+   const navigate = useNavigate();
    const nodes = workflow.canvas.nodes.filter(n => n.image_url).slice(0, 6);
    const hasNodes = nodes.length > 0;
 
    return (
-      <div className="flex flex-col bg-[#1a1a1a] hover:bg-[#212121] border border-sand/15 transition-colors overflow-hidden group rounded-md">
+      <div
+         onClick={() => navigate(`/app/workflows/${workflow.id}`)}
+         className="flex flex-col bg-[#1a1a1a] hover:bg-[#141414] border border-sand/15 transition-colors overflow-hidden group rounded-md cursor-pointer"
+      >
          {/* Canvas preview */}
          <div className="relative h-52 overflow-hidden">
             <div
@@ -37,7 +42,7 @@ export function WorkflowCard({ workflow, onDelete }: { workflow: Workflow; onDel
                }}
             />
 
-            <div className="absolute top-2 right-2 z-10">
+            <div className="absolute top-2 right-2 z-10" onClick={e => e.stopPropagation()}>
                <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                      <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#1a1a1a] border border-[#333] text-sand/60 hover:text-sand transition-colors cursor-pointer">
@@ -63,19 +68,14 @@ export function WorkflowCard({ workflow, onDelete }: { workflow: Workflow; onDel
                </DropdownMenu>
             </div>
 
-            {hasNodes ? (
-               <Link to={`/app/workflows/${workflow.id}`} className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center">
+               {hasNodes ? (
                   <div className="grid grid-cols-3 gap-4 px-6">
                      {nodes.map(node => (
                         <NodeIcon key={node.id} node={node} />
                      ))}
                   </div>
-               </Link>
-            ) : (
-               <Link
-                  to={`/app/workflows/${workflow.id}`}
-                  className="absolute inset-0 flex items-center justify-center"
-               >
+               ) : (
                   <span
                      className="flex items-center gap-1.5 bg-sand text-ink-dark text-[12px] font-bold px-5 py-2 border-2 border-ink/20"
                      style={{ clipPath: "polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px)" }}
@@ -83,8 +83,8 @@ export function WorkflowCard({ workflow, onDelete }: { workflow: Workflow; onDel
                      Open
                      <ArrowUpRight size={13} strokeWidth={2} />
                   </span>
-               </Link>
-            )}
+               )}
+            </div>
          </div>
 
          {/* Details */}

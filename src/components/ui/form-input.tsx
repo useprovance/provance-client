@@ -46,7 +46,7 @@ export function FormInput({
    );
 
    const inputCls =
-      "flex-1 self-center bg-transparent text-[13px] text-white placeholder:text-white/20 px-3 py-3 outline-none disabled:cursor-not-allowed";
+      "flex-1 bg-transparent text-[13px] text-white placeholder:text-white/20 px-3 py-3 outline-none disabled:cursor-not-allowed";
 
    return (
       <div className={cn("flex flex-col gap-1.5", className)}>

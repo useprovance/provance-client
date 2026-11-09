@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { GitBranch, Bot, Wallet, Settings, LogOut, Store } from "lucide-react";
+import { GitBranch, Bot, Wallet, Settings, LogOut, Store, KeyRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { authService } from "@/services/auth.service";
 
@@ -11,6 +11,7 @@ const NAV = [
          { label: "Workflows", icon: GitBranch, to: "/app" },
          { label: "Agents", icon: Bot, to: "/app/agents" },
          { label: "Wallet", icon: Wallet, to: "/app/wallet" },
+         { label: "Credentials", icon: KeyRound, to: "/app/credentials" },
       ],
    },
 ];
@@ -70,7 +71,7 @@ export default function AppSidebar() {
          </nav>
 
          <div className="flex flex-col gap-0.5 px-1 pt-1 pb-2">
-            <NavItem label="Marketplace" icon={Store} to="/app/marketplace" active={pathname === "/app/marketplace"} />
+            <NavItem label="Explore" icon={Store} to="/app/explore" active={pathname === "/app/explore"} />
             <NavItem label="Settings" icon={Settings} to="/app/settings" active={pathname === "/app/settings"} />
             <hr className="border-white/10 my-1" />
             <button

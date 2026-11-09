@@ -5,6 +5,7 @@ import { agentService } from "@/services/agent.service";
 import { authService } from "@/services/auth.service";
 import { aiService } from "@/services/ai.service";
 import { walletService } from "@/services/wallet.service";
+import { credentialService } from "@/services/credential.service";
 
 export const authLoader = async () => {
    for (let i = 0; i < 3; i++) {
@@ -41,6 +42,18 @@ export const agentsLoader = async () => {
    }
 };
 
+
+export const credentialsLoader = async () => {
+   try {
+      return await queryClient.query({
+         queryKey: ["credentials"],
+         queryFn: () => credentialService.list(),
+         staleTime: "static",
+      });
+   } catch {
+      return null;
+   }
+};
 
 export const walletsLoader = async () => {
    try {
