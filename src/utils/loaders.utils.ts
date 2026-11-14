@@ -6,6 +6,7 @@ import { authService } from "@/services/auth.service";
 import { aiService } from "@/services/ai.service";
 import { walletService } from "@/services/wallet.service";
 import { credentialService } from "@/services/credential.service";
+import { chatService } from "@/services/chat.service";
 
 export const authLoader = async () => {
    for (let i = 0; i < 3; i++) {
@@ -61,6 +62,18 @@ export const walletsLoader = async () => {
          queryKey: ["wallets"],
          queryFn: () => walletService.list(),
          staleTime: "static",
+      });
+   } catch {
+      return null;
+   }
+};
+
+export const chatLoader = async ({ params }: { params: { id?: string } }) => {
+   if (!params.id) return null;
+   try {
+      return await queryClient.query({
+         queryKey: ["chat-messages", params.id],
+         queryFn: () => chatService.getMessages(params.id!),
       });
    } catch {
       return null;

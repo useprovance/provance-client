@@ -82,6 +82,7 @@ export interface Workflow {
    description: string;
    published: boolean;
    runs: number;
+   chat_id: string | null;
    canvas: {
       nodes: WorkflowNode[];
       edges: WorkflowEdge[];
@@ -94,6 +95,7 @@ export interface Workflow {
 export interface CreateWorkflowInput {
    name: string;
    description?: string;
+   chat_id?: string;
 }
 
 export interface UpdateWorkflowInput {

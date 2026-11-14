@@ -34,13 +34,11 @@ export function AiChatPanel({ onCollapse }: { onCollapse: () => void }) {
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
 	const workflowId = useEditorStore(s => s.workflowId);
-	const nodes = useEditorStore(s => s.nodes);
-	const edges = useEditorStore(s => s.edges);
-	const logs = useEditorStore(s => s.logs);
 	const addAgentNode = useEditorStore(s => s.addAgentNode);
 	const onConnect = useEditorStore(s => s.onConnect);
 	const updateNodeConfig = useEditorStore(s => s.updateNodeConfig);
 	const removeNode = useEditorStore(s => s.removeNode);
+	const triggerRun = useEditorStore(s => s.triggerRun);
 
 	const { data: savedMessages } = useQuery({
 		queryKey: ['chat-history', workflowId],
@@ -82,24 +80,6 @@ export function AiChatPanel({ onCollapse }: { onCollapse: () => void }) {
 			transport: new DefaultChatTransport({
 				api: `${BASE}/ai/chat`,
 				credentials: 'include',
-				body: () => ({
-					workflowId,
-					canvas: {
-						nodes: nodes.map(n => ({
-							id: n.id,
-							label: n.data.label,
-							action: n.data.action,
-						})),
-						edges: edges.map(e => ({
-							id: e.id,
-							source: e.source,
-							target: e.target,
-						})),
-					},
-					logs: logs
-						.slice(-20)
-						.map(l => ({ level: l.level, message: l.message })),
-				}),
 			}),
 			sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
 			onToolCall({ toolCall }) {
@@ -123,6 +103,11 @@ export function AiChatPanel({ onCollapse }: { onCollapse: () => void }) {
 							toolName: 'remove_node';
 							toolCallId: string;
 							input: { nodeId: string };
+					  }
+					| {
+							toolName: 'run_workflow';
+							toolCallId: string;
+							input: { reason: string };
 					  };
 
 				const tc = toolCall as TC;
@@ -175,6 +160,13 @@ export function AiChatPanel({ onCollapse }: { onCollapse: () => void }) {
 					removeNode(tc.input.nodeId);
 					addToolOutput({
 						tool: 'remove_node',
+						toolCallId: tc.toolCallId,
+						output: 'done',
+					});
+				} else if (tc.toolName === 'run_workflow') {
+					void triggerRun();
+					addToolOutput({
+						tool: 'run_workflow',
 						toolCallId: tc.toolCallId,
 						output: 'done',
 					});
