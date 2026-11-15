@@ -1,10 +1,16 @@
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import HeroGraphic from "@/components/landing-page/HeroGraphic";
+import RequestAccessModal from "@/components/landing-page/RequestAccessModal";
 import { authService } from "@/services/auth.service";
+
+const IS_PRODUCTION = import.meta.env.MODE === "production";
 
 export default function Hero() {
    const navigate = useNavigate();
+   const [accessOpen, setAccessOpen] = useState(false);
+
    const { data: user } = useQuery({
       queryKey: ["auth", "me"],
       queryFn: () => authService.me(),
@@ -14,7 +20,17 @@ export default function Hero() {
    const ctaLabel = user ? "GO TO DASHBOARD" : "GET STARTED";
    const ctaPath = user ? "/app" : "/auth";
 
+   function handleCta() {
+      if (IS_PRODUCTION) {
+         setAccessOpen(true);
+      } else {
+         navigate(ctaPath);
+      }
+   }
+
    return (
+      <>
+      <RequestAccessModal open={accessOpen} onOpenChange={setAccessOpen} />
       <section className="grid grid-cols-1 md:grid-cols-2 md:gap-8 min-h-screen bg-ink max-w-7xl mx-auto border-b border-b-sand-faint">
             <div className="flex flex-col gap-6 md:gap-8 w-full pt-16 md:pt-25 pb-12 md:pb-0 border-x border-sand-faint px-6 md:px-8">
                <div className="flex items-center justify-between w-full max-w-lg border-t border-b py-3 border-sand/40">
@@ -43,11 +59,11 @@ export default function Hero() {
 
                <div className="flex flex-col gap-4 w-full max-w-lg">
                   <button
-                     onClick={() => navigate(ctaPath)}
+                     onClick={handleCta}
                      className="flex items-center justify-center w-full h-[52px] bg-sand text-ink-dark font-bold text-sm hover:bg-sand-light transition-colors cursor-pointer"
                      style={{ clipPath: "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)" }}
                   >
-                     {ctaLabel}
+                     {IS_PRODUCTION ? "REQUEST ACCESS" : ctaLabel}
                   </button>
                   <div
                      className="w-full h-[52px] p-[2px]"
@@ -75,6 +91,6 @@ export default function Hero() {
                <HeroGraphic />
             </div>
          </section>
-
+      </>
    );
 }

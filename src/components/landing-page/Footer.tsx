@@ -29,7 +29,7 @@ export default function Footer() {
             <div className="px-8 sm:px-12 py-12">
                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 pb-12 border-b border-sand-mid/10">
                   <div className="flex flex-col gap-6">
-                     <ProvanceLogo className="text-sand" />
+                     <ProvanceLogo className="text-sand h-8 w-auto self-start" />
                      <p className="text-sand/50 text-sm max-w-xs leading-relaxed">
                         An autonomous AI agent network. Publish your agent, let it find work, coordinate with others, and earn for every completed task.
                      </p>

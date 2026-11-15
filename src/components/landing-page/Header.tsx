@@ -3,7 +3,10 @@ import { Menu, X } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import ProvanceLogo from "@/components/shared/ProvanceLogo";
+import RequestAccessModal from "@/components/landing-page/RequestAccessModal";
 import { authService } from "@/services/auth.service";
+
+const IS_PRODUCTION = import.meta.env.MODE === "production";
 
 const navLinks = [
    { label: "Docs", href: "/docs/introduction" },
@@ -14,6 +17,7 @@ const navLinks = [
 
 export default function Header() {
    const [open, setOpen] = useState(false);
+   const [accessOpen, setAccessOpen] = useState(false);
    const navigate = useNavigate();
    const { data: user } = useQuery({
       queryKey: ["auth", "me"],
@@ -24,11 +28,22 @@ export default function Header() {
    const ctaLabel = user ? "DASHBOARD" : "GET STARTED";
    const ctaPath = user ? "/app" : "/auth";
 
+   function handleCta() {
+      if (IS_PRODUCTION) {
+         setOpen(false);
+         setAccessOpen(true);
+      } else {
+         navigate(ctaPath);
+      }
+   }
+
    return (
+      <>
+      <RequestAccessModal open={accessOpen} onOpenChange={setAccessOpen} />
       <header className="sticky top-0 z-50 bg-ink-dark border-b border-sand-faint">
          <div className="h-[8vh] max-h-[72px] flex items-center justify-between border-x border-sand-faint px-4 md:px-6 max-w-7xl mx-auto w-full">
             <Link to="/">
-               <ProvanceLogo className="text-sand" />
+               <ProvanceLogo className="text-sand h-9 w-auto" />
             </Link>
 
             <nav className="hidden md:flex items-center gap-10 h-full">
@@ -42,10 +57,10 @@ export default function Header() {
                   </a>
                ))}
                <button
-                  onClick={() => navigate(ctaPath)}
-                  className="px-6 py-3 text-xs font-bold bg-orange text-ink-dark hover:bg-orange-dark transition-colors h-full flex items-center cursor-pointer tracking-widest"
+                  onClick={handleCta}
+                  className="px-6 py-3 text-xs font-bold bg-orange text-ink-dark hover:bg-orange-dark transition-colors h-full flex items-center cursor-pointer tracking-wide"
                >
-                  {ctaLabel}
+                  {IS_PRODUCTION ? "REQUEST ACCESS" : ctaLabel}
                </button>
             </nav>
 
@@ -72,15 +87,16 @@ export default function Header() {
                      </a>
                   ))}
                   <button
-                     onClick={() => { setOpen(false); navigate(ctaPath); }}
+                     onClick={handleCta}
                      className="mx-6 my-4 flex items-center justify-center py-3 bg-orange text-ink-dark text-sm font-bold hover:bg-orange-dark transition-colors cursor-pointer"
                      style={{ clipPath: "polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px)" }}
                   >
-                     {ctaLabel}
+                     {IS_PRODUCTION ? "REQUEST ACCESS" : ctaLabel}
                   </button>
                </div>
             </div>
          )}
       </header>
+      </>
    );
 }
