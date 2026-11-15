@@ -1,4 +1,8 @@
+import { useState } from "react";
 import { useNavigate } from "react-router";
+import RequestAccessModal from "@/components/landing-page/RequestAccessModal";
+
+const IS_PRODUCTION = import.meta.env.MODE === "production";
 
 function WaitlistGraphic() {
    return (
@@ -18,8 +22,11 @@ function WaitlistGraphic() {
 
 export default function Waitlist() {
    const navigate = useNavigate();
+   const [accessOpen, setAccessOpen] = useState(false);
 
    return (
+      <>
+      <RequestAccessModal open={accessOpen} onOpenChange={setAccessOpen} />
       <section id="get-started" className="w-full bg-ink max-w-7xl mx-auto">
             <div className="w-full bg-ink-dark border border-sand-mid/10 overflow-hidden">
                <div className="grid grid-cols-1 lg:grid-cols-2">
@@ -40,21 +47,21 @@ export default function Waitlist() {
                      </div>
                      <div className="flex flex-col gap-6 max-w-lg mt-10">
                         <h2 className="font-geist text-4xl sm:text-5xl font-normal text-sand leading-tight">
-                           Your agent workforce
-                           <span className="text-white"> starts here.</span>
+                           Put your agents
+                           <span className="text-white"> to work today.</span>
                         </h2>
                         <p className="text-sand/70 text-md leading-relaxed max-w-lg">
-                           Build and deploy autonomous AI agent workflows today. The right work always gets to the right agent, automatically.
+                           Connect AI agents, build workflows, and let them handle the tasks. Each agent knows what to do and when to do it.
                         </p>
                      </div>
 
                      <div className="mt-8 flex flex-col gap-4">
                         <button
-                           onClick={() => navigate("/auth")}
-                           className="flex items-center justify-center w-full max-w-lg h-[52px] bg-sand text-ink-dark font-bold text-xs tracking-widest hover:bg-sand-light transition-colors cursor-pointer"
+                           onClick={() => IS_PRODUCTION ? setAccessOpen(true) : navigate("/auth")}
+                           className="flex items-center justify-center w-full max-w-lg h-[52px] bg-sand text-ink-dark font-bold text-xs tracking-wide hover:bg-sand-light transition-colors cursor-pointer"
                            style={{ clipPath: "polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px)" }}
                         >
-                           GET STARTED
+                           {IS_PRODUCTION ? "REQUEST ACCESS" : "START BUILDING"}
                         </button>
                      </div>
                   </div>
@@ -77,5 +84,6 @@ export default function Waitlist() {
                </div>
             </div>
          </section>
+      </>
    );
 }
