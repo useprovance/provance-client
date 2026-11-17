@@ -17,6 +17,7 @@ import type {
 	WorkflowNode,
 	NodeRunResult,
 	PendingPayment,
+	PendingApproval,
 } from '@/services/workflow.service';
 import { workflowService } from '@/services/workflow.service';
 
@@ -56,6 +57,7 @@ interface EditorStore {
 	activeRunId: string | null;
 	runningNodeId: string | null;
 	pendingPayment: PendingPayment | null;
+	pendingApproval: PendingApproval | null;
 	logsOpen: boolean;
 	panelTab: 'logs' | 'runs';
 	logs: WorkflowLog[];
@@ -66,6 +68,8 @@ interface EditorStore {
 	clearRuns: () => void;
 	triggerRun: () => Promise<void>;
 	clearPendingPayment: () => void;
+	clearPendingApproval: () => void;
+	decideApproval: (decision: boolean) => Promise<void>;
 	stopRun: () => void;
 }
 
@@ -135,6 +139,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 	activeRunId: null,
 	runningNodeId: null,
 	pendingPayment: null,
+	pendingApproval: null,
 	logsOpen: false,
 	panelTab: 'logs',
 	logs: [],
@@ -148,6 +153,17 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 	},
 	clearRuns: () => set({ runs: [] }),
 	clearPendingPayment: () => set({ pendingPayment: null }),
+	clearPendingApproval: () => set({ pendingApproval: null }),
+	decideApproval: async decision => {
+		const { pendingApproval } = get();
+		if (!pendingApproval) return;
+		await workflowService.decideApproval(
+			pendingApproval.runId,
+			pendingApproval.approvalId,
+			decision,
+		);
+		set({ pendingApproval: null });
+	},
 
 	triggerRun: async () => {
 		const { workflowId, nodes } = get();
@@ -226,12 +242,27 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 						chainId: event.chainId,
 					},
 				});
+			} else if (event.type === 'approval_required') {
+				set({
+					pendingApproval: {
+						runId,
+						approvalId: event.approvalId,
+						nodeId: event.nodeId,
+						expiresAt: event.expiresAt,
+						summary: event.summary,
+					},
+				});
+			} else if (event.type === 'approval_resolved') {
+				set(s => s.pendingApproval?.approvalId === event.approvalId
+					? { pendingApproval: null }
+					: {});
 			} else if (event.type === 'complete') {
 				set(s => ({
 					isRunning: false,
 					activeRunId: null,
 					runningNodeId: null,
 					pendingPayment: null,
+					pendingApproval: null,
 					runs: s.runs.map(r => r.id === runId
 						? { ...r, status: event.status, nodeResults: event.nodeResults }
 						: r
@@ -250,7 +281,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
 	stopRun: () => {
 		const { activeRunId } = get();
 		if (activeRunId) void workflowService.stopRun(activeRunId);
-		set({ isRunning: false, activeRunId: null, runningNodeId: null, pendingPayment: null });
+		set({ isRunning: false, activeRunId: null, runningNodeId: null, pendingPayment: null, pendingApproval: null });
 	},
 
 	addAgentNode: (agent, action, nodeId) => {

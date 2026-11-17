@@ -38,6 +38,14 @@ export type NodeRunResult = {
   durationMs: number;
 };
 
+export type PendingApproval = {
+   runId: string;
+   approvalId: string;
+   nodeId: string;
+   expiresAt: string;
+   summary: Record<string, unknown>;
+};
+
 export type PendingPayment = {
   runId: string;
   nodeId: string;
@@ -57,6 +65,8 @@ export type RunEvent =
   | { type: "log";              level: "info" | "error"; message: string }
   | { type: "complete";         status: "success" | "error"; nodeResults: NodeRunResult[] }
   | { type: "payment_required"; nodeId: string; itemCount: number; pricePerCall: number; totalAmount: number; token: string; tokenAddress: string; walletAddress: string; chainId: number }
+  | { type: "approval_required"; approvalId: string; nodeId: string; expiresAt: string; summary: Record<string, unknown> }
+  | { type: "approval_resolved"; approvalId: string; nodeId: string; decision: boolean }
   | { type: "stream_error" };
 
 export interface WorkflowNode extends Record<string, unknown> {
@@ -90,6 +100,31 @@ export interface Workflow {
    viewport: { x: number; y: number; zoom: number };
    created_at: string;
    updated_at: string;
+}
+
+export interface WorkflowSchedule {
+   id: string;
+   workflow_id: string;
+   name: string;
+   cron: string;
+   timezone: string;
+   enabled: boolean;
+   payload: Record<string, unknown>;
+   max_attempts: number;
+   last_run_at: string | null;
+   next_run_at: string | null;
+   created_at: string;
+}
+
+export interface WorkflowTrigger {
+   id: string;
+   name: string;
+   type: "webhook" | "event";
+   token_hint: string;
+   event_name: string | null;
+   enabled: boolean;
+   last_triggered_at: string | null;
+   created_at: string;
 }
 
 export interface CreateWorkflowInput {
@@ -186,6 +221,54 @@ class WorkflowService extends BaseApiService {
       } catch (error) {
          throw this.handleError(error);
       }
+   }
+
+   async decideApproval(runId: string, approvalId: string, decision: boolean): Promise<void> {
+      try {
+         await this.api.post(`/runs/${runId}/approvals/${approvalId}`, { decision });
+      } catch (error) {
+         throw this.handleError(error);
+      }
+   }
+
+   async getSchedules(workflowId: string): Promise<WorkflowSchedule[]> {
+      const res = await this.api.get<{ schedules: WorkflowSchedule[] }>(`/workflows/${workflowId}/schedules`);
+      return res.data.schedules;
+   }
+
+   async createSchedule(workflowId: string, input: {
+      name?: string;
+      cron: string;
+      timezone?: string;
+      enabled?: boolean;
+   }): Promise<WorkflowSchedule> {
+      const res = await this.api.post<{ schedule: WorkflowSchedule }>(`/workflows/${workflowId}/schedules`, input);
+      return res.data.schedule;
+   }
+
+   async deleteSchedule(workflowId: string, scheduleId: string): Promise<void> {
+      await this.api.delete(`/workflows/${workflowId}/schedules/${scheduleId}`);
+   }
+
+   async getTriggers(workflowId: string): Promise<WorkflowTrigger[]> {
+      const res = await this.api.get<{ triggers: WorkflowTrigger[] }>(`/workflows/${workflowId}/triggers`);
+      return res.data.triggers;
+   }
+
+   async createTrigger(workflowId: string, input: {
+      name?: string;
+      type: "webhook" | "event";
+      eventName?: string;
+   }): Promise<{ trigger: WorkflowTrigger; token: string; webhookPath: string | null }> {
+      const res = await this.api.post<{ trigger: WorkflowTrigger; token: string; webhookPath: string | null }>(
+         `/workflows/${workflowId}/triggers`,
+         input,
+      );
+      return res.data;
+   }
+
+   async deleteTrigger(workflowId: string, triggerId: string): Promise<void> {
+      await this.api.delete(`/workflows/${workflowId}/triggers/${triggerId}`);
    }
 
    async getRuns(workflowId: string): Promise<WorkflowRun[]> {

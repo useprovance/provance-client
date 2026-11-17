@@ -11,6 +11,20 @@ export default defineConfig({
 			'@': path.resolve(__dirname, './src'),
 		},
 	},
+	build: {
+		rollupOptions: {
+			output: {
+				manualChunks(id: string) {
+					if (!id.includes('node_modules')) return undefined;
+					if (/viem|wagmi|ethers|@privy|@stellar|freighter/i.test(id)) return 'wallet';
+					if (/react|scheduler/i.test(id)) return 'react';
+					if (/lucide|@radix-ui/i.test(id)) return 'ui';
+					if (/recharts|lightweight-charts|chart/i.test(id)) return 'charts';
+					return 'vendor';
+				},
+			},
+		},
+	},
 	server: {
 		proxy: {
 			'/api': {
