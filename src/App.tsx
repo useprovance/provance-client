@@ -11,8 +11,8 @@ const CredentialsPage = lazy(() => import('./pages/app/CredentialsPage'));
 const NewChatPage = lazy(() => import('./pages/app/NewChatPage'));
 const ChatPage = lazy(() => import('./pages/app/ChatPage'));
 const WorkflowEditorPage = lazy(() => import('./pages/app/WorkflowEditorPage'));
+const DocSlugPage = lazy(() => import('./pages/docs/DocSlugPage'));
 import DocsLayout from './layouts/DocsLayout';
-import DocSlugPage from './pages/docs/DocSlugPage';
 import { Toaster } from 'react-hot-toast';
 import { workflowsLoader, workflowEditorLoader, agentsLoader, authLoader, credentialsLoader, chatLoader } from './utils/loaders.utils';
 
@@ -55,7 +55,7 @@ const router = createBrowserRouter([
 		element: <DocsLayout />,
 		children: [
 			{ index: true, element: <Navigate to="/docs/introduction" replace /> },
-			{ path: ':slug', element: <DocSlugPage /> },
+			{ path: ':slug', element: <LazyPage><DocSlugPage /></LazyPage> },
 		],
 	},
 ]);

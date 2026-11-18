@@ -60,7 +60,7 @@ export const walletsLoader = async () => {
    try {
       return await queryClient.query({
          queryKey: ["wallets"],
-         queryFn: () => walletService.list(),
+         queryFn: () => walletService.getAll(),
          staleTime: "static",
       });
    } catch {
