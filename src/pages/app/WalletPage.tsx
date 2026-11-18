@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Wallet, Copy, Plus, Trash2, Send, RefreshCw, Loader2, ArrowLeftRight, Coins, ArrowDownToLine, ChartCandlestick, Landmark, ShieldCheck } from "lucide-react";
+import { Wallet, Copy, Plus, Trash2, Send, RefreshCw, Loader2, ArrowLeftRight, Coins, ArrowDownToLine, ChartCandlestick, Landmark, ShieldCheck, Braces } from "lucide-react";
 import toast from "react-hot-toast";
 import { WalletBlockie } from "@/components/shared/WalletBlockie";
 import { WalletPickerModal } from "@/components/shared/WalletPickerModal";
@@ -13,6 +13,8 @@ import { ReceiveWalletModal } from "@/components/shared/ReceiveWalletModal";
 import { StellarOrdersModal } from "@/components/shared/StellarOrdersModal";
 import { DefindexPositionsModal } from "@/components/shared/DefindexPositionsModal";
 import { AutomationPolicyModal } from "@/components/shared/AutomationPolicyModal";
+import { EvmBridgeModal } from "@/components/shared/EvmBridgeModal";
+import { EvmContractModal } from "@/components/shared/EvmContractModal";
 import { getWalletBalances, type WalletBalanceResult } from "@/services/wallet-balance.service";
 import { EVM_SWAP_NETWORKS } from "@/services/evm-swap.service";
 
@@ -75,6 +77,8 @@ export default function WalletPage() {
    const [tokenSendWallet, setTokenSendWallet] = useState<WalletRecord | null>(null);
    const [receiveWallet, setReceiveWallet] = useState<WalletRecord | null>(null);
    const [policyWallet, setPolicyWallet] = useState<WalletRecord | null>(null);
+   const [bridgeWallet, setBridgeWallet] = useState<WalletRecord | null>(null);
+   const [contractWallet, setContractWallet] = useState<WalletRecord | null>(null);
    const [balances, setBalances] = useState<Record<string, WalletBalanceResult>>({});
    const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
 
@@ -217,6 +221,18 @@ export default function WalletPage() {
                            title="Swap ERC-20 tokens"
                            className="text-white/30 hover:text-white transition-colors cursor-pointer"
                         ><ArrowLeftRight size={15} strokeWidth={1.5} /></button>}
+                        {(w.chain === "evm" || w.chain === "base") && <button
+                           onClick={() => setBridgeWallet(w)}
+                           aria-label={`Bridge tokens from ${w.address}`}
+                           title="Bridge tokens across EVM networks with LI.FI"
+                           className="text-white/30 hover:text-white transition-colors cursor-pointer"
+                        ><ArrowLeftRight size={15} strokeWidth={1.5} /></button>}
+                        {(w.chain === "evm" || w.chain === "base") && <button
+                           onClick={() => setContractWallet(w)}
+                           aria-label={`Call a contract from ${w.address}`}
+                           title="Inspect, simulate, and call a contract"
+                           className="text-white/30 hover:text-white transition-colors cursor-pointer"
+                        ><Braces size={15} strokeWidth={1.5} /></button>}
                         <button
                            onClick={() => setPolicyWallet(w)}
                            aria-label={`Configure automation policy for ${w.address}`}
@@ -333,6 +349,24 @@ export default function WalletPage() {
                source={tokenSendWallet.address}
                walletChain={tokenSendWallet.chain}
                onSubmitted={() => { void refreshWallets(); }}
+            />
+         )}
+         {bridgeWallet && (
+            <EvmBridgeModal
+               key={bridgeWallet.id}
+               open={Boolean(bridgeWallet)}
+               onOpenChange={(open) => { if (!open) setBridgeWallet(null); }}
+               address={bridgeWallet.address}
+               onSubmitted={() => { void refreshTransactions(); }}
+            />
+         )}
+         {contractWallet && (
+            <EvmContractModal
+               key={contractWallet.id}
+               open={Boolean(contractWallet)}
+               onOpenChange={(open) => { if (!open) setContractWallet(null); }}
+               wallet={contractWallet}
+               onSubmitted={() => { void refreshTransactions(); }}
             />
          )}
          {policyWallet && (

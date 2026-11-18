@@ -1,19 +1,28 @@
 import './App.css';
+import { lazy, Suspense, type ReactNode } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router';
 import LandingPage from './pages/LandingPage';
 import AuthModalRoute from './pages/AuthModalRoute';
 import AppLayout from './layouts/AppLayout';
-import AppHomePage from './pages/app/AppHomePage';
-import AgentsPage from './pages/app/AgentsPage';
-import WalletPage from './pages/app/WalletPage';
-import CredentialsPage from './pages/app/CredentialsPage';
-import NewChatPage from './pages/app/NewChatPage';
-import ChatPage from './pages/app/ChatPage';
-import WorkflowEditorPage from './pages/app/WorkflowEditorPage';
+const AppHomePage = lazy(() => import('./pages/app/AppHomePage'));
+const AgentsPage = lazy(() => import('./pages/app/AgentsPage'));
+const WalletPage = lazy(() => import('./pages/app/WalletPage'));
+const CredentialsPage = lazy(() => import('./pages/app/CredentialsPage'));
+const NewChatPage = lazy(() => import('./pages/app/NewChatPage'));
+const ChatPage = lazy(() => import('./pages/app/ChatPage'));
+const WorkflowEditorPage = lazy(() => import('./pages/app/WorkflowEditorPage'));
 import DocsLayout from './layouts/DocsLayout';
 import DocSlugPage from './pages/docs/DocSlugPage';
 import { Toaster } from 'react-hot-toast';
-import { workflowsLoader, workflowEditorLoader, agentsLoader, authLoader, walletsLoader, credentialsLoader, chatLoader } from './utils/loaders.utils';
+import { workflowsLoader, workflowEditorLoader, agentsLoader, authLoader, credentialsLoader, chatLoader } from './utils/loaders.utils';
+
+function LazyPage({ children }: { children: ReactNode }) {
+	return (
+		<Suspense fallback={<div className="px-6 py-10 text-[12px] text-white/40">Loading…</div>}>
+			{children}
+		</Suspense>
+	);
+}
 
 const router = createBrowserRouter([
 	{
@@ -30,15 +39,15 @@ const router = createBrowserRouter([
 		children: [
 			{
 				index: true,
-				element: <AppHomePage />,
+				element: <LazyPage><AppHomePage /></LazyPage>,
 				loader: workflowsLoader,
 			},
-			{ path: 'agents', element: <AgentsPage />, loader: agentsLoader },
-			{ path: 'wallet', element: <WalletPage />, loader: walletsLoader },
-			{ path: 'credentials', element: <CredentialsPage />, loader: credentialsLoader },
-			{ path: 'chat', element: <NewChatPage /> },
-			{ path: 'chat/:id', element: <ChatPage />, loader: chatLoader },
-			{ path: 'workflows/:id', element: <WorkflowEditorPage />, loader: workflowEditorLoader },
+			{ path: 'agents', element: <LazyPage><AgentsPage /></LazyPage>, loader: agentsLoader },
+			{ path: 'wallet', element: <LazyPage><WalletPage /></LazyPage> },
+			{ path: 'credentials', element: <LazyPage><CredentialsPage /></LazyPage>, loader: credentialsLoader },
+			{ path: 'chat', element: <LazyPage><NewChatPage /></LazyPage> },
+			{ path: 'chat/:id', element: <LazyPage><ChatPage /></LazyPage>, loader: chatLoader },
+			{ path: 'workflows/:id', element: <LazyPage><WorkflowEditorPage /></LazyPage>, loader: workflowEditorLoader },
 		],
 	},
 	{

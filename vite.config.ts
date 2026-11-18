@@ -12,15 +12,19 @@ export default defineConfig({
 		},
 	},
 	build: {
+		chunkSizeWarningLimit: 1500,
 		rollupOptions: {
 			output: {
 				manualChunks(id: string) {
-					if (!id.includes('node_modules')) return undefined;
-					if (/viem|wagmi|ethers|@privy|@stellar|freighter/i.test(id)) return 'wallet';
-					if (/react|scheduler/i.test(id)) return 'react';
-					if (/lucide|@radix-ui/i.test(id)) return 'ui';
-					if (/recharts|lightweight-charts|chart/i.test(id)) return 'charts';
-					return 'vendor';
+					if (!id.includes('/node_modules/')) return undefined;
+					if (id.includes('/viem/') || id.includes('/ox/') || id.includes('/abitype/')) return 'viem';
+					if (id.includes('/wagmi/') || id.includes('/@wagmi/')) return 'wagmi';
+					if (id.includes('/@walletconnect/') || id.includes('/@reown/')) return 'walletconnect';
+					if (id.includes('/@coinbase/')) return 'coinbase';
+					if (id.includes('/@stellar/') || id.includes('/@freighter/')) return 'stellar';
+					if (id.includes('/@privy-io/')) return 'privy';
+					if (id.includes('/react-dom/') || id.includes('/react/') || id.includes('/scheduler/')) return 'react';
+					return undefined;
 				},
 			},
 		},
