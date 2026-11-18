@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { X, ArrowUpRight, Zap, Loader2 } from "lucide-react";
 import { createPublicClient, createWalletClient, custom } from "viem";
-import { useWallets } from "@privy-io/react-auth";
+import { PrivyProvider, useWallets, useConnectWallet } from "@privy-io/react-auth";
+import { env } from "@/utils/env.utils";
+import { goatNetwork } from "@/lib/chains";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useEditorStore } from "@/stores/editor.store";
 import { workflowService } from "@/services/workflow.service";
@@ -14,11 +16,12 @@ const permitAbi = [
    { name: 'decimals', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint8' }] },
 ] as const;
 
-export function WorkflowPaymentModal() {
+function WorkflowPaymentModalContent() {
    const pendingPayment = useEditorStore(s => s.pendingPayment);
    const clearPendingPayment = useEditorStore(s => s.clearPendingPayment);
    const stopRun = useEditorStore(s => s.stopRun);
    const { wallets } = useWallets();
+   const { connectWallet } = useConnectWallet();
    const [signing, setSigning] = useState(false);
    const [error, setError] = useState<string | null>(null);
 
@@ -34,7 +37,7 @@ export function WorkflowPaymentModal() {
    async function handleConfirm() {
       if (!pendingPayment) return;
       const wallet = wallets[wallets.length - 1] ?? null;
-      if (!wallet) { setError("No wallet connected. Add a wallet on the Wallet page first."); return; }
+      if (!wallet) { connectWallet(); return; }
 
       setSigning(true);
       setError(null);
@@ -168,5 +171,16 @@ export function WorkflowPaymentModal() {
             </div>
          </DialogContent>
       </Dialog>
+   );
+}
+
+
+export function WorkflowPaymentModal() {
+   const isOpen = useEditorStore((state) => state.pendingPayment !== null);
+   if (!isOpen) return null;
+   return (
+      <PrivyProvider appId={env.VITE_PRIVY_APP_ID} config={{ supportedChains: [goatNetwork] }}>
+         <WorkflowPaymentModalContent />
+      </PrivyProvider>
    );
 }

@@ -1,0 +1,8 @@
+packages:
+  - '.'
+
+overrides:
+  follow-redirects: 1.16.3
+  ws: 8.23.0
+  hono: 4.13.19
+  decode-uri-component: 0.5.1

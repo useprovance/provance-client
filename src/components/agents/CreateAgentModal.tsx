@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { createWalletClient, custom } from "viem";
-import { useConnectWallet, useWallets } from "@privy-io/react-auth";
+import { PrivyProvider, useConnectWallet, useWallets } from "@privy-io/react-auth";
+import { env } from "@/utils/env.utils";
+import { goatNetwork } from "@/lib/chains";
 import { Loader2, Search, CheckCircle2, X, Wallet } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { FormInput } from "@/components/ui/form-input";
@@ -18,7 +20,7 @@ interface CreateAgentModalProps {
    onCreated?: () => void;
 }
 
-export default function CreateAgentModal({ open, onOpenChange, onCreated }: CreateAgentModalProps) {
+function CreateAgentModalContent({ open, onOpenChange, onCreated }: CreateAgentModalProps) {
    const { connectWallet } = useConnectWallet();
    const { wallets } = useWallets();
    const connectedWallet = wallets[wallets.length - 1] ?? null;
@@ -206,5 +208,15 @@ export default function CreateAgentModal({ open, onOpenChange, onCreated }: Crea
             </div>
          </DialogContent>
       </Dialog>
+   );
+}
+
+
+export default function CreateAgentModal(props: CreateAgentModalProps) {
+   if (!props.open) return null;
+   return (
+      <PrivyProvider appId={env.VITE_PRIVY_APP_ID} config={{ supportedChains: [goatNetwork] }}>
+         <CreateAgentModalContent {...props} />
+      </PrivyProvider>
    );
 }

@@ -4,7 +4,7 @@ import {
    ChevronUp, ChevronDown, FlaskConical, Square,
    MoreHorizontal, Trash2, Globe, EyeOff, ChevronRight,
    CheckCircle2, XCircle, Loader2, Copy, Check,
-   CircleOff, Eraser,
+   CircleOff, Eraser, CalendarClock,
 } from "lucide-react";
 import {
    DropdownMenu,
@@ -16,6 +16,8 @@ import {
 import { useEditorStore } from "@/stores/editor.store";
 import { workflowService, type WorkflowRun, type NodeRunResult } from "@/services/workflow.service";
 import { WorkflowPaymentModal } from "@/components/editor/WorkflowPaymentModal";
+import { WorkflowApprovalModal } from "@/components/editor/WorkflowApprovalModal";
+import { WorkflowAutomationModal } from "@/components/editor/WorkflowAutomationModal";
 
 function JsonValue({ value, depth = 0 }: { value: unknown; depth?: number }) {
    if (value === null) return <span className="text-white/60">null</span>;
@@ -291,6 +293,7 @@ export function EditorBottomPanel() {
    };
 
    const [panelHeight, setPanelHeight] = useState(MIN_HEIGHT);
+   const [automationOpen, setAutomationOpen] = useState(false);
 
    const dragStartY = useRef<number | null>(null);
    const dragStartHeight = useRef<number>(MIN_HEIGHT);
@@ -325,6 +328,14 @@ export function EditorBottomPanel() {
    return (
       <>
       <WorkflowPaymentModal />
+      <WorkflowApprovalModal />
+      {workflowId && (
+         <WorkflowAutomationModal
+            open={automationOpen}
+            onOpenChange={setAutomationOpen}
+            workflowId={workflowId}
+         />
+      )}
       <div
          className="relative shrink-0 bg-[#111] flex flex-col border-t border-[#2a2a2a]"
          style={{ height: collapsed ? "36px" : `${panelHeight}px`, transition: collapsed ? "height 0.2s" : "none" }}
@@ -346,6 +357,14 @@ export function EditorBottomPanel() {
             >
                <FlaskConical size={13} strokeWidth={2} />
                {isRunning ? "Running..." : "Run workflow"}
+            </button>
+            <button
+               onClick={() => setAutomationOpen(true)}
+               disabled={!workflowId}
+               className="flex items-center gap-2 px-4 h-10 bg-[#1e1e1e] border border-white/20 text-white/80 text-[12px] font-medium rounded-md hover:bg-[#2a2a2a] hover:border-white/40 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+               <CalendarClock size={13} strokeWidth={2} />
+               Automation
             </button>
             {isRunning && (
                <button

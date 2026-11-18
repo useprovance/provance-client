@@ -58,3 +58,5 @@ Start here: [useprovance.xyz/docs/introduction](https://useprovance.xyz/docs/int
 pnpm install
 pnpm dev
 ```
+
+Copy `.env.example` to `.env` and set `VITE_API_URL` to the backend API base, including `/api/v1`. For backend secrets and provider credentials, see [the environment setup guide](../provance-nodes/docs/ENVIRONMENT.md).
